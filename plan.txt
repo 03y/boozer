@@ -1,0 +1,68 @@
+
+
+
+
+informal project
+open source- gh
+no name, agree and get domain
+
+data sourced from dbas and users
+- will be sparse at first, but once most of the uses bell curve is added submitting new items will be rare
+- l may have good knowledge here, possibly create a small tool for adding new items
+
+team
+ 1. m - backend, sysadm
+ 2. a - dba, data
+ 3. e - frontend, possibly also dba & data
+ 4. c - reqs gathering and user testing
+
+plan
+- no time restraint on phases
+ph1:   db & backend implementation of users and items
+ph2:   db & backend implementation of uses
+ph3:   html/js frontend implementations
+ph3.5: bot (maybe)
+ph4:   data analysis(e working on d3 visualisation lib atm, ask a about preferred tools/libs)
+
+- monorepo for backend(api),frontend and db scripts (and later data stuff)
+- ci for backend (gh actions probably works, but would be nice to self-host this)
+- use issue and prs
+  - review prs to share and increase understanding of project
+  - enforce naming schemes and 
+
+backend
+overview
+ - any user can add a new item
+ - users add an instance of item use
+
+db; some sort of sql (ph1&2)
+ 1. items
+ 2. users
+ 3. uses (maybe find a better name for this)
+
+api; go (gin-gonic) (ph1&2)
+- reverse proxy, dont expose db
+- json
+
+ 1. users
+    a) user info [user.id->user] (excl priv info)
+ 2. items
+    a) item info [item.id->item]
+	b) items list [items] (or maybe search func, better for net & client performance?)
+ 3. uses
+    a) add [user.id, date->use]
+	b) get [user.id, <date range>->use]
+    c) getall [user.id->uses]
+ 
+frontend (ph3)
+overview
+basic html initially, long-term: cross-platform implementation
+use js for api reqs
+
+1. account system (create, login, change pw) - research a bit into security here; e might know about this
+2. table view of items and uses
+3. analytics view (ph4)
+
+ws: caddy
+1. api:      api.name.org
+2. frontend: name.org
