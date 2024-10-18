@@ -26,30 +26,42 @@
 3. Frontend implementations (web, bot).
 4. Data analysis on uses.
 
-### Stack
-| Service       | Software      |
-| ------------- |:-------------:|
-| DB            | Postgresql    |
-| Backend       | Go            |
-| Frontend      | HTML/bot      |
+Here is a prettier version of your markdown content:
 
-### DB
-* [Postgresql](https://postgresql.org).
-* Tables:
-    1. Items
-    2. Users
-    3. Uses (is there a better name for this?)
+## Stack
 
-### Backend
-* [Go](https://go.dev).
-    * [Gin for HTTP API](https://pkg.go.dev/github.com/gin-gonic/gin).
-    * [PGX for DB connection](https://github.com/jackc/pgx).
-        * [Mock tests (useful for TDD)](https://github.com/jackc/pgmock).
-* [backend specification](./docs/backend.md).
+| **Service**   | **Software**   |
+|---------------|----------------|
+| **DB**        | PostgreSQL     |
+| **Backend**   | Go             |
+| **Frontend**  | HTML / Bot     |
 
-### Frontend
-* Web frontend
-    * Basic HTML+JS probably suffices.
-    * Make effort to make sure it works nicely on mobile.
-* Discord bot (py3).
-* [frontend specification](./docs/frontend.md).
+---
+
+## DB
+
+- **[PostgreSQL](https://postgresql.org)**.
+- **Tables**:
+  1. **Items**
+  2. **Users**
+  3. **Uses** (*Consider renaming for clarity—perhaps "Activity" or "Transactions"?*)
+
+---
+
+## Backend
+
+- **[Go](https://go.dev)**.
+  - **[Gin for HTTP API](https://pkg.go.dev/github.com/gin-gonic/gin)**.
+  - **[PGX for DB connection](https://github.com/jackc/pgx)**.
+    - **[Mock tests (for TDD)](https://github.com/jackc/pgmock)**.
+- More details in the **[Backend Specification](./docs/backend.md)**.
+
+---
+
+## Frontend
+
+- **Web Frontend**:
+  - Basic **HTML + JS** should suffice.
+  - Ensure it performs well on **mobile devices**.
+- **Discord bot** built with **Python 3**.
+- More details in the **[Frontend Specification](./docs/frontend.md)**.

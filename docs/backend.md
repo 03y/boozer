@@ -4,34 +4,26 @@
     * [https://pkg.go.dev/github.com/lib/pq](pq for DB connection).
 
 ## Outline
+Here is the requested information in markdown tables:
+
 ### Users
-#### User info
-GIVE: user ID
-GET:  user excl priv info)
+| **Action**   | **Input (GIVE)**   | **Output (GET)**           |
+|--------------|--------------------|----------------------------|
+| User info    | User ID             | User excl priv info         |
 
 ### Items
-#### Item info
-GIVE: item ID
-GET:  item
+| **Action**    | **Input (GIVE)**   | **Output (GET)**   |
+|---------------|--------------------|--------------------|
+| Item info     | Item ID             | Item               |
+| Items list    | <nothing>           | Item[]             |
 
-#### Items list
-GIVE: <nothing>
-GET:  item[]
-
-* As items list grows, this function may become unsuitable due to network & client performance.
-    * At this point either limit list (return n items at a time), or implement search func.
+> **Note:** As the items list grows, this function may become unsuitable due to network & client performance. At this point, either limit the list (return *n* items at a time), or implement a search function.
 
 ### Uses
-#### Add
-GIVE: user.id, timestamp
-GET:  <success>
+| **Action** | **Input (GIVE)**         | **Output (GET)**   |
+|------------|--------------------------|--------------------|
+| Add        | User ID, Timestamp        | <success>          |
+| Get        | User ID, Time period      | Use[]              |
+| Getall     | User ID                   | Use[]              |
 
-#### Get
-GIVE: user.id, timeperiod
-GET:  use[]
-
-#### Getall
-GIVE: user.id
-GET:  use[]
-
-* Again like [items list](####Items list) this might need to be optimised as the uses table grows.
+> **Note:** Like the Items list, this function might need to be optimized as the Uses table grows.
