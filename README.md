@@ -18,7 +18,7 @@
 * CI for baclend (gh actions).
 * Use issues and PRs to keep track of work.
     * Review PRs before merge: increase understanding of project.
-* Use [https://en.wikipedia.org/wiki/Test-driven\_development](TDD).
+* Use [TDD](https://en.wikipedia.org/wiki/Test-driven\_development).
 ## Plan
 **No time restraint on stages**
 1. DB & backend implementation of users and items.
@@ -34,21 +34,22 @@
 | Frontend      | HTML/bot      |
 
 ### DB
-* [https://postgresql.org](Postgresql) (A learning SQL).
+* [Postgresql](https://postgresql.org).
 * Tables:
     1. Items
     2. Users
     3. Uses (is there a better name for this?)
 
 ### Backend
-* [https://go.dev](Go).
-    * [https://pkg.go.dev/github.com/gin-gonic/gin](Gin for HTTP API).
-    * [https://pkg.go.dev/github.com/lib/pq](pq for DB connection).
-* [./docs/backend.md](backend specification).
+* [Go](https://go.dev).
+    * [Gin for HTTP API](https://pkg.go.dev/github.com/gin-gonic/gin).
+    * [PGX for DB connection](https://github.com/jackc/pgx).
+        * [Mock tests (useful for TDD)](https://github.com/jackc/pgmock).
+* [backend specification](./docs/backend.md).
 
 ### Frontend
 * Web frontend
     * Basic HTML+JS probably suffices.
     * Make effort to make sure it works nicely on mobile.
 * Discord bot (py3).
-* [./docs/frontend.md](frontend specification).
+* [frontend specification](./docs/frontend.md).
