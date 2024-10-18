@@ -44,7 +44,7 @@ Here is a prettier version of your markdown content:
 - **Tables**:
   1. **Items**
   2. **Users**
-  3. **Uses** (*Consider renaming for clarity—perhaps "Activity" or "Transactions"?*)
+  3. **Uses** (*maybe find a better name for this*)
 
 ---
 
