@@ -20,7 +20,7 @@ Three tables: users, items and uses.
 | abv           | float         |     |          |
 | added         | timestamp     |     |          |
 
-### Uses
+### Consumptions
 | Field         | Datatype      | Key | Comments |
 | ------------- |:-------------:|:---:|:--------:|
 | use\_id       | int(20)       | PK  | AUTO-INC |
