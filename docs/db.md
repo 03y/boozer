@@ -1,5 +1,5 @@
 # DB
-* [https://postgresql.org](Postgresql)
+* [Postgresql](https://postgresql.org)
 
 ## Outline
 Three tables: users, items and uses.

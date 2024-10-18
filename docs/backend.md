@@ -1,6 +1,6 @@
 # Backend
-* [https://go.dev](Go).
-    * [https://pkg.go.dev/github.com/gin-gonic/gin](Gin for HTTP API).
+* [Go](https://go.dev).
+    * [Gin for HTTP API](https://pkg.go.dev/github.com/gin-gonic/gin).
     * [https://pkg.go.dev/github.com/lib/pq](pq for DB connection).
 
 ## Outline
@@ -34,4 +34,4 @@ GET:  use[]
 GIVE: user.id
 GET:  use[]
 
-* Again like [#### Items list](items list) this might need to be optimised as the uses table grows.
+* Again like [items list](####Items list) this might need to be optimised as the uses table grows.
