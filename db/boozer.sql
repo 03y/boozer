@@ -9,7 +9,7 @@ CREATE TABLE users(
 CREATE TABLE items(
     item_id     SERIAL          PRIMARY KEY,
     name        VARCHAR(40)     NOT NULL,
-    abv         FLOAT           NOT NULL,
+    units       FLOAT           NOT NULL,
     added       TIMESTAMP       NOT NULL
 );
 

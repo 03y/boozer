@@ -17,7 +17,7 @@ Three tables: users, items and uses.
 | ------------- |:-------------:|:---:|:--------:|
 | item\_id      | int(20)       | PK  | AUTO-INC |
 | name          | varchar(40)   |     |          |
-| abv           | float         |     |          |
+| units         | float         |     |          |
 | added         | timestamp     |     |          |
 
 ### Consumptions
