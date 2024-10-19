@@ -5,10 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
 	"net/http"
 	"os"
-	"strconv"
 )
 
 type user struct {
@@ -31,21 +30,12 @@ type consumption struct {
 	When           int // unix timestamp
 }
 
+type App struct {
+	DB *pgx.Conn
+}
+
 const NAME string = "🍺 boozer"
 const VERSION string = "0.1-Alpha"
-
-var db_connection *pgxpool.Conn
-
-func connect_db() {
-	// urlExample := "postgres://username:password@localhost:5432/database_name"
-	db_connection, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
-	if err != nil {
-		fmt.Printf("WARNING: Unable to create connection pool: %v\n", err)
-		os.Exit(1)
-	}
-	fmt.Println("Successfully connected to database!")
-	defer db_connection.Close()
-}
 
 /* ******************************************************************************** */
 /* API endpoints */
@@ -55,17 +45,22 @@ func hello(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, "hello boozers!")
 }
 
-func get_item(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("item_id"))
-	beer := &item{Item_id: id, Name: "Tennents", Units: 2.272, Added: 1729331086}
+func (a *App) get_item(c *gin.Context) {
+	var beer item
+	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE item_id=$1", c.Param("item_id")).Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+		return
+	}
 
 	serialised, err := json.Marshal(beer)
 	if err != nil {
 		fmt.Println(err)
-		c.IndentedJSON(http.StatusInternalServerError, "Internal error")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing data"})
 		return
 	}
-	c.IndentedJSON(http.StatusOK, string(serialised))
+	c.JSON(http.StatusOK, string(serialised))
 }
 
 /* ******************************************************************************** */
@@ -78,12 +73,19 @@ func main() {
 		return
 	}
 
-	connect_db()
+	// postgres://username:password@localhost:5432/database_name
+	db, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		fmt.Printf("WARNING: Unable to create connection pool: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Successfully connected to database!")
+	defer db.Close(context.Background())
+	app := &App{DB: db}
 
-	// Setup API routes
 	router := gin.Default()
 	router.GET("/hello", hello)
-	router.GET("/item/:item_id", get_item)
+	router.GET("/item/:item_id", app.get_item)
 
 	var listen string = os.Args[1]
 	fmt.Printf("\nLets get boozing! 🍻\nListening on %s...\n\n", listen)
