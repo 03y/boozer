@@ -41,10 +41,6 @@ const VERSION string = "0.1-Alpha"
 /* API endpoints */
 /* ******************************************************************************** */
 
-func hello(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, "hello boozers!")
-}
-
 func (a *App) get_item(c *gin.Context) {
 	var beer item
 	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE item_id=$1", c.Param("item_id")).Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
@@ -92,6 +88,25 @@ func (a *App) get_item_list(c *gin.Context) {
 	c.JSON(http.StatusOK, string(serialised))
 }
 
+
+func (a *App) get_user(c *gin.Context) {
+	var user user
+	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE user_id=$1", c.Param("user_id")).Scan(&user.User_id, &user.Username, &user.Joined)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+		return
+	}
+
+	serialised, err := json.Marshal(user)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing data"})
+		return
+	}
+	c.JSON(http.StatusOK, string(serialised))
+}
+
 /* ******************************************************************************** */
 
 func main() {
@@ -113,9 +128,9 @@ func main() {
 	app := &App{DB: db}
 
 	router := gin.Default()
-	router.GET("/hello", hello)
 	router.GET("/item/:item_id", app.get_item)
 	router.GET("/items/", app.get_item_list)
+	router.GET("/user/:user_id", app.get_user)
 
 	var listen string = os.Args[1]
 	fmt.Printf("\nLets get boozing! 🍻\nListening on %s...\n\n", listen)
