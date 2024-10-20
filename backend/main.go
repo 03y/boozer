@@ -1,7 +1,6 @@
 package main
 
 import (
-	"time"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"net/http"
 	"os"
+	"time"
 )
 
 type user struct {
@@ -89,7 +89,6 @@ func (a *App) get_item_list(c *gin.Context) {
 	c.JSON(http.StatusOK, string(serialised))
 }
 
-
 func (a *App) get_user(c *gin.Context) {
 	var user user
 	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE user_id=$1", c.Param("user_id")).Scan(&user.User_id, &user.Username, &user.Joined)
@@ -115,7 +114,7 @@ func (a *App) add_consumption(c *gin.Context) {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, "Error processing data")
 		return
-    }
+	}
 	// write time here, dont allow user to mess with this
 	// todo: in future maybe allow backdating
 	newConsumption.Time = int(time.Now().Unix())
@@ -127,6 +126,24 @@ func (a *App) add_consumption(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusCreated)
+}
+
+func (a *App) get_consumption(c *gin.Context) {
+	var consumption consumption
+	err := a.DB.QueryRow(context.Background(), "SELECT consumption_id, item_id, user_id, time FROM consumptions WHERE consumption_id=$1", c.Param("consumption_id")).Scan(&consumption.Consumption_id, &consumption.Item_id, &consumption.User_id, &consumption.Time)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+		return
+	}
+
+	serialised, err := json.Marshal(consumption)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing data"})
+		return
+	}
+	c.JSON(http.StatusOK, string(serialised))
 }
 
 /* ******************************************************************************** */
@@ -153,6 +170,7 @@ func main() {
 	router.GET("/item/:item_id", app.get_item)
 	router.GET("/items/", app.get_item_list)
 	router.GET("/user/:user_id", app.get_user)
+	router.GET("/consumption/:consumption_id", app.get_consumption)
 	router.POST("/consumption/new", app.add_consumption)
 
 	var listen string = os.Args[1]

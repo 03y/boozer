@@ -3,7 +3,7 @@ CREATE TABLE users(
     user_id     SERIAL          PRIMARY KEY,
     username    VARCHAR(20)     NOT NULL,
     password    VARCHAR(256)    NOT NULL,
-    reg_date    TIMESTAMP       NOT NULL
+    created     TIMESTAMP       NOT NULL
 );
 
 CREATE TABLE items(
