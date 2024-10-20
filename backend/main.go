@@ -168,7 +168,7 @@ func main() {
 
 	router := gin.Default()
 	router.GET("/item/:item_id", app.get_item)
-	router.GET("/items/", app.get_item_list)
+	router.GET("/items", app.get_item_list)
 	router.GET("/user/:user_id", app.get_user)
 	router.GET("/consumption/:consumption_id", app.get_consumption)
 	router.POST("/consumption/new", app.add_consumption)
