@@ -23,7 +23,7 @@ Three tables: users, items and uses.
 ### Consumptions
 | Field         | Datatype      | Key | Comments  |
 | ------------- |:-------------:|:---:|:---------:|
-| use\_id       | int(20)       | PK  | AUTO-INC  |
+| consumption\_id       | int(20)       | PK  | AUTO-INC  |
 | user\_id      | int(20)       | FK  |           |
 | item\_id      | int(20)       | FK  |           |
 | timestamp     | int           |     | unix time |

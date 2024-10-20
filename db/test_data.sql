@@ -11,12 +11,12 @@ INSERT INTO items (name, units, added) VALUES ('Guinness', 2.3, EXTRACT(epoch FR
 
 -- add some consumptions
 -- todo: dont hardcode the user and item ids here
-INSERT INTO consumptions (consumption_id, user_id, item_id, time) VALUES (1, 1, now());
-INSERT INTO consumptions (consumption_id, user_id, item_id, time) VALUES (1, 2, now());
-INSERT INTO consumptions (consumption_id, user_id, item_id, time) VALUES (1, 2, now());
-INSERT INTO consumptions (consumption_id, user_id, item_id, time) VALUES (2, 3, now());
-INSERT INTO consumptions (consumption_id, user_id, item_id, time) VALUES (2, 3, now());
-INSERT INTO consumptions (consumption_id, user_id, item_id, time) VALUES (2, 3, now());
-INSERT INTO consumptions (consumption_id, user_id, item_id, time) VALUES (3, 1, now());
-INSERT INTO consumptions (consumption_id, user_id, item_id, time) VALUES (3, 3, now());
-INSERT INTO consumptions (consumption_id, user_id, item_id, time) VALUES (4, 2, now());
+INSERT INTO consumptions (user_id, item_id, time) VALUES (1, 1, EXTRACT(epoch FROM now()));
+INSERT INTO consumptions (user_id, item_id, time) VALUES (1, 2, EXTRACT(epoch FROM now()));
+INSERT INTO consumptions (user_id, item_id, time) VALUES (1, 2, EXTRACT(epoch FROM now()));
+INSERT INTO consumptions (user_id, item_id, time) VALUES (2, 3, EXTRACT(epoch FROM now()));
+INSERT INTO consumptions (user_id, item_id, time) VALUES (2, 3, EXTRACT(epoch FROM now()));
+INSERT INTO consumptions (user_id, item_id, time) VALUES (2, 3, EXTRACT(epoch FROM now()));
+INSERT INTO consumptions (user_id, item_id, time) VALUES (3, 1, EXTRACT(epoch FROM now()));
+INSERT INTO consumptions (user_id, item_id, time) VALUES (3, 3, EXTRACT(epoch FROM now()));
+INSERT INTO consumptions (user_id, item_id, time) VALUES (4, 2, EXTRACT(epoch FROM now()));
