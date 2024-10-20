@@ -1,6 +1,7 @@
 package main
 
 import (
+	"time"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -27,7 +28,7 @@ type consumption struct {
 	Consumption_id int
 	User_id        int
 	Item_id        int
-	When           int // unix timestamp
+	Time           int // unix timestamp
 }
 
 type App struct {
@@ -107,6 +108,27 @@ func (a *App) get_user(c *gin.Context) {
 	c.JSON(http.StatusOK, string(serialised))
 }
 
+func (a *App) add_consumption(c *gin.Context) {
+	var newConsumption consumption
+	err := c.BindJSON(&newConsumption)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, "Error processing data")
+		return
+    }
+	// write time here, dont allow user to mess with this
+	// todo: in future maybe allow backdating
+	newConsumption.Time = int(time.Now().Unix())
+
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO consumptions (user_id, item_id, time) VALUES ($1, $2, $3)", newConsumption.User_id, newConsumption.Item_id, newConsumption.Time)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, "Error processing data")
+		return
+	}
+	c.Status(http.StatusCreated)
+}
+
 /* ******************************************************************************** */
 
 func main() {
@@ -131,6 +153,7 @@ func main() {
 	router.GET("/item/:item_id", app.get_item)
 	router.GET("/items/", app.get_item_list)
 	router.GET("/user/:user_id", app.get_user)
+	router.POST("/consumption/new", app.add_consumption)
 
 	var listen string = os.Args[1]
 	fmt.Printf("\nLets get boozing! 🍻\nListening on %s...\n\n", listen)
