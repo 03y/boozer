@@ -63,6 +63,35 @@ func (a *App) get_item(c *gin.Context) {
 	c.JSON(http.StatusOK, string(serialised))
 }
 
+func (a *App) get_item_list(c *gin.Context) {
+	rows, err := a.DB.Query(context.Background(), "SELECT * FROM items")
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+		return
+	}
+
+	beers := make([]item, 0)
+	for rows.Next() {
+		var beer item
+		err := rows.Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
+		if err != nil {
+			fmt.Println(err)
+			c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+			return
+		}
+		beers = append(beers, beer)
+	}
+
+	serialised, err := json.Marshal(beers)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing data"})
+		return
+	}
+	c.JSON(http.StatusOK, string(serialised))
+}
+
 /* ******************************************************************************** */
 
 func main() {
@@ -86,6 +115,7 @@ func main() {
 	router := gin.Default()
 	router.GET("/hello", hello)
 	router.GET("/item/:item_id", app.get_item)
+	router.GET("/items/", app.get_item_list)
 
 	var listen string = os.Args[1]
 	fmt.Printf("\nLets get boozing! 🍻\nListening on %s...\n\n", listen)
