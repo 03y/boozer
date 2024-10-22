@@ -11,20 +11,20 @@ import (
 	"time"
 )
 
-type user struct {
+type User struct {
 	User_id  int
 	Username string
 	Joined   int // unix timestamp
 }
 
-type item struct {
+type Item struct {
 	Item_id int
 	Name    string
 	Units   float32
 	Added   int // unix timestamp
 }
 
-type consumption struct {
+type Consumption struct {
 	Consumption_id int
 	User_id        int
 	Item_id        int
@@ -42,9 +42,9 @@ const VERSION string = "0.1-Alpha"
 /* API endpoints */
 /* ******************************************************************************** */
 
-func (a *App) get_item(c *gin.Context) {
-	var beer item
-	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE item_id=$1", c.Param("item_id")).Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
+func (a *App) GetItem(c *gin.Context) {
+	var beer Item
+	err := a.DB.QueryRow(context.Background(), "SELECT * FROM Items WHERE Item_id=$1", c.Param("Item_id")).Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
@@ -60,17 +60,17 @@ func (a *App) get_item(c *gin.Context) {
 	c.JSON(http.StatusOK, string(serialised))
 }
 
-func (a *App) get_item_list(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT * FROM items")
+func (a *App) GetItemList(c *gin.Context) {
+	rows, err := a.DB.Query(context.Background(), "SELECT * FROM Items")
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
 		return
 	}
 
-	beers := make([]item, 0)
+	beers := make([]Item, 0)
 	for rows.Next() {
-		var beer item
+		var beer Item
 		err := rows.Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
 		if err != nil {
 			fmt.Println(err)
@@ -89,37 +89,22 @@ func (a *App) get_item_list(c *gin.Context) {
 	c.JSON(http.StatusOK, string(serialised))
 }
 
-func (a *App) get_user(c *gin.Context) {
-	var user user
-	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE user_id=$1", c.Param("user_id")).Scan(&user.User_id, &user.Username, &user.Joined)
-	if err != nil {
-		fmt.Println(err)
-		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
-		return
-	}
-
-	serialised, err := json.Marshal(user)
-	if err != nil {
-		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing data"})
-		return
-	}
-	c.JSON(http.StatusOK, string(serialised))
-}
-
-func (a *App) add_consumption(c *gin.Context) {
-	var newConsumption consumption
-	err := c.BindJSON(&newConsumption)
+func (a *App) AddItem(c *gin.Context) {
+	var newBeer Item
+	err := c.BindJSON(&newBeer)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, "Error processing data")
 		return
 	}
-	// write time here, dont allow user to mess with this
-	// todo: in future maybe allow backdating
-	newConsumption.Time = int(time.Now().Unix())
+	if newBeer.Name == "" || newBeer.Units < 0 {
+		c.JSON(http.StatusBadRequest, "Bad request data")
+		return
+	}
 
-	_, err = a.DB.Exec(context.Background(), "INSERT INTO consumptions (user_id, item_id, time) VALUES ($1, $2, $3)", newConsumption.User_id, newConsumption.Item_id, newConsumption.Time)
+	newBeer.Added = int(time.Now().Unix())
+
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO Items (name, units time) VALUES ($1, $2, $3)", newBeer.Name, newBeer.Units, newBeer.Added)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, "Error processing data")
@@ -128,16 +113,55 @@ func (a *App) add_consumption(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
-func (a *App) get_consumption(c *gin.Context) {
-	var consumption consumption
-	err := a.DB.QueryRow(context.Background(), "SELECT consumption_id, item_id, user_id, time FROM consumptions WHERE consumption_id=$1", c.Param("consumption_id")).Scan(&consumption.Consumption_id, &consumption.Item_id, &consumption.User_id, &consumption.Time)
+func (a *App) GetUser(c *gin.Context) {
+	var User User
+	err := a.DB.QueryRow(context.Background(), "SELECT User_id, Username, created FROM Users WHERE User_id=$1", c.Param("User_id")).Scan(&User.User_id, &User.Username, &User.Joined)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
 		return
 	}
 
-	serialised, err := json.Marshal(consumption)
+	serialised, err := json.Marshal(User)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing data"})
+		return
+	}
+	c.JSON(http.StatusOK, string(serialised))
+}
+
+func (a *App) AddConsumption(c *gin.Context) {
+	var newConsumption Consumption
+	err := c.BindJSON(&newConsumption)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, "Error processing data")
+		return
+	}
+	// write time here, dont allow User to mess with this
+	// todo: in future maybe allow backdating
+	newConsumption.Time = int(time.Now().Unix())
+
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO Consumptions (User_id, Item_id, time) VALUES ($1, $2, $3)", newConsumption.User_id, newConsumption.Item_id, newConsumption.Time)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, "Error processing data")
+		return
+	}
+	c.Status(http.StatusCreated)
+}
+
+func (a *App) GetConsumption(c *gin.Context) {
+	var Consumption Consumption
+	err := a.DB.QueryRow(context.Background(), "SELECT Consumption_id, Item_id, User_id, time FROM Consumptions WHERE Consumption_id=$1", c.Param("Consumption_id")).Scan(&Consumption.Consumption_id, &Consumption.Item_id, &Consumption.User_id, &Consumption.Time)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+		return
+	}
+
+	serialised, err := json.Marshal(Consumption)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing data"})
@@ -156,7 +180,7 @@ func main() {
 		return
 	}
 
-	// postgres://username:password@localhost:5432/database_name
+	// export DATABASE_URL='postgres://username:password@localhost:5432/database_name'
 	db, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		fmt.Printf("WARNING: Unable to create connection pool: %v\n", err)
@@ -167,11 +191,12 @@ func main() {
 	app := &App{DB: db}
 
 	router := gin.Default()
-	router.GET("/item/:item_id", app.get_item)
-	router.GET("/items", app.get_item_list)
-	router.GET("/user/:user_id", app.get_user)
-	router.GET("/consumption/:consumption_id", app.get_consumption)
-	router.POST("/consumption/new", app.add_consumption)
+	router.GET("/add/new", app.AddItem)
+	router.GET("/item/:item_id", app.GetItem)
+	router.GET("/items", app.GetItemList)
+	router.GET("/User/:user_id", app.GetUser)
+	router.GET("/consumption/:consumption_id", app.GetConsumption)
+	router.POST("/consumption/new", app.AddConsumption)
 
 	var listen string = os.Args[1]
 	fmt.Printf("\nLets get boozing! 🍻\nListening on %s...\n\n", listen)
