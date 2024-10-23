@@ -33,6 +33,11 @@ type Consumption struct {
 	Time           int // unix timestamp
 }
 
+type LeaderboardItem struct {
+	TimesDrank int
+	Item
+}
+
 type App struct {
 	DB *pgx.Conn
 }
@@ -172,6 +177,35 @@ func (a *App) GetConsumption(c *gin.Context) {
 	c.JSON(http.StatusOK, string(serialised))
 }
 
+func (a *App) GetLeaderboard(c *gin.Context) {
+	rows, err := a.DB.Query(context.Background(), "SELECT items.item_id, items.name, items.units, items.added, COUNT(*) FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id GROUP BY items.item_id, items.name, items.units, items.added;")
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+		return
+	}
+
+	leaderboard := make([]LeaderboardItem, 0)
+	for rows.Next() {
+		var item LeaderboardItem
+		err := rows.Scan(&item.Item_id, &item.Name, &item.Units, &item.Added, &item.TimesDrank)
+		if err != nil {
+			fmt.Println(err)
+			c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+			return
+		}
+		leaderboard = append(leaderboard, item)
+	}
+
+	serialised, err := json.Marshal(leaderboard)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing data"})
+		return
+	}
+	c.JSON(http.StatusOK, string(serialised))
+}
+
 /* ******************************************************************************** */
 
 func main() {
@@ -199,6 +233,7 @@ func main() {
 	router.GET("/user/:user_id", app.GetUser)
 	router.GET("/consumption/:consumption_id", app.GetConsumption)
 	router.POST("/consumption/new", app.AddConsumption)
+	router.GET("/leaderboard", app.GetLeaderboard)
 
 	var listen string = os.Args[1]
 	fmt.Printf("\nLets get boozing! 🍻\nListening on %s...\n\n", listen)
