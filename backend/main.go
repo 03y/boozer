@@ -2,13 +2,15 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
-	"net/http"
 	"os"
 	"time"
+
+	"encoding/json"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 )
 
 type User struct {
@@ -194,7 +196,7 @@ func main() {
 	router.GET("/add/new", app.AddItem)
 	router.GET("/item/:item_id", app.GetItem)
 	router.GET("/items", app.GetItemList)
-	router.GET("/User/:user_id", app.GetUser)
+	router.GET("/user/:user_id", app.GetUser)
 	router.GET("/consumption/:consumption_id", app.GetConsumption)
 	router.POST("/consumption/new", app.AddConsumption)
 
