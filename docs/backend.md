@@ -1,7 +1,7 @@
 # Backend
 * [Go](https://go.dev).
     * [Gin for HTTP API](https://pkg.go.dev/github.com/gin-gonic/gin).
-    * [PGX for DB connection](https://github.com/jackc/pgx)**.
+    * [PGX for DB connection](https://github.com/jackc/pgx).
 
 ## Outline
 Here is the requested information in markdown tables:
