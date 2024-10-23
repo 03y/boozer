@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -51,24 +50,18 @@ const VERSION string = "0.1-Alpha"
 
 func (a *App) GetItem(c *gin.Context) {
 	var beer Item
-	err := a.DB.QueryRow(context.Background(), "SELECT * FROM Items WHERE Item_id=$1", c.Param("Item_id")).Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
+	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE item_id=$1", c.Param("item_id")).Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
 		return
 	}
 
-	serialised, err := json.Marshal(beer)
-	if err != nil {
-		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing data"})
-		return
-	}
-	c.JSON(http.StatusOK, string(serialised))
+	c.JSON(http.StatusOK, beer)
 }
 
 func (a *App) GetItemList(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT * FROM Items")
+	rows, err := a.DB.Query(context.Background(), "SELECT * FROM items")
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
@@ -87,13 +80,7 @@ func (a *App) GetItemList(c *gin.Context) {
 		beers = append(beers, beer)
 	}
 
-	serialised, err := json.Marshal(beers)
-	if err != nil {
-		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing data"})
-		return
-	}
-	c.JSON(http.StatusOK, string(serialised))
+	c.JSON(http.StatusOK, beers)
 }
 
 func (a *App) AddItem(c *gin.Context) {
@@ -111,7 +98,7 @@ func (a *App) AddItem(c *gin.Context) {
 
 	newBeer.Added = int(time.Now().Unix())
 
-	_, err = a.DB.Exec(context.Background(), "INSERT INTO Items (name, units time) VALUES ($1, $2, $3)", newBeer.Name, newBeer.Units, newBeer.Added)
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO items (name, units time) VALUES ($1, $2, $3)", newBeer.Name, newBeer.Units, newBeer.Added)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, "Error processing data")
@@ -121,21 +108,15 @@ func (a *App) AddItem(c *gin.Context) {
 }
 
 func (a *App) GetUser(c *gin.Context) {
-	var User User
-	err := a.DB.QueryRow(context.Background(), "SELECT User_id, Username, created FROM Users WHERE User_id=$1", c.Param("User_id")).Scan(&User.User_id, &User.Username, &User.Joined)
+	var user User
+	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE user_id=$1", c.Param("user_id")).Scan(&user.User_id, &user.Username, &user.Joined)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
 		return
 	}
 
-	serialised, err := json.Marshal(User)
-	if err != nil {
-		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing data"})
-		return
-	}
-	c.JSON(http.StatusOK, string(serialised))
+	c.JSON(http.StatusOK, user)
 }
 
 func (a *App) AddConsumption(c *gin.Context) {
@@ -146,11 +127,11 @@ func (a *App) AddConsumption(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, "Error processing data")
 		return
 	}
-	// write time here, dont allow User to mess with this
+	// write time here, dont allow user to mess with this
 	// todo: in future maybe allow backdating
 	newConsumption.Time = int(time.Now().Unix())
 
-	_, err = a.DB.Exec(context.Background(), "INSERT INTO Consumptions (User_id, Item_id, time) VALUES ($1, $2, $3)", newConsumption.User_id, newConsumption.Item_id, newConsumption.Time)
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO consumptions (user_id, item_id, time) VALUES ($1, $2, $3)", newConsumption.User_id, newConsumption.Item_id, newConsumption.Time)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, "Error processing data")
@@ -160,21 +141,15 @@ func (a *App) AddConsumption(c *gin.Context) {
 }
 
 func (a *App) GetConsumption(c *gin.Context) {
-	var Consumption Consumption
-	err := a.DB.QueryRow(context.Background(), "SELECT Consumption_id, Item_id, User_id, time FROM Consumptions WHERE Consumption_id=$1", c.Param("Consumption_id")).Scan(&Consumption.Consumption_id, &Consumption.Item_id, &Consumption.User_id, &Consumption.Time)
+	var consumption Consumption
+	err := a.DB.QueryRow(context.Background(), "SELECT consumption_id, item_id, user_id, time FROM consumptions WHERE consumption_id=$1", c.Param("consumption_id")).Scan(&consumption.Consumption_id, &consumption.Item_id, &consumption.User_id, &consumption.Time)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
 		return
 	}
 
-	serialised, err := json.Marshal(Consumption)
-	if err != nil {
-		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing data"})
-		return
-	}
-	c.JSON(http.StatusOK, string(serialised))
+	c.JSON(http.StatusOK, consumption)
 }
 
 func (a *App) GetLeaderboard(c *gin.Context) {
@@ -197,13 +172,7 @@ func (a *App) GetLeaderboard(c *gin.Context) {
 		leaderboard = append(leaderboard, item)
 	}
 
-	serialised, err := json.Marshal(leaderboard)
-	if err != nil {
-		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing data"})
-		return
-	}
-	c.JSON(http.StatusOK, string(serialised))
+	c.JSON(http.StatusOK, leaderboard)
 }
 
 /* ******************************************************************************** */
