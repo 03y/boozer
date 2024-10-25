@@ -205,6 +205,19 @@ func (a *App) GetItemsLeaderboard(c *gin.Context) {
 
 /* ******************************************************************************** */
 
+func (a *App) SetUpRouter() *gin.Engine {
+	router := gin.Default()
+	router.GET("/add/new", a.AddItem)
+	router.GET("/item/:item_id", a.GetItem)
+	router.GET("/items", a.GetItemList)
+	router.GET("/user/:user_id", a.GetUser)
+	router.GET("/consumption/:consumption_id", a.GetConsumption)
+	router.POST("/consumption/new", a.AddConsumption)
+	router.GET("/items/leaderboard", a.GetItemsLeaderboard)
+	router.GET("/users/leaderboard", a.GetUserLeaderboard)
+	return router
+}
+
 func main() {
 	fmt.Printf("%s %s\n", NAME, VERSION)
 
@@ -223,15 +236,7 @@ func main() {
 	defer db.Close(context.Background())
 	app := &App{DB: db}
 
-	router := gin.Default()
-	router.GET("/add/new", app.AddItem)
-	router.GET("/item/:item_id", app.GetItem)
-	router.GET("/items", app.GetItemList)
-	router.GET("/user/:user_id", app.GetUser)
-	router.GET("/consumption/:consumption_id", app.GetConsumption)
-	router.POST("/consumption/new", app.AddConsumption)
-	router.GET("/items/leaderboard", app.GetItemsLeaderboard)
-	router.GET("/users/leaderboard", app.GetUserLeaderboard)
+	router := app.SetUpRouter()
 
 	var listen string = os.Args[1]
 	fmt.Printf("\nLets get boozing! 🍻\nListening on %s...\n\n", listen)
