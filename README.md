@@ -1,11 +1,11 @@
-# Informal Project
-- Name tbd
+# 🍺 Boozer
+Boozer is a database which stores users, drinks and consumptions! Powere
 
 ## Team
-1. M: backend, sysadmin
-2. A: dba, data
-3. E: full-stack(?), possibly also dba & data
-4. C: requirements gathering and user testing
+1. [M](https://github.com/03y): backend, sysadmin
+2. [A](https://github.com/Adam-W2): dba, data
+3. [E](https://github.com/EuanRobertson1): full-stack(?), possibly also dba & data
+4. [C](https://github.com/Choob303): requirements gathering and user testing
 
 ## Outline
 * Data sourced from dbas and users.
