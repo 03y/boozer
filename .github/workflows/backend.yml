@@ -22,4 +22,5 @@ jobs:
     - name: Build
       run: |
         cd backend
+        go get boozer
         go build .
