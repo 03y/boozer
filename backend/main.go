@@ -5,42 +5,13 @@ import (
 	"fmt"
 	"os"
 	"time"
-
 	"net/http"
+
+	"boozer/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 )
-
-type User struct {
-	User_id  int
-	Username string
-	Joined   int // unix timestamp
-}
-
-type Item struct {
-	Item_id int
-	Name    string
-	Units   float32
-	Added   int // unix timestamp
-}
-
-type Consumption struct {
-	Consumption_id int
-	User_id        int
-	Item_id        int
-	Time           int // unix timestamp
-}
-
-type LeaderboardUser struct {
-	Username	string
-	Consumed	int
-}
-
-type LeaderboardItem struct {
-	Consumed	int
-	Item
-}
 
 type App struct {
 	DB *pgx.Conn
@@ -54,7 +25,7 @@ const VERSION string = "0.1-Alpha"
 /* ******************************************************************************** */
 
 func (a *App) GetItem(c *gin.Context) {
-	var beer Item
+	var beer models.Item
 	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE item_id=$1", c.Param("item_id")).Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
 	if err != nil {
 		fmt.Println(err)
@@ -73,9 +44,9 @@ func (a *App) GetItemList(c *gin.Context) {
 		return
 	}
 
-	beers := make([]Item, 0)
+	beers := make([]models.Item, 0)
 	for rows.Next() {
-		var beer Item
+		var beer models.Item
 		err := rows.Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
 		if err != nil {
 			fmt.Println(err)
@@ -89,7 +60,7 @@ func (a *App) GetItemList(c *gin.Context) {
 }
 
 func (a *App) AddItem(c *gin.Context) {
-	var newBeer Item
+	var newBeer models.Item
 	err := c.BindJSON(&newBeer)
 	if err != nil {
 		fmt.Println(err)
@@ -113,7 +84,7 @@ func (a *App) AddItem(c *gin.Context) {
 }
 
 func (a *App) GetUser(c *gin.Context) {
-	var user User
+	var user models.User
 	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE user_id=$1", c.Param("user_id")).Scan(&user.User_id, &user.Username, &user.Joined)
 	if err != nil {
 		fmt.Println(err)
@@ -125,7 +96,7 @@ func (a *App) GetUser(c *gin.Context) {
 }
 
 func (a *App) AddConsumption(c *gin.Context) {
-	var newConsumption Consumption
+	var newConsumption models.Consumption
 	err := c.BindJSON(&newConsumption)
 	if err != nil {
 		fmt.Println(err)
@@ -146,7 +117,7 @@ func (a *App) AddConsumption(c *gin.Context) {
 }
 
 func (a *App) GetConsumption(c *gin.Context) {
-	var consumption Consumption
+	var consumption models.Consumption
 	err := a.DB.QueryRow(context.Background(), "SELECT consumption_id, item_id, user_id, time FROM consumptions WHERE consumption_id=$1", c.Param("consumption_id")).Scan(&consumption.Consumption_id, &consumption.Item_id, &consumption.User_id, &consumption.Time)
 	if err != nil {
 		fmt.Println(err)
@@ -165,9 +136,9 @@ func (a *App) GetUserLeaderboard(c *gin.Context) {
 		return
 	}
 
-	leaderboard := make([]LeaderboardUser, 0)
+	leaderboard := make([]models.LeaderboardUser, 0)
 	for rows.Next() {
-		var user LeaderboardUser
+		var user models.LeaderboardUser
 		err := rows.Scan(&user.Username, &user.Consumed)
 		if err != nil {
 			fmt.Println(err)
@@ -188,9 +159,9 @@ func (a *App) GetItemsLeaderboard(c *gin.Context) {
 		return
 	}
 
-	leaderboard := make([]LeaderboardItem, 0)
+	leaderboard := make([]models.LeaderboardItem, 0)
 	for rows.Next() {
-		var item LeaderboardItem
+		var item models.LeaderboardItem
 		err := rows.Scan(&item.Item_id, &item.Name, &item.Units, &item.Added, &item.Consumed)
 		if err != nil {
 			fmt.Println(err)
