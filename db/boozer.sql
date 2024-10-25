@@ -1,14 +1,17 @@
--- NOTES: serial = auto incrementing number
+CREATE DATABASE boozer;
+
+\c boozer
+
 CREATE TABLE users(
     user_id     SERIAL          PRIMARY KEY,
-    username    VARCHAR(20)     NOT NULL,
+    username    VARCHAR(20)     NOT NULL    UNIQUE,
     password    VARCHAR(256)    NOT NULL,
     created     INT             NOT NULL
 );
 
 CREATE TABLE items(
     item_id     SERIAL          PRIMARY KEY,
-    name        VARCHAR(40)     NOT NULL,
+    name        VARCHAR(40)     NOT NULL    UNIQUE,
     units       FLOAT           NOT NULL,
     added       INT             NOT NULL
 );
