@@ -8,7 +8,6 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: boozer
     ports:
       - 5001:5432
     # no volumes, data will not persist
