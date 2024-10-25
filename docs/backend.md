@@ -22,15 +22,16 @@ Here is the requested information in markdown tables:
 ### Consumptions
 | **Action** | **Input (GIVE)**         | **Output (GET)**   | **Relative URL**      |
 |------------|--------------------------|--------------------|-----------------------|
-| Add        | User ID, Item ID          | <success>          | `/consumptions/add`      |
+| Add        | User ID, Item ID          |                    | `/consumptions/add`      |
 | Get        | User ID, Time period(?)   | Consumption[]      | `/consumptions/{user_id}?period={time_period}` |
 | Get all(?) | User ID                   | Consumption[]      | `/consumptions/{user_id}` |
 
 > **Note:** Like the Items list, this function might need to be optimized as the Uses table grows.
 
-### Leaderboard
+### Leaderboards
 | **Action** | **Input (GIVE)**         | **Output (GET)**   | **Relative URL**      |
 |------------|--------------------------|--------------------|-----------------------|
-| Get        |                          |                    | `/leaderboard`        |
+| Get        |                          | Arr of username & # of consumptions | `/users/leaderboard`        |
+| Get        |                          | Arr of Item[] & # of consumptions | `/items/leaderboard`        |
 |
 
