@@ -1,4 +1,33 @@
-﻿INSERT INTO items (name, units, added) VALUES ('Früh Kölsch',2.4, EXTRACT(epoch FROM now()));
+CREATE DATABASE boozer;
+
+\c boozer
+
+CREATE TABLE users(
+    user_id     SERIAL          PRIMARY KEY,
+    username    VARCHAR(20)     NOT NULL    UNIQUE,
+    password    VARCHAR(256)    NOT NULL,
+    created     INT             NOT NULL
+);
+
+CREATE TABLE items(
+    item_id     SERIAL          PRIMARY KEY,
+    name        VARCHAR(40)     NOT NULL    UNIQUE,
+    units       FLOAT           NOT NULL,
+    added       INT             NOT NULL
+);
+
+CREATE TABLE consumptions(
+    consumption_id  SERIAL      PRIMARY KEY,
+    item_id         SERIAL      REFERENCES items,
+    user_id         SERIAL      REFERENCES users,
+    time            INT         NOT NULL
+);
+
+INSERT INTO users (username, password, created) VALUES ('Pibble', 'lemur', EXTRACT(epoch FROM now()));
+INSERT INTO users (username, password, created) VALUES ('Glorp', 'lemur', EXTRACT(epoch FROM now()));
+INSERT INTO users (username, password, created) VALUES ('Gleeb', 'lemur', EXTRACT(epoch FROM now()));
+INSERT INTO users (username, password, created) VALUES ('Gnarp', 'lemur', EXTRACT(epoch FROM now()));
+INSERT INTO items (name, units, added) VALUES ('Früh Kölsch',2.4, EXTRACT(epoch FROM now()));
 INSERT INTO items (name, units, added) VALUES ('Rothaus Pils',2.6, EXTRACT(epoch FROM now()));
 INSERT INTO items (name, units, added) VALUES ('Ishii Orehi Pale Ale',2.4, EXTRACT(epoch FROM now()));
 INSERT INTO items (name, units, added) VALUES ('Exmoor Phoenix',2.8, EXTRACT(epoch FROM now()));

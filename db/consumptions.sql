@@ -1,9 +1,0 @@
-INSERT INTO consumptions (user_id, item_id, time) VALUES (1, 1, EXTRACT(epoch FROM now()));
-INSERT INTO consumptions (user_id, item_id, time) VALUES (1, 2, EXTRACT(epoch FROM now()));
-INSERT INTO consumptions (user_id, item_id, time) VALUES (1, 2, EXTRACT(epoch FROM now()));
-INSERT INTO consumptions (user_id, item_id, time) VALUES (2, 3, EXTRACT(epoch FROM now()));
-INSERT INTO consumptions (user_id, item_id, time) VALUES (2, 3, EXTRACT(epoch FROM now()));
-INSERT INTO consumptions (user_id, item_id, time) VALUES (2, 3, EXTRACT(epoch FROM now()));
-INSERT INTO consumptions (user_id, item_id, time) VALUES (3, 1, EXTRACT(epoch FROM now()));
-INSERT INTO consumptions (user_id, item_id, time) VALUES (3, 3, EXTRACT(epoch FROM now()));
-INSERT INTO consumptions (user_id, item_id, time) VALUES (4, 2, EXTRACT(epoch FROM now()));
