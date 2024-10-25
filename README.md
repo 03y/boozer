@@ -1,5 +1,5 @@
 # 🍺 Boozer
-Boozer is a database which stores users, drinks and consumptions! Powere
+Boozer is a database which stores users, drinks and consumptions!
 
 ## Team
 1. [M](https://github.com/03y): backend, sysadmin
