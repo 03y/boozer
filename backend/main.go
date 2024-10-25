@@ -32,8 +32,13 @@ type Consumption struct {
 	Time           int // unix timestamp
 }
 
+type LeaderboardUser struct {
+	Username	string
+	Consumed	int
+}
+
 type LeaderboardItem struct {
-	TimesDrank int
+	Consumed	int
 	Item
 }
 
@@ -152,8 +157,31 @@ func (a *App) GetConsumption(c *gin.Context) {
 	c.JSON(http.StatusOK, consumption)
 }
 
-func (a *App) GetLeaderboard(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT items.item_id, items.name, items.units, items.added, COUNT(*) FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id GROUP BY items.item_id, items.name, items.units, items.added;")
+func (a *App) GetUserLeaderboard(c *gin.Context) {
+	rows, err := a.DB.Query(context.Background(), "SELECT users.username, COUNT(consumptions.item_id) AS drank FROM consumptions INNER JOIN users ON consumptions.user_id = users.user_id GROUP BY users.username ORDER BY drank DESC LIMIT 10;")
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+		return
+	}
+
+	leaderboard := make([]LeaderboardUser, 0)
+	for rows.Next() {
+		var user LeaderboardUser
+		err := rows.Scan(&user.Username, &user.Consumed)
+		if err != nil {
+			fmt.Println(err)
+			c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+			return
+		}
+		leaderboard = append(leaderboard, user)
+	}
+
+	c.JSON(http.StatusOK, leaderboard)
+}
+
+func (a *App) GetItemsLeaderboard(c *gin.Context) {
+	rows, err := a.DB.Query(context.Background(), "SELECT items.item_id, items.name, items.units, items.added, COUNT(items.item_id) AS drank FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id GROUP BY items.item_id, items.name, items.units, items.added ORDER BY drank DESC LIMIT 50;")
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
@@ -163,7 +191,7 @@ func (a *App) GetLeaderboard(c *gin.Context) {
 	leaderboard := make([]LeaderboardItem, 0)
 	for rows.Next() {
 		var item LeaderboardItem
-		err := rows.Scan(&item.Item_id, &item.Name, &item.Units, &item.Added, &item.TimesDrank)
+		err := rows.Scan(&item.Item_id, &item.Name, &item.Units, &item.Added, &item.Consumed)
 		if err != nil {
 			fmt.Println(err)
 			c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
@@ -202,7 +230,8 @@ func main() {
 	router.GET("/user/:user_id", app.GetUser)
 	router.GET("/consumption/:consumption_id", app.GetConsumption)
 	router.POST("/consumption/new", app.AddConsumption)
-	router.GET("/leaderboard", app.GetLeaderboard)
+	router.GET("/items/leaderboard", app.GetItemsLeaderboard)
+	router.GET("/users/leaderboard", app.GetUserLeaderboard)
 
 	var listen string = os.Args[1]
 	fmt.Printf("\nLets get boozing! 🍻\nListening on %s...\n\n", listen)
