@@ -19,8 +19,46 @@ jobs:
       with:
         go-version: '1.23'
 
-    - name: Build
+    # Build for Linux AMD64
+    - name: Build for Linux AMD64
       run: |
         cd backend
-        go get boozer
-        go build .
+        GOOS=linux GOARCH=amd64 go build -o backend-app-linux-amd64
+    - name: Upload Linux AMD64 binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-binary-linux-amd64
+        path: backend/backend-app-linux-amd64
+
+    # Build for Linux ARM64
+    - name: Build for Linux ARM64
+      run: |
+        cd backend
+        GOOS=linux GOARCH=arm64 go build -o backend-app-linux-arm64
+    - name: Upload Linux ARM64 binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-binary-linux-arm64
+        path: backend/backend-app-linux-arm64
+
+    # Build for Windows AMD64
+    - name: Build for Windows AMD64
+      run: |
+        cd backend
+        GOOS=windows GOARCH=amd64 go build -o backend-app-windows-amd64.exe
+    - name: Upload Windows AMD64 binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-binary-windows-amd64
+        path: backend/backend-app-windows-amd64.exe
+
+    # Build for macOS AMD64
+    - name: Build for macOS AMD64
+      run: |
+        cd backend
+        GOOS=darwin GOARCH=amd64 go build -o backend-app-macos-amd64
+    - name: Upload macOS AMD64 binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-binary-macos-amd64
+        path: backend/backend-app-macos-amd64
