@@ -9,7 +9,7 @@ Three tables: users, items and uses.
 | ------------- |:-------------:|:---:|:---------:|
 | user\_id      | int(20)       | PK  | AUTO-INC  |
 | username      | varchar(20)   |     |           |
-| password      | varchar(256)  |     |           |
+| password      | varchar(256)  |     | argon2    |
 | created       | int           |     | unix time |
 
 ### Items

@@ -7,31 +7,32 @@
 Here is the requested information in markdown tables:
 
 ### Users
-| **Action**   | **Input (GIVE)**   | **Output (GET)**           | **Relative URL**    |
-|--------------|--------------------|----------------------------|---------------------|
-| User info    | User ID             | User excl priv info         | `/users/{user_id}`     |
+| **Action**   | **Input (GIVE)**                 | **Output (GET)**           | **Relative URL**    |
+|--------------|----------------------------------|----------------------------|---------------------|
+| User info    | User ID                          | User excl priv info        | `/users/{user_id}`  |
+| Sign up      | Username, password hash (argon2) | User excl priv info        | `/users/{user_id}`  |
 
 ### Items
 | **Action**    | **Input (GIVE)**   | **Output (GET)**   | **Relative URL**     |
 |---------------|--------------------|--------------------|----------------------|
-| Item info     | Item ID             | Item               | `/item/{item_id}`      |
-| Items list    |                     | Item[]             | `/items`                |
+| Item info     | Item ID            | Item               | `/item/{item_id}`    |
+| Items list    |                    | Item[]             | `/items`             |
 
 > **Note:** As the items list grows, this function may become unsuitable due to network & client performance. At this point, either limit the list (return *n* items at a time), or implement a search function.
 
 ### Consumptions
-| **Action** | **Input (GIVE)**         | **Output (GET)**   | **Relative URL**      |
-|------------|--------------------------|--------------------|-----------------------|
-| Add        | User ID, Item ID          |                    | `/consumptions/add`      |
+| **Action** | **Input (GIVE)**         | **Output (GET)**   | **Relative URL**                                |
+|------------|--------------------------|--------------------|-------------------------------------------------|
+| Add        | User ID, Item ID          |                    | `/consumptions/add`                            |
 | Get        | User ID, Time period(?)   | Consumption[]      | `/consumptions/{user_id}?period={time_period}` |
-| Get all(?) | User ID                   | Consumption[]      | `/consumptions/{user_id}` |
+| Get all(?) | User ID                   | Consumption[]      | `/consumptions/{user_id}`                      |
 
 > **Note:** Like the Items list, this function might need to be optimized as the Uses table grows.
 
 ### Leaderboards
-| **Action** | **Input (GIVE)**         | **Output (GET)**   | **Relative URL**      |
-|------------|--------------------------|--------------------|-----------------------|
-| Get        |                          | Arr of username & # of consumptions | `/users/leaderboard`        |
-| Get        |                          | Arr of Item[] & # of consumptions | `/items/leaderboard`        |
+| **Action** | **Input (GIVE)** | **Output (GET)**                    | **Relative URL**      |
+|------------|------------------|-------------------------------------|-----------------------|
+| Get        |                  | Arr of username & # of consumptions | `/users/leaderboard`  |
+| Get        |                  | Arr of Item[] & # of consumptions   | `/items/leaderboard`  |
 |
 
