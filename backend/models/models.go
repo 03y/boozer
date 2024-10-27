@@ -3,7 +3,8 @@ package models
 type User struct {
 	User_id  int
 	Username string
-	Joined   int // unix timestamp
+	Password string // hashed, never in clear
+	Created  int    // unix timestamp
 }
 
 type Item struct {
@@ -21,12 +22,11 @@ type Consumption struct {
 }
 
 type LeaderboardUser struct {
-	Username	string
-	Consumed	int
+	Username string
+	Consumed int
 }
 
 type LeaderboardItem struct {
-	Consumed	int
+	Consumed int
 	Item
 }
-

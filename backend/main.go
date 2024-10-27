@@ -2,23 +2,60 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
-	"net/http"
 
 	"boozer/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/crypto/argon2"
 )
 
 type App struct {
 	DB *pgx.Conn
 }
 
+type ArgonParams struct {
+	memory      uint32
+	iterations  uint32
+	parallelism uint8
+	saltLength  uint32
+	keyLength   uint32
+}
+
 const NAME string = "🍺 boozer"
 const VERSION string = "0.1-Alpha"
+
+func hash(input string, params *ArgonParams) (encodedHash string, err error) {
+	salt, err := generateRandomBytes(params.saltLength)
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+
+	hashed := argon2.IDKey([]byte(input), salt, params.iterations, params.memory, params.parallelism, params.keyLength)
+
+	b64Salt := base64.RawStdEncoding.EncodeToString(salt)
+	b64Hash := base64.RawStdEncoding.EncodeToString(hashed)
+
+	encodedHash = fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s", argon2.Version, params.memory, params.iterations, params.parallelism, b64Salt, b64Hash)
+
+	return encodedHash, nil
+}
+
+func generateRandomBytes(n uint32) ([]byte, error) {
+	bytes := make([]byte, n)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		return nil, err
+	}
+	return bytes, nil
+}
 
 /* ******************************************************************************** */
 /* API endpoints */
@@ -74,7 +111,33 @@ func (a *App) AddItem(c *gin.Context) {
 
 	newBeer.Added = int(time.Now().Unix())
 
-	_, err = a.DB.Exec(context.Background(), "INSERT INTO items (name, units time) VALUES ($1, $2, $3)", newBeer.Name, newBeer.Units, newBeer.Added)
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO items (name, units, time) VALUES ($1, $2, $3)", newBeer.Name, newBeer.Units, newBeer.Added)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, "Error processing data")
+		return
+	}
+	c.Status(http.StatusCreated)
+}
+
+func (a *App) AddUser(c *gin.Context) {
+	var newUser models.User
+
+	err := c.BindJSON(&newUser)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, "Error processing data")
+		return
+	}
+	if len(newUser.Username) < 1 || len(newUser.Username) > 20 {
+		c.JSON(http.StatusBadRequest, "Bad request data")
+		return
+	}
+	// todo: check decode hash
+
+	newUser.Created = int(time.Now().Unix())
+
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO users (username, password, created) VALUES ($1, $2, $3)", newUser.Username, newUser.Password, newUser.Created)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, "Error processing data")
@@ -85,7 +148,7 @@ func (a *App) AddItem(c *gin.Context) {
 
 func (a *App) GetUser(c *gin.Context) {
 	var user models.User
-	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE user_id=$1", c.Param("user_id")).Scan(&user.User_id, &user.Username, &user.Joined)
+	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE user_id=$1", c.Param("user_id")).Scan(&user.User_id, &user.Username, &user.Created)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
@@ -176,16 +239,28 @@ func (a *App) GetItemsLeaderboard(c *gin.Context) {
 
 /* ******************************************************************************** */
 
-func (a *App) SetUpRouter() *gin.Engine {
+func (a *App) setUpRouter() *gin.Engine {
 	router := gin.Default()
-	router.GET("/add/new", a.AddItem)
+
+	// adding new items and consumptions
+	router.POST("/submit/item", a.AddItem)               // todo: maybe add field for who added it, add auth for this
+	router.POST("/submit/consumption", a.AddConsumption) // todo: implement auth
+
+	// getting items
 	router.GET("/item/:item_id", a.GetItem)
 	router.GET("/items", a.GetItemList)
+
+	// account actions
+	router.POST("/signup", a.AddUser)
 	router.GET("/user/:user_id", a.GetUser)
-	router.GET("/consumption/:consumption_id", a.GetConsumption)
-	router.POST("/consumption/new", a.AddConsumption)
-	router.GET("/items/leaderboard", a.GetItemsLeaderboard)
-	router.GET("/users/leaderboard", a.GetUserLeaderboard)
+
+	// get consumption
+	//router.GET("/consumption/:consumption_id", a.GetConsumption) // todo: implement auth
+
+	// leaderboards
+	router.GET("/leaderboard/items", a.GetItemsLeaderboard)
+	router.GET("/leaderboard/users", a.GetUserLeaderboard)
+
 	return router
 }
 
@@ -207,7 +282,7 @@ func main() {
 	defer db.Close(context.Background())
 	app := &App{DB: db}
 
-	router := app.SetUpRouter()
+	router := app.setUpRouter()
 
 	var listen string = os.Args[1]
 	fmt.Printf("\nLets get boozing! 🍻\nListening on %s...\n\n", listen)
