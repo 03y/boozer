@@ -5,7 +5,7 @@ CREATE DATABASE boozer;
 CREATE TABLE users(
     user_id     SERIAL          PRIMARY KEY,
     username    VARCHAR(20)     NOT NULL    UNIQUE,
-    password    VARCHAR(256)    NOT NULL,
+    password    VARCHAR         NOT NULL,
     created     INT             NOT NULL
 );
 
@@ -23,10 +23,10 @@ CREATE TABLE consumptions(
     time            INT         NOT NULL
 );
 
-INSERT INTO users (username, password, created) VALUES ('Pibble', 'lemur', EXTRACT(epoch FROM now()));
-INSERT INTO users (username, password, created) VALUES ('Glorp', 'lemur', EXTRACT(epoch FROM now()));
-INSERT INTO users (username, password, created) VALUES ('Gleeb', 'lemur', EXTRACT(epoch FROM now()));
-INSERT INTO users (username, password, created) VALUES ('Gnarp', 'lemur', EXTRACT(epoch FROM now()));
+INSERT INTO users (username, password, created) VALUES ('Pibble', '$argon2id$v=19$m=65536,t=3,p=2$XSOu1t83U/L0FeYIOsKj1w$Jw/pC4H+/LU2ADcGklGP7coCjjcO7oWU0o4o+KtPIVI', EXTRACT(epoch FROM now()));
+INSERT INTO users (username, password, created) VALUES ('Glorp', '$argon2id$v=19$m=65536,t=3,p=2$PwqTHL78MOTQ3UL3VvofQw$R6trg6Toz5xpsqXev5eeFG2AVsh9pTxcWR89R12L0V4', EXTRACT(epoch FROM now()));
+INSERT INTO users (username, password, created) VALUES ('Gleeb', '$argon2id$v=19$m=65536,t=3,p=2$eeUhXsS80It2/keNafq20A$XI9Iceote9gUfmL3xctaJR1HZPRWgc8eGLe6GuSra60', EXTRACT(epoch FROM now()));
+INSERT INTO users (username, password, created) VALUES ('Gnarp', '$argon2id$v=19$m=65536,t=3,p=2$MccGQPqZCmy8Adx/IHCoYA$sJWt1sO0EcKO6qPeWALkeW7796a7E8KxyDVcYsSNx70', EXTRACT(epoch FROM now()));
 INSERT INTO items (name, units, added) VALUES ('Früh Kölsch',2.4, EXTRACT(epoch FROM now()));
 INSERT INTO items (name, units, added) VALUES ('Rothaus Pils',2.6, EXTRACT(epoch FROM now()));
 INSERT INTO items (name, units, added) VALUES ('Ishii Orehi Pale Ale',2.4, EXTRACT(epoch FROM now()));
