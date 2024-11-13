@@ -2,11 +2,15 @@ package main
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/subtle"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -15,6 +19,7 @@ import (
 	"boozer/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/argon2"
 )
@@ -25,7 +30,8 @@ var (
 )
 
 type App struct {
-	DB *pgx.Conn
+	DB      *pgx.Conn
+	JWT_KEY *ecdsa.PrivateKey
 }
 
 type params struct {
@@ -113,6 +119,50 @@ func decodeHash(encodedHash string) (p *params, salt, hash []byte, err error) {
 	p.keyLength = uint32(len(hash))
 
 	return p, salt, hash, nil
+}
+
+func loadKey(keyFile string) (*ecdsa.PrivateKey, error) {
+	keyBytes, err := ioutil.ReadFile(keyFile)
+	if err != nil {
+		return nil, err
+	}
+
+	block, _ := pem.Decode(keyBytes)
+	if block == nil {
+		return nil, fmt.Errorf("failed to decode PEM block containing the private key")
+	}
+
+	return x509.ParseECPrivateKey(block.Bytes)
+}
+
+func (a *App) generateJWT(user models.User) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
+		"id": user.User_id,
+	})
+
+	return token.SignedString(a.JWT_KEY)
+}
+
+func parseJWT(tokenString string, privateKey *ecdsa.PrivateKey) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+			return nil, errors.New("Unexpected signing method")
+		}
+
+		return &privateKey.PublicKey, nil
+	})
+
+	switch {
+	case token.Valid:
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			return nil, errors.New("Failed to parse token claims")
+		} else {
+			return claims, nil
+		}
+	default:
+		return nil, err
+	}
 }
 
 /* ******************************************************************************** */
@@ -209,6 +259,52 @@ func (a *App) AddUser(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
+func (a *App) Authenticate(c *gin.Context) {
+	// get user data from req
+	var user models.User
+	err := c.BindJSON(&user)
+	if err != nil {
+		fmt.Println(err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	// decode the hash
+	_, _, hash, err := decodeHash(user.Password)
+	if err != nil {
+		fmt.Println(err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	// get the hash we have in the db
+	var storedHash string
+	err = a.DB.QueryRow(context.Background(), "SELECT password FROM users WHERE user_id=$1", user.User_id).Scan(&storedHash)
+	_, _, otherHash, err := decodeHash(storedHash)
+	if err != nil {
+		fmt.Println(err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	// compare
+	if subtle.ConstantTimeCompare(hash, otherHash) == 1 {
+		// create jwt
+		token, err := a.generateJWT(user)
+		if err != nil {
+			fmt.Println(err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"token": token})
+		fmt.Println("Successful auth for user ", user.User_id)
+	} else {
+		fmt.Println("Auth failed")
+		c.Status(http.StatusBadRequest)
+		return
+	}
+}
+
 func (a *App) GetUser(c *gin.Context) {
 	var user models.User
 	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE user_id=$1", c.Param("user_id")).Scan(&user.User_id, &user.Username, &user.Created)
@@ -222,15 +318,43 @@ func (a *App) GetUser(c *gin.Context) {
 }
 
 func (a *App) AddConsumption(c *gin.Context) {
+	tokenString := c.Request.Header["Authorization"][0]
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		fmt.Println(err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
 	var newConsumption models.Consumption
-	err := c.BindJSON(&newConsumption)
+	err = c.BindJSON(&newConsumption)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, "Error processing data")
 		return
 	}
+
+	// check user matches
+	if claims["id"] != float64(newConsumption.User_id) {
+		// TODO: should this just overwrite the consumption user with the authenticated user?
+		fmt.Println("authenticated id didnt match consumptions id")
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	// check item exists
+	var item_id int
+	err = a.DB.QueryRow(context.Background(), "SELECT item_id FROM items WHERE item_id = $1", newConsumption.Item_id).Scan(&item_id)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, "Error processing data")
+		return
+	}
+	// if no rows are returned then it doesnt exist
+	// otherwise we are safe to continue knowing the item id exists
+
 	// write time here, dont allow user to mess with this
-	// todo: in future maybe allow backdating
+	// TODO: in future maybe allow backdating
 	newConsumption.Time = int(time.Now().Unix())
 
 	_, err = a.DB.Exec(context.Background(), "INSERT INTO consumptions (user_id, item_id, time) VALUES ($1, $2, $3)", newConsumption.User_id, newConsumption.Item_id, newConsumption.Time)
@@ -306,8 +430,8 @@ func (a *App) setUpRouter() *gin.Engine {
 	router := gin.Default()
 
 	// adding new items and consumptions
-	router.POST("/submit/item", a.AddItem)               // todo: maybe add field for who added it, add auth for this
-	router.POST("/submit/consumption", a.AddConsumption) // todo: implement auth
+	router.POST("/submit/item", a.AddItem)               // TODO: maybe add field for who added it, add auth for this
+	router.POST("/submit/consumption", a.AddConsumption) // TODO: implement auth
 
 	// getting items
 	router.GET("/item/:item_id", a.GetItem)
@@ -315,10 +439,11 @@ func (a *App) setUpRouter() *gin.Engine {
 
 	// account actions
 	router.POST("/signup", a.AddUser)
+	router.POST("/authenticate", a.Authenticate)
 	router.GET("/user/:user_id", a.GetUser)
 
 	// get consumption
-	//router.GET("/consumption/:consumption_id", a.GetConsumption) // todo: implement auth
+	//router.GET("/consumption/:consumption_id", a.GetConsumption) // TODO: implement auth
 
 	// leaderboards
 	router.GET("/leaderboard/items", a.GetItemsLeaderboard)
@@ -335,6 +460,12 @@ func main() {
 		return
 	}
 
+	jwtKey, err := loadKey("boozer.pem")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	// DATABASE_URL='postgres://username:password@localhost:5432/database_name'
 	db, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
@@ -343,7 +474,7 @@ func main() {
 	}
 	fmt.Println("Successfully connected to database!")
 	defer db.Close(context.Background())
-	app := &App{DB: db}
+	app := &App{DB: db, JWT_KEY: jwtKey}
 
 	router := app.setUpRouter()
 
