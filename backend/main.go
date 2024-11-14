@@ -138,6 +138,7 @@ func loadKey(keyFile string) (*ecdsa.PrivateKey, error) {
 func (a *App) generateJWT(user models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
 		"id": user.User_id,
+		// TODO: exp?
 	})
 
 	return token.SignedString(a.JWT_KEY)
@@ -296,6 +297,7 @@ func (a *App) Authenticate(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
+		// TODO: we should tell the user (moreso the frontend application) how long their token is valid for (when exp is implemented)
 		c.JSON(http.StatusOK, gin.H{"token": token})
 		fmt.Println("Successful auth for user ", user.User_id)
 	} else {
@@ -367,11 +369,28 @@ func (a *App) AddConsumption(c *gin.Context) {
 }
 
 func (a *App) GetConsumption(c *gin.Context) {
+	// auth first
+	tokenString := c.Request.Header["Authorization"][0]
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		fmt.Println(err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	// now get that consumption (presumably it exists!)
 	var consumption models.Consumption
-	err := a.DB.QueryRow(context.Background(), "SELECT consumption_id, item_id, user_id, time FROM consumptions WHERE consumption_id=$1", c.Param("consumption_id")).Scan(&consumption.Consumption_id, &consumption.Item_id, &consumption.User_id, &consumption.Time)
+	err = a.DB.QueryRow(context.Background(), "SELECT consumption_id, item_id, user_id, time FROM consumptions WHERE consumption_id=$1", c.Param("consumption_id")).Scan(&consumption.Consumption_id, &consumption.Item_id, &consumption.User_id, &consumption.Time)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+		return
+	}
+
+	// check user matches
+	if claims["id"] != float64(consumption.User_id) {
+		fmt.Println("authenticated id didnt match consumptions id")
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
@@ -430,8 +449,8 @@ func (a *App) setUpRouter() *gin.Engine {
 	router := gin.Default()
 
 	// adding new items and consumptions
-	router.POST("/submit/item", a.AddItem)               // TODO: maybe add field for who added it, add auth for this
-	router.POST("/submit/consumption", a.AddConsumption) // TODO: implement auth
+	router.POST("/submit/item", a.AddItem) // TODO: maybe add field for who added it, add auth for this
+	router.POST("/submit/consumption", a.AddConsumption)
 
 	// getting items
 	router.GET("/item/:item_id", a.GetItem)
@@ -443,7 +462,7 @@ func (a *App) setUpRouter() *gin.Engine {
 	router.GET("/user/:user_id", a.GetUser)
 
 	// get consumption
-	//router.GET("/consumption/:consumption_id", a.GetConsumption) // TODO: implement auth
+	router.GET("/consumption/:consumption_id", a.GetConsumption) // TODO: implement auth
 
 	// leaderboards
 	router.GET("/leaderboard/items", a.GetItemsLeaderboard)
