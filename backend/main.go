@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -43,7 +44,7 @@ type params struct {
 }
 
 const NAME string = "🍺 boozer"
-const VERSION string = "0.1-Alpha"
+const VERSION string = "0.2-Alpha"
 
 func hash(input string, p *params) (encodedHash string, err error) {
 	salt, err := generateRandomBytes(p.saltLength)
@@ -137,8 +138,8 @@ func loadKey(keyFile string) (*ecdsa.PrivateKey, error) {
 
 func (a *App) generateJWT(user models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
-		"id": user.User_id,
-		// TODO: exp?
+		"username": user.Username,
+		"exp":      time.Now().Add(time.Hour).Unix(), // expire in 1 hour
 	})
 
 	return token.SignedString(a.JWT_KEY)
@@ -280,7 +281,7 @@ func (a *App) Authenticate(c *gin.Context) {
 
 	// get the hash we have in the db
 	var storedHash string
-	err = a.DB.QueryRow(context.Background(), "SELECT password FROM users WHERE user_id=$1", user.User_id).Scan(&storedHash)
+	err = a.DB.QueryRow(context.Background(), "SELECT password FROM users WHERE username=$1", user.Username).Scan(&storedHash)
 	_, _, otherHash, err := decodeHash(storedHash)
 	if err != nil {
 		fmt.Println(err)
@@ -299,7 +300,7 @@ func (a *App) Authenticate(c *gin.Context) {
 		}
 		// TODO: we should tell the user (moreso the frontend application) how long their token is valid for (when exp is implemented)
 		c.JSON(http.StatusOK, gin.H{"token": token})
-		fmt.Println("Successful auth for user ", user.User_id)
+		fmt.Println("Successful auth for user", user.Username)
 	} else {
 		fmt.Println("Auth failed")
 		c.Status(http.StatusBadRequest)
@@ -336,14 +337,6 @@ func (a *App) AddConsumption(c *gin.Context) {
 		return
 	}
 
-	// check user matches
-	if claims["id"] != float64(newConsumption.User_id) {
-		// TODO: should this just overwrite the consumption user with the authenticated user?
-		fmt.Println("authenticated id didnt match consumptions id")
-		c.Status(http.StatusBadRequest)
-		return
-	}
-
 	// check item exists
 	var item_id int
 	err = a.DB.QueryRow(context.Background(), "SELECT item_id FROM items WHERE item_id = $1", newConsumption.Item_id).Scan(&item_id)
@@ -358,6 +351,15 @@ func (a *App) AddConsumption(c *gin.Context) {
 	// write time here, dont allow user to mess with this
 	// TODO: in future maybe allow backdating
 	newConsumption.Time = int(time.Now().Unix())
+
+	var id_lookup string
+	err = a.DB.QueryRow(context.Background(), "SELECT user_id FROM users WHERE username=$1", claims["username"]).Scan(&id_lookup)
+	if err != nil {
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	newConsumption.User_id, _ = strconv.Atoi(id_lookup)
 
 	_, err = a.DB.Exec(context.Background(), "INSERT INTO consumptions (user_id, item_id, time) VALUES ($1, $2, $3)", newConsumption.User_id, newConsumption.Item_id, newConsumption.Time)
 	if err != nil {
