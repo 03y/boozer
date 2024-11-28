@@ -338,8 +338,8 @@ func (a *App) AddConsumption(c *gin.Context) {
 	}
 
 	// check item exists
-	var item_id int
-	err = a.DB.QueryRow(context.Background(), "SELECT item_id FROM items WHERE item_id = $1", newConsumption.Item_id).Scan(&item_id)
+	var itemId int
+	err = a.DB.QueryRow(context.Background(), "SELECT item_id FROM items WHERE item_id=$1", newConsumption.Item_id).Scan(&itemId)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, "Error processing data")
@@ -370,6 +370,51 @@ func (a *App) AddConsumption(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
+func (a *App) RemoveConsumption(c *gin.Context) {
+	// do auth
+	tokenString := c.Request.Header["Authorization"][0]
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		fmt.Println(err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	// get the consumption requested for deletion (although we will only read the id)
+	var newConsumption models.Consumption
+	err = c.BindJSON(&newConsumption)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, "Error processing data")
+		return
+	}
+
+	// get username from consumption id, check that is the authenticated user
+	var usernameLookup string
+	err = a.DB.QueryRow(context.Background(), "SELECT users.username FROM consumptions INNER JOIN users ON consumptions.user_id=users.user_id WHERE consumptions.consumption_id=$1", newConsumption.Consumption_id).Scan(&usernameLookup)
+	if err != nil {
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// check authenticated user is the user associated with consumption
+	if usernameLookup != claims["username"] {
+		fmt.Println("User", claims["username"], "tried to delete a consumption record from", usernameLookup, "!")
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	// delete
+	_, err = a.DB.Exec(context.Background(), "DELETE FROM consumptions WHERE consumption_id=$1", newConsumption.Consumption_id)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, "Error processing data")
+		return
+	}
+	c.Status(http.StatusOK)
+}
+
 func (a *App) GetConsumption(c *gin.Context) {
 	// auth first
 	tokenString := c.Request.Header["Authorization"][0]
@@ -382,7 +427,8 @@ func (a *App) GetConsumption(c *gin.Context) {
 
 	// now get that consumption (presumably it exists!)
 	var consumption models.Consumption
-	err = a.DB.QueryRow(context.Background(), "SELECT consumption_id, item_id, user_id, time FROM consumptions WHERE consumption_id=$1", c.Param("consumption_id")).Scan(&consumption.Consumption_id, &consumption.Item_id, &consumption.User_id, &consumption.Time)
+	var usernameLookup string
+	err = a.DB.QueryRow(context.Background(), "SELECT consumptions.consumption_id, consumptions.item_id, consumptions.user_id, users.username, consumptions.time FROM consumptions INNER JOIN users ON consumptions.user_id=users.user_id WHERE consumptions.consumption_id=$1", c.Param("consumption_id")).Scan(&consumption.Consumption_id, &consumption.Item_id, &consumption.User_id, &usernameLookup, &consumption.Time)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
@@ -390,8 +436,8 @@ func (a *App) GetConsumption(c *gin.Context) {
 	}
 
 	// check user matches
-	if claims["id"] != float64(consumption.User_id) {
-		fmt.Println("authenticated id didnt match consumptions id")
+	if claims["username"] != usernameLookup {
+		fmt.Println("authenticated user didnt match consumptions user")
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -450,17 +496,23 @@ func (a *App) GetItemsLeaderboard(c *gin.Context) {
 func (a *App) setUpRouter() *gin.Engine {
 	router := gin.Default()
 
-	// adding new items and consumptions
+	// adding new items/consumptions
 	router.POST("/submit/item", a.AddItem) // TODO: maybe add field for who added it, add auth for this
 	router.POST("/submit/consumption", a.AddConsumption)
+	// TODO: router.PUT("/submit/consumption", a.AddConsumption)
+
+	// updating and deleting items/consumptions
+	router.POST("/remove/consumption", a.RemoveConsumption)
 
 	// getting items
 	router.GET("/item/:item_id", a.GetItem)
 	router.GET("/items", a.GetItemList)
 
-	// account actions
+	// create & authenticate accounts
 	router.POST("/signup", a.AddUser)
 	router.POST("/authenticate", a.Authenticate)
+
+	// get user
 	router.GET("/user/:user_id", a.GetUser)
 
 	// get consumption
