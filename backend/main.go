@@ -309,7 +309,15 @@ func (a *App) Authenticate(c *gin.Context) {
 }
 
 func (a *App) GetUser(c *gin.Context) {
-	var user models.User
+	// TODO: this is some repetition from models/models.go
+	// because the password field will be delivered to the user (even though we dont retrieve from db)
+	type UserNoPw struct {
+		User_id  int    `json:"user_id"`
+		Username string `json:"username"`
+		Created  int    `json:"created"` // unix timestamp
+	}
+
+	var user UserNoPw
 	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE user_id=$1", c.Param("user_id")).Scan(&user.User_id, &user.Username, &user.Created)
 	if err != nil {
 		fmt.Println(err)
