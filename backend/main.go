@@ -69,6 +69,7 @@ func generateRandomBytes(n uint32) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return bytes, nil
 }
 
@@ -83,6 +84,7 @@ func comparePasswordAndHash(password, encodedHash string) (match bool, err error
 	if subtle.ConstantTimeCompare(hash, otherHash) == 1 {
 		return true, nil
 	}
+
 	return false, nil
 }
 
@@ -177,8 +179,10 @@ func (a *App) GetItem(c *gin.Context) {
 	if err != nil {
 		if err != pgx.ErrNoRows {
 			fmt.Println(err)
+			c.Status(http.StatusInternalServerError)
+			return
 		}
-		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+		c.Status(http.StatusNotFound)
 		return
 	}
 
@@ -189,7 +193,7 @@ func (a *App) GetItemList(c *gin.Context) {
 	rows, err := a.DB.Query(context.Background(), "SELECT * FROM items")
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 
@@ -199,7 +203,7 @@ func (a *App) GetItemList(c *gin.Context) {
 		err := rows.Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
 		if err != nil {
 			fmt.Println(err)
-			c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+			c.Status(http.StatusInternalServerError)
 			return
 		}
 		beers = append(beers, beer)
@@ -213,22 +217,24 @@ func (a *App) AddItem(c *gin.Context) {
 	err := c.BindJSON(&newBeer)
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, "Error processing data")
+		c.Status(http.StatusBadRequest)
 		return
 	}
-	if newBeer.Name == "" || newBeer.Units < 0 {
-		c.JSON(http.StatusBadRequest, "Bad request data")
+
+	if newBeer.Name == "" || newBeer.Units < 0 || len(newBeer.Name) < 1 || len(newBeer.Name) > 40 {
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
 	newBeer.Added = int(time.Now().Unix())
 
-	_, err = a.DB.Exec(context.Background(), "INSERT INTO items (name, units, time) VALUES ($1, $2, $3)", newBeer.Name, newBeer.Units, newBeer.Added)
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO items (name, units, added) VALUES ($1, $2, $3)", newBeer.Name, newBeer.Units, newBeer.Added)
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, "Error processing data")
+		c.Status(http.StatusBadRequest) // it was probably the clients fault
 		return
 	}
+
 	c.Status(http.StatusCreated)
 }
 
@@ -238,17 +244,17 @@ func (a *App) AddUser(c *gin.Context) {
 	err := c.BindJSON(&newUser)
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, "Error processing data")
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 	if len(newUser.Username) < 1 || len(newUser.Username) > 20 {
-		c.JSON(http.StatusBadRequest, "Bad request data")
+		c.Status(http.StatusBadRequest)
 		return
 	}
 	_, _, _, err = decodeHash(newUser.Password)
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, "Error processing data")
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
@@ -257,9 +263,10 @@ func (a *App) AddUser(c *gin.Context) {
 	_, err = a.DB.Exec(context.Background(), "INSERT INTO users (username, password, created) VALUES ($1, $2, $3)", newUser.Username, newUser.Password, newUser.Created)
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, "Error processing data")
+		c.Status(http.StatusInternalServerError)
 		return
 	}
+
 	c.Status(http.StatusCreated)
 }
 
@@ -304,7 +311,6 @@ func (a *App) Authenticate(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"token": token})
 		fmt.Println("Successful auth for user", user.Username)
 	} else {
-		fmt.Println("Auth failed")
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -324,9 +330,11 @@ func (a *App) GetUser(c *gin.Context) {
 	if err != nil {
 		if err != pgx.ErrNoRows {
 			fmt.Println(err)
+			c.Status(http.StatusInternalServerError)
+			return
 		}
 
-		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+		c.Status(http.StatusNotFound)
 		return
 	}
 
@@ -346,7 +354,7 @@ func (a *App) AddConsumption(c *gin.Context) {
 	err = c.BindJSON(&newConsumption)
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, "Error processing data")
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
@@ -354,10 +362,13 @@ func (a *App) AddConsumption(c *gin.Context) {
 	var itemId int
 	err = a.DB.QueryRow(context.Background(), "SELECT item_id FROM items WHERE item_id=$1", newConsumption.Item_id).Scan(&itemId)
 	if err != nil {
-		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, "Error processing data")
+		if err != pgx.ErrNoRows {
+			fmt.Println(err)
+		}
+		c.Status(http.StatusInternalServerError)
 		return
 	}
+
 	// if no rows are returned then it doesnt exist
 	// otherwise we are safe to continue knowing the item id exists
 
@@ -377,9 +388,10 @@ func (a *App) AddConsumption(c *gin.Context) {
 	_, err = a.DB.Exec(context.Background(), "INSERT INTO consumptions (user_id, item_id, time) VALUES ($1, $2, $3)", newConsumption.User_id, newConsumption.Item_id, newConsumption.Time)
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, "Error processing data")
+		c.Status(http.StatusInternalServerError)
 		return
 	}
+
 	c.Status(http.StatusCreated)
 }
 
@@ -398,7 +410,7 @@ func (a *App) RemoveConsumption(c *gin.Context) {
 	err = c.BindJSON(&newConsumption)
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, "Error processing data")
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
@@ -418,13 +430,13 @@ func (a *App) RemoveConsumption(c *gin.Context) {
 		return
 	}
 
-	// delete
 	_, err = a.DB.Exec(context.Background(), "DELETE FROM consumptions WHERE consumption_id=$1", newConsumption.Consumption_id)
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, "Error processing data")
+		c.Status(http.StatusInternalServerError)
 		return
 	}
+
 	c.Status(http.StatusOK)
 }
 
@@ -446,7 +458,7 @@ func (a *App) GetConsumption(c *gin.Context) {
 		if err != pgx.ErrNoRows {
 			fmt.Println(err)
 		}
-		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+		c.Status(http.StatusNotFound)
 		return
 	}
 
@@ -464,7 +476,7 @@ func (a *App) GetUserLeaderboard(c *gin.Context) {
 	rows, err := a.DB.Query(context.Background(), "SELECT users.username, COUNT(consumptions.item_id) AS drank FROM consumptions INNER JOIN users ON consumptions.user_id = users.user_id GROUP BY users.username ORDER BY drank DESC LIMIT 10;")
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+		c.Status(http.StatusNotFound)
 		return
 	}
 
@@ -474,7 +486,7 @@ func (a *App) GetUserLeaderboard(c *gin.Context) {
 		err := rows.Scan(&user.Username, &user.Consumed)
 		if err != nil {
 			fmt.Println(err)
-			c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+			c.Status(http.StatusNotFound)
 			return
 		}
 		leaderboard = append(leaderboard, user)
@@ -487,7 +499,7 @@ func (a *App) GetItemsLeaderboard(c *gin.Context) {
 	rows, err := a.DB.Query(context.Background(), "SELECT items.item_id, items.name, items.units, items.added, COUNT(items.item_id) AS drank FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id GROUP BY items.item_id, items.name, items.units, items.added ORDER BY drank DESC LIMIT 50;")
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+		c.Status(http.StatusNotFound)
 		return
 	}
 
@@ -497,7 +509,7 @@ func (a *App) GetItemsLeaderboard(c *gin.Context) {
 		err := rows.Scan(&item.Item_id, &item.Name, &item.Units, &item.Added, &item.Consumed)
 		if err != nil {
 			fmt.Println(err)
-			c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
+			c.Status(http.StatusNotFound)
 			return
 		}
 		leaderboard = append(leaderboard, item)
