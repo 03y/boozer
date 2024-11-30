@@ -175,7 +175,9 @@ func (a *App) GetItem(c *gin.Context) {
 	var beer models.Item
 	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE item_id=$1", c.Param("item_id")).Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
 	if err != nil {
-		fmt.Println(err)
+		if err != pgx.ErrNoRows {
+			fmt.Println(err)
+		}
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
 		return
 	}
@@ -320,7 +322,10 @@ func (a *App) GetUser(c *gin.Context) {
 	var user UserNoPw
 	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE user_id=$1", c.Param("user_id")).Scan(&user.User_id, &user.Username, &user.Created)
 	if err != nil {
-		fmt.Println(err)
+		if err != pgx.ErrNoRows {
+			fmt.Println(err)
+		}
+
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
 		return
 	}
@@ -438,7 +443,9 @@ func (a *App) GetConsumption(c *gin.Context) {
 	var usernameLookup string
 	err = a.DB.QueryRow(context.Background(), "SELECT consumptions.consumption_id, consumptions.item_id, consumptions.user_id, users.username, consumptions.time FROM consumptions INNER JOIN users ON consumptions.user_id=users.user_id WHERE consumptions.consumption_id=$1", c.Param("consumption_id")).Scan(&consumption.Consumption_id, &consumption.Item_id, &consumption.User_id, &usernameLookup, &consumption.Time)
 	if err != nil {
-		fmt.Println(err)
+		if err != pgx.ErrNoRows {
+			fmt.Println(err)
+		}
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching data"})
 		return
 	}
