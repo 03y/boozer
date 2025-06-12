@@ -19,6 +19,7 @@ import (
 
 	"boozer/models"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
@@ -522,6 +523,7 @@ func (a *App) GetItemsLeaderboard(c *gin.Context) {
 
 func (a *App) setUpRouter() *gin.Engine {
 	router := gin.Default()
+	router.Use(cors.Default())
 
 	// adding new items/consumptions
 	router.POST("/submit/item", a.AddItem) // TODO: maybe add field for who added it, add auth for this
