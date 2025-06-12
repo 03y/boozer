@@ -191,7 +191,7 @@ func (a *App) GetItem(c *gin.Context) {
 }
 
 func (a *App) GetItemList(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT * FROM items")
+	rows, err := a.DB.Query(context.Background(), "SELECT * FROM items ORDER BY added DESC")
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
