@@ -185,12 +185,20 @@
         </div>
 
         <script>
-            const API_BASE_URL = "http://localhost:6969";
+            const API_BASE_URL = "https://192.168.0.34:6969";
 
             async function fetchLeaderboard(type) {
                 try {
                     const response = await fetch(
                         `${API_BASE_URL}/leaderboard/${type}`,
+                        {
+                            method: "GET",
+                            mode: "cors",
+                            credentials: "include",
+                            headers: {
+                                Accept: "application/json",
+                            },
+                        },
                     );
 
                     if (!response.ok) {

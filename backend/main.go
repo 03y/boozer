@@ -523,7 +523,17 @@ func (a *App) GetItemsLeaderboard(c *gin.Context) {
 
 func (a *App) setUpRouter() *gin.Engine {
 	router := gin.Default()
-	router.Use(cors.Default())
+
+	// cors
+	config := cors.Config{
+		AllowOrigins:     []string{"https://192.168.0.34:6969", "https://192.168.0.34"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}
+	router.Use(cors.New(config))
 
 	// adding new items/consumptions
 	router.POST("/submit/item", a.AddItem) // TODO: maybe add field for who added it, add auth for this
@@ -559,7 +569,16 @@ func main() {
 
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: ./boozer <URL>:<PORT>")
+		fmt.Println("Note: cert.pem and key.pem must exist in the current directory")
 		return
+	}
+
+	// Check if SSL certificate files exist
+	if _, err := os.Stat("cert.pem"); os.IsNotExist(err) {
+		fmt.Println("cert.pem not found")
+	}
+	if _, err := os.Stat("key.pem"); os.IsNotExist(err) {
+		fmt.Println("key.pem not found")
 	}
 
 	jwtKey, err := loadKey("boozer.pem")
@@ -582,5 +601,14 @@ func main() {
 
 	var listen string = os.Args[1]
 	fmt.Printf("\nLets get boozing! 🍻\nListening on %s...\n\n", listen)
-	router.Run(listen)
+
+	srv := &http.Server{
+		Addr:    listen,
+		Handler: router,
+	}
+
+	fmt.Println("Starting HTTPS server on", listen)
+	if err := srv.ListenAndServeTLS("cert.pem", "key.pem"); err != nil && err != http.ErrServerClosed {
+		fmt.Println("Error starting HTTPS server:", err)
+	}
 }
