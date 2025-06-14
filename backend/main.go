@@ -22,7 +22,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -32,7 +32,7 @@ var (
 )
 
 type App struct {
-	DB      *pgx.Conn
+	DB      *pgxpool.Pool
 	JWT_KEY *ecdsa.PrivateKey
 }
 
@@ -178,7 +178,7 @@ func (a *App) GetItem(c *gin.Context) {
 	var beer models.Item
 	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE item_id=$1", c.Param("item_id")).Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
 	if err != nil {
-		if err != pgx.ErrNoRows {
+		if err != nil {
 			fmt.Println(err)
 			c.Status(http.StatusInternalServerError)
 			return
@@ -329,7 +329,7 @@ func (a *App) GetUser(c *gin.Context) {
 	var user UserNoPw
 	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE user_id=$1", c.Param("user_id")).Scan(&user.User_id, &user.Username, &user.Created)
 	if err != nil {
-		if err != pgx.ErrNoRows {
+		if err != nil {
 			fmt.Println(err)
 			c.Status(http.StatusInternalServerError)
 			return
@@ -363,7 +363,7 @@ func (a *App) AddConsumption(c *gin.Context) {
 	var itemId int
 	err = a.DB.QueryRow(context.Background(), "SELECT item_id FROM items WHERE item_id=$1", newConsumption.Item_id).Scan(&itemId)
 	if err != nil {
-		if err != pgx.ErrNoRows {
+		if err != nil {
 			fmt.Println(err)
 		}
 		c.Status(http.StatusInternalServerError)
@@ -456,7 +456,7 @@ func (a *App) GetConsumption(c *gin.Context) {
 	var usernameLookup string
 	err = a.DB.QueryRow(context.Background(), "SELECT consumptions.consumption_id, consumptions.item_id, consumptions.user_id, users.username, consumptions.time FROM consumptions INNER JOIN users ON consumptions.user_id=users.user_id WHERE consumptions.consumption_id=$1", c.Param("consumption_id")).Scan(&consumption.Consumption_id, &consumption.Item_id, &consumption.User_id, &usernameLookup, &consumption.Time)
 	if err != nil {
-		if err != pgx.ErrNoRows {
+		if err != nil {
 			fmt.Println(err)
 		}
 		c.Status(http.StatusNotFound)
@@ -588,14 +588,28 @@ func main() {
 	}
 
 	// DATABASE_URL='postgres://username:password@localhost:5432/database_name'
-	db, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+	config, err := pgxpool.ParseConfig(os.Getenv("DATABASE_URL"))
 	if err != nil {
-		fmt.Printf("WARNING: Unable to create connection pool: %v\n", err)
+		fmt.Println("WARNING: Error parsing config:", err)
+		os.Exit(1)
+	}
+
+	// pool config
+	config.MaxConns = 25
+	config.MinConns = 25
+	// TODO: find the best values for these
+	config.MaxConnLifetime = 1 * time.Hour
+	config.MaxConnIdleTime = 30 * time.Minute
+
+	// connect
+	pool, err := pgxpool.NewWithConfig(context.Background(), config)
+	if err != nil {
+		fmt.Println("Failed to create connection pool:", err)
 		os.Exit(1)
 	}
 	fmt.Println("Successfully connected to database!")
-	defer db.Close(context.Background())
-	app := &App{DB: db, JWT_KEY: jwtKey}
+	defer pool.Close()
+	app := &App{DB: pool, JWT_KEY: jwtKey}
 
 	router := app.setUpRouter()
 
