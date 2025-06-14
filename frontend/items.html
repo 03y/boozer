@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>🍺 Boozer - Inventory</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: darkslateblue;
+                color: white;
+            }
+
+            nav {
+                background-color: #333;
+                overflow: hidden;
+            }
+
+            nav a {
+                float: left;
+                display: block;
+                color: white;
+                text-align: center;
+                padding: 14px 20px;
+                text-decoration: none;
+            }
+
+            nav a:hover {
+                background-color: #575757;
+            }
+
+            nav a.active {
+                background-color: #969696;
+            }
+
+            header {
+                text-align: center;
+                margin: 20px 0;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            .leaderboard-section {
+                margin: 30px 0;
+            }
+
+            .leaderboard-section h2 {
+                color: #fff;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                background-color: rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+
+            th,
+            td {
+                padding: 12px 15px;
+                text-align: left;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            th {
+                background-color: rgba(0, 0, 0, 0.3);
+                font-weight: bold;
+                color: #fff;
+            }
+
+            tr:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+
+            .rank {
+                font-weight: bold;
+                color: #ffd700;
+            }
+
+            .rank.first {
+                color: #ffd700;
+            }
+
+            .rank.second {
+                color: #c0c0c0;
+            }
+
+            .rank.third {
+                color: #cd7f32;
+            }
+
+            .loading {
+                text-align: center;
+                color: #ccc;
+                font-style: italic;
+                padding: 20px;
+            }
+
+            .error {
+                color: #ff6b6b;
+                text-align: center;
+                padding: 20px;
+                background-color: rgba(255, 107, 107, 0.1);
+                border-radius: 4px;
+                margin: 20px 0;
+            }
+
+            .refresh-btn {
+                background-color: #4caf50;
+                color: white;
+                padding: 10px 20px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                margin: 20px auto;
+                display: block;
+                font-size: 16px;
+            }
+
+            .refresh-btn:hover {
+                background-color: #45a049;
+            }
+
+            .leaderboard-controls {
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 20px;
+            }
+
+            select {
+                padding: 10px;
+                font-size: 16px;
+                border-radius: 4px;
+                background-color: #fff;
+                border: none;
+                color: #333;
+                cursor: pointer;
+            }
+
+            select:hover {
+                background-color: #f0f0f0;
+            }
+        </style>
+    </head>
+    <body>
+        <nav>
+            <a href="./index.html">Leaderboard</a>
+            <a href="./items.html" class="active">Inventory</a>
+            <a href="./profile.html">Profile</a>
+        </nav>
+
+        <header>
+            <h1>🍺 Boozer - Inventory</h1>
+        </header>
+
+        <div class="container">
+            <div class="leaderboard-section">
+                <div id="leaderboard-container">
+                    <div class="loading">Loading inventory...</div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const API_BASE_URL = "https://192.168.0.34:6969";
+
+            async function fetchLeaderboard() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/items`);
+
+                    if (!response.ok) {
+                        throw new Error(
+                            `HTTP error! status: ${response.status}`,
+                        );
+                    }
+
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error("Error fetching inventory:", error);
+                    throw error;
+                }
+            }
+
+            function createLeaderboardTable(data) {
+                if (!data || data.length === 0) {
+                    return `<div class="error">Inventory is empty.</div>`;
+                }
+
+                let tableHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Units</th>
+                                <th>Date added</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                data.forEach((item, index) => {
+                    const date = new Date(item.added * 1000);
+                    const formattedDate = date.toISOString().split("T")[0];
+                    tableHTML += `
+                        <tr>
+                            <td>${item.name || ""}</td>
+                            <td>${item.units || 0}</td>
+                            <td>${formattedDate}</td>
+                        </tr>
+                    `;
+                });
+
+                tableHTML += `
+                        </tbody>
+                    </table>
+                `;
+
+                return tableHTML;
+            }
+
+            async function loadLeaderboard() {
+                const container = document.getElementById(
+                    "leaderboard-container",
+                );
+                const titleElement = document.getElementById("inventoryTitle");
+
+                container.innerHTML =
+                    '<div class="loading">Loading inventory...</div>';
+
+                try {
+                    const data = await fetchLeaderboard();
+                    const tableHTML = createLeaderboardTable(data);
+                    container.innerHTML = tableHTML;
+                } catch (error) {
+                    container.innerHTML = `
+                        <div class="error">
+                            <strong>Error loading leaderboard:</strong><br>
+                            ${error.message}<br>
+                            <small>Make sure the backend server is running on ${API_BASE_URL}</small>
+                        </div>
+                    `; // TODO: change these error messages to be less verbose
+                }
+            }
+
+            // Load leaderboard when page loads
+            document.addEventListener("DOMContentLoaded", loadLeaderboard);
+        </script>
+    </body>
+</html>
