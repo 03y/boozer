@@ -48,6 +48,14 @@
 
             .leaderboard-section {
                 margin: 30px 0;
+                display: flex;
+                gap: 20px;
+                justify-content: space-between;
+            }
+
+            .leaderboard-column {
+                flex: 1;
+                max-width: calc(50% - 10px);
             }
 
             .leaderboard-section h2 {
@@ -167,20 +175,25 @@
 
         <div class="container">
             <div class="leaderboard-section">
-                <div class="leaderboard-controls">
-                    <select id="leaderboardType" onchange="loadLeaderboard()">
-                        <option value="users">👤 Boozers</option>
-                        <option value="items">🍺 Most Popular Items</option>
-                    </select>
-                    <button class="refresh-btn" onclick="loadLeaderboard()">
-                        Refresh Leaderboard
-                    </button>
+                <div class="leaderboard-column">
+                    <h2>👤 Top Boozers</h2>
+                    <div id="users-leaderboard" class="leaderboard-container">
+                        <div class="loading">Loading users leaderboard...</div>
+                    </div>
                 </div>
-                <h2 id="leaderboardTitle">👑 Top Users by Consumptions</h2>
-
-                <div id="leaderboard-container">
-                    <div class="loading">Loading leaderboard...</div>
+                <div class="leaderboard-column">
+                    <h2>🍺 Top Beers</h2>
+                    <div id="items-leaderboard" class="leaderboard-container">
+                        <div class="loading">Loading items leaderboard...</div>
+                    </div>
                 </div>
+                <button
+                    class="refresh-btn"
+                    onclick="loadLeaderboards()"
+                    style="position: absolute; top: 20px; right: 20px"
+                >
+                    Refresh Leaderboards
+                </button>
             </div>
         </div>
 
@@ -279,38 +292,46 @@
                 return tableHTML;
             }
 
-            async function loadLeaderboard() {
-                const container = document.getElementById(
-                    "leaderboard-container",
-                );
-                const titleElement =
-                    document.getElementById("leaderboardTitle");
-                const type = document.getElementById("leaderboardType").value;
+            async function loadLeaderboards() {
+                const usersContainer =
+                    document.getElementById("users-leaderboard");
+                const itemsContainer =
+                    document.getElementById("items-leaderboard");
 
-                container.innerHTML =
-                    '<div class="loading">Loading leaderboard...</div>';
-                titleElement.textContent =
-                    type === "users"
-                        ? "👑 Top Users by Consumptions"
-                        : "🏆 Most Popular Items";
+                usersContainer.innerHTML =
+                    '<div class="loading">Loading users leaderboard...</div>';
+                itemsContainer.innerHTML =
+                    '<div class="loading">Loading items leaderboard...</div>';
 
                 try {
-                    const data = await fetchLeaderboard(type);
-                    const tableHTML = createLeaderboardTable(data, type);
-                    container.innerHTML = tableHTML;
+                    const [usersData, itemsData] = await Promise.all([
+                        fetchLeaderboard("users"),
+                        fetchLeaderboard("items"),
+                    ]);
+
+                    usersContainer.innerHTML = createLeaderboardTable(
+                        usersData,
+                        "users",
+                    );
+                    itemsContainer.innerHTML = createLeaderboardTable(
+                        itemsData,
+                        "items",
+                    );
                 } catch (error) {
-                    container.innerHTML = `
+                    const errorHTML = `
                         <div class="error">
                             <strong>Error loading leaderboard:</strong><br>
                             ${error.message}<br>
                             <small>Make sure the backend server is running on ${API_BASE_URL}</small>
                         </div>
                     `;
+                    usersContainer.innerHTML = errorHTML;
+                    itemsContainer.innerHTML = errorHTML;
                 }
             }
 
-            // Load leaderboard when page loads
-            document.addEventListener("DOMContentLoaded", loadLeaderboard);
+            // Load leaderboards when page loads
+            document.addEventListener("DOMContentLoaded", loadLeaderboards);
         </script>
     </body>
 </html>
