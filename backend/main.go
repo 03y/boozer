@@ -110,13 +110,13 @@ func decodeHash(encodedHash string) (p *params, salt, hash []byte, err error) {
 		return nil, nil, nil, err
 	}
 
-	salt, err = base64.RawStdEncoding.Strict().DecodeString(vals[4])
+	salt, err = base64.StdEncoding.Strict().DecodeString(vals[4])
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	p.saltLength = uint32(len(salt))
 
-	hash, err = base64.RawStdEncoding.Strict().DecodeString(vals[5])
+	hash, err = base64.StdEncoding.Strict().DecodeString(vals[5])
 	if err != nil {
 		return nil, nil, nil, err
 	}
