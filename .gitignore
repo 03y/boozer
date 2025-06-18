@@ -1,3 +1,4 @@
 backend/boozer
 backend/boozer.pem
 frontend/node_modules
+*.pem
