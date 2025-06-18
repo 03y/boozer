@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>🍺 Boozer - Login</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: darkslateblue;
+                color: white;
+            }
+
+            nav {
+                background-color: #333;
+                overflow: hidden;
+                display: flex;
+                flex-wrap: wrap;
+            }
+
+            nav a {
+                flex: 1;
+                min-width: 100px;
+                color: white;
+                text-align: center;
+                padding: 14px 20px;
+                text-decoration: none;
+            }
+
+            nav a:hover {
+                background-color: #575757;
+            }
+
+            nav a.active {
+                background-color: #969696;
+            }
+
+            header {
+                text-align: center;
+                margin: 20px 0;
+                padding: 0 10px;
+            }
+
+            header h1 {
+                font-size: clamp(24px, 5vw, 36px);
+                margin: 10px 0;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 10px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .signup-section {
+                margin: 30px auto;
+                max-width: 400px;
+                padding: 20px;
+                background-color: rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+
+            .signup-form {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .form-group {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .form-group label {
+                font-size: clamp(14px, 3vw, 16px);
+                color: #fff;
+            }
+
+            .form-group input {
+                width: 100%;
+                padding: 10px;
+                border: none;
+                border-radius: 4px;
+                font-size: clamp(14px, 3vw, 16px);
+                box-sizing: border-box;
+            }
+
+            .signup-btn {
+                background-color: #4caf50;
+                color: white;
+                padding: 12px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: clamp(14px, 3vw, 16px);
+                margin-top: 10px;
+                width: 100%;
+            }
+
+            .signup-btn:hover {
+                background-color: #45a049;
+            }
+
+            .error {
+                color: #ff6b6b;
+                text-align: center;
+                padding: 20px;
+                background-color: rgba(255, 107, 107, 0.1);
+                border-radius: 4px;
+                margin: 20px 0;
+                font-size: clamp(14px, 3vw, 16px);
+            }
+
+            @media screen and (max-width: 480px) {
+                .signup-section {
+                    margin: 20px 10px;
+                    padding: 15px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <nav>
+            <a href="./index.html">Leaderboard</a>
+            <a href="./items.html">Inventory</a>
+            <a href="./profile.html">Profile</a>
+            <a href="./signup.html">Login</a>
+        </nav>
+
+        <header>
+            <h1>🍺 Boozer - Signup</h1>
+        </header>
+
+        <div class="container">
+            <div class="signup-section">
+                <div class="signup-form">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" />
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" />
+                    </div>
+                    <button type="button" class="signup-btn" onclick="signup()">
+                        Signup
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Move scripts to end of body -->
+        <script src="node_modules/argon2-browser/lib/argon2.js"></script>
+        <script>
+            const API_BASE_URL = "https://192.168.0.34:6969";
+
+            async function signup() {
+                try {
+                    const username = document.getElementById("username").value;
+                    const password = document.getElementById("password").value;
+                    const salt = "6666millionwaystodie"; // TODO: change this
+
+                    if (!username || !password) {
+                        alert("Please enter both username and password");
+                        return;
+                    }
+
+                    const hash = await argon2.hash({
+                        pass: password,
+                        salt: salt,
+                        time: 3,
+                        mem: 65536,
+                        parallelism: 2,
+                        type: argon2.ArgonType.Argon2id,
+                        hashLen: 32,
+                    });
+
+                    // Convert to standard Argon2 encoded format
+                    const salt64 = btoa(salt);
+                    const hash64 = btoa(
+                        String.fromCharCode(...new Uint8Array(hash.hash)),
+                    );
+                    const encodedHash = `$argon2id$v=19$m=65536,t=3,p=2$${salt64}$${hash64}`;
+
+                    const response = await fetch(`${API_BASE_URL}/signup`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            username: username,
+                            password: encodedHash,
+                        }),
+                    });
+
+                    if (response.status === 201) {
+                        alert("Signup complete!");
+                        window.location.href = "index.html";
+                    } else {
+                        alert("Signup failed");
+                    }
+                } catch (error) {
+                    console.error("Signup error:", error);
+                    alert("Failed to Sign up. Please try again.");
+                }
+            }
+        </script>
+    </body>
+</html>
