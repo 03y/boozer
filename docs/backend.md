@@ -1,21 +1,23 @@
 # Backend
-* [Go](https://go.dev).
-    * [Gin for HTTP API](https://pkg.go.dev/github.com/gin-gonic/gin).
-    * [PGX for DB connection](https://github.com/jackc/pgx).
+
+- [Go](https://go.dev).
+  - [Gin for HTTP API](https://pkg.go.dev/github.com/gin-gonic/gin).
+  - [PGX for DB connection](https://github.com/jackc/pgx).
 
 ## Outline
+
 Here is the requested information in markdown tables:
 
 ### Endpoints
-| Method | Route                      | Notes                                            | Implemented |
-|--------|----------------------------|--------------------------------------------------|-------------|
-| POST   | `/submit/item`             | requires JWT token (obtain from `/authenticate`) | Yes         |
-| POST   | `/submit/consumption`      | requires JWT token (obtain from `/authenticate`) | Yes         |
-| GET    | `/item/:item_id`           |                                                  | Yes         |
-| GET    | `/items`                   | returns all rows                                 | Yes         |
-| POST   | `/signup`                  |                                                  | Yes         |
-| POST   | `/authenticate`            |                                                  | Yes         |
-| GET    | `/user/:user_id`           |                                                  | Yes         |
-| GET    | `/leaderboard/items`       | returns 50 rows, sorted by # of consumptions     | Yes         |
-| GET    | `/leaderboard/users`       | returns 50 rows, sorted by # of consumptions     | Yes         |
 
+| Method | Route                 | Parameters                                      | Notes                                            |
+| ------ | --------------------- | ----------------------------------------------- | ------------------------------------------------ |
+| POST   | `/submit/item`        | `name` (string), `type` (string), `abv` (float) | requires JWT token (obtain from `/authenticate`) |
+| POST   | `/submit/consumption` | `item_id` (int), `amount` (int)                 | requires JWT token (obtain from `/authenticate`) |
+| GET    | `/item/:item_id`      | item_id (int) in URL                            |                                                  |
+| GET    | `/items`              |                                                 | returns all rows                                 |
+| POST   | `/signup`             | `username` (string), `password` (argon2)        |                                                  |
+| POST   | `/authenticate`       | `username` (string), `password` (argon2)        |                                                  |
+| GET    | `/user/:user_id`      | user_id (int) in URL                            |                                                  |
+| GET    | `/leaderboard/items`  |                                                 | returns 50 rows, sorted by # of consumptions     |
+| GET    | `/leaderboard/users`  |                                                 | returns 50 rows, sorted by # of consumptions     |

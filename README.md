@@ -2,15 +2,15 @@
 Boozer is a database which stores users, drinks and consumptions!
 
 ## Team
-1. [M](https://github.com/03y): backend, sysadmin
-2. [A](https://github.com/Adam-W2): dba, data
-3. [E](https://github.com/EuanRobertson1): full-stack(?), possibly also dba & data
-4. [C](https://github.com/Choob303): requirements gathering and user testing
+1. [03y](https://github.com/03y): backend, sysadmin
+2. [Adam-W2](https://github.com/Adam-W2): dba, data
+3. [EuanRobertson1](https://github.com/EuanRobertson1): full-stack(?), possibly also dba & data
+4. [Choob303](https://github.com/Choob303): requirements gathering and user testing
 
 ## Outline
 * Data sourced from dbas and users.
     * This means the data will be sparse at first, but item uses will conform to a bell-curve. Once most of the commonly used items are added, adding new items will be rare.
-    * L has good knowledge of items, could create a small tool for adding lots of new items.
+    * Choob303 has good knowledge of items, could create a small tool for adding lots of new items.
 * User creates account, adds items and records uses of items.
 
 ## Workflow
