@@ -31,11 +31,6 @@ var (
 	ErrIncompatibleVersion = errors.New("incompatible version of argon2")
 )
 
-type App struct {
-	DB      *pgxpool.Pool
-	JWT_KEY *ecdsa.PrivateKey
-}
-
 type params struct {
 	memory      uint32
 	iterations  uint32
@@ -44,24 +39,47 @@ type params struct {
 	keyLength   uint32
 }
 
-const NAME string = "🍺 boozer"
-const VERSION string = "0.2-Alpha"
+type App struct {
+	DB      *pgxpool.Pool
+	JWT_KEY *ecdsa.PrivateKey
+}
 
-func hash(input string, p *params) (encodedHash string, err error) {
-	salt, err := generateRandomBytes(p.saltLength)
+const NAME string = "🍺 boozer"
+const VERSION string = "0.3-Alpha"
+
+var ARGON2_PARAMS = &params{
+	memory:      65536,
+	iterations:  3,
+	parallelism: 2,
+	saltLength:  128,
+	keyLength:   128,
+}
+
+func plaintextToEncodedHash(input string) (encodedHash string, err error) {
+	salt, err := generateRandomBytes(ARGON2_PARAMS.saltLength)
 	if err != nil {
 		fmt.Println(err)
 		return "", err
 	}
 
-	hashed := argon2.IDKey([]byte(input), salt, p.iterations, p.memory, p.parallelism, p.keyLength)
+	hashed := argon2.IDKey([]byte(input), salt, ARGON2_PARAMS.iterations, ARGON2_PARAMS.memory, ARGON2_PARAMS.parallelism, ARGON2_PARAMS.keyLength)
 
-	b64Salt := base64.RawStdEncoding.EncodeToString(salt)
-	b64Hash := base64.RawStdEncoding.EncodeToString(hashed)
+	b64Salt := base64.StdEncoding.EncodeToString(salt)
+	b64Hash := base64.StdEncoding.EncodeToString(hashed)
 
-	encodedHash = fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s", argon2.Version, p.memory, p.iterations, p.parallelism, b64Salt, b64Hash)
+	encodedHash = fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s", argon2.Version, ARGON2_PARAMS.memory, ARGON2_PARAMS.iterations, ARGON2_PARAMS.parallelism, b64Salt, b64Hash)
 
 	return encodedHash, nil
+}
+
+func hash(input string) (hash []byte, err error) {
+	salt, err := generateRandomBytes(ARGON2_PARAMS.saltLength)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return argon2.IDKey([]byte(input), salt, ARGON2_PARAMS.iterations, ARGON2_PARAMS.memory, ARGON2_PARAMS.parallelism, ARGON2_PARAMS.keyLength), nil
 }
 
 func generateRandomBytes(n uint32) ([]byte, error) {
@@ -110,13 +128,13 @@ func decodeHash(encodedHash string) (p *params, salt, hash []byte, err error) {
 		return nil, nil, nil, err
 	}
 
-	salt, err = base64.StdEncoding.Strict().DecodeString(vals[4])
+	salt, err = base64.StdEncoding.DecodeString(vals[4])
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	p.saltLength = uint32(len(salt))
 
-	hash, err = base64.StdEncoding.Strict().DecodeString(vals[5])
+	hash, err = base64.StdEncoding.DecodeString(vals[5])
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -252,16 +270,12 @@ func (a *App) AddUser(c *gin.Context) {
 		c.Status(http.StatusBadRequest)
 		return
 	}
-	_, _, _, err = decodeHash(newUser.Password)
-	if err != nil {
-		fmt.Println(err)
-		c.Status(http.StatusBadRequest)
-		return
-	}
+
+	hashedPassword, err := plaintextToEncodedHash(newUser.Password)
 
 	newUser.Created = int(time.Now().Unix())
 
-	_, err = a.DB.Exec(context.Background(), "INSERT INTO users (username, password, created) VALUES ($1, $2, $3)", newUser.Username, newUser.Password, newUser.Created)
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO users (username, password, created) VALUES ($1, $2, $3)", newUser.Username, hashedPassword, newUser.Created)
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
@@ -281,26 +295,13 @@ func (a *App) Authenticate(c *gin.Context) {
 		return
 	}
 
-	// decode the hash
-	_, _, hash, err := decodeHash(user.Password)
-	if err != nil {
-		fmt.Println(err)
-		c.Status(http.StatusBadRequest)
-		return
-	}
-
 	// get the hash we have in the db
 	var storedHash string
 	err = a.DB.QueryRow(context.Background(), "SELECT password FROM users WHERE username=$1", user.Username).Scan(&storedHash)
-	_, _, otherHash, err := decodeHash(storedHash)
-	if err != nil {
-		fmt.Println(err)
-		c.Status(http.StatusBadRequest)
-		return
-	}
 
 	// compare
-	if subtle.ConstantTimeCompare(hash, otherHash) == 1 {
+	match, err := comparePasswordAndHash(user.Password, storedHash)
+	if match {
 		// create jwt
 		token, err := a.generateJWT(user)
 		if err != nil {
@@ -609,6 +610,7 @@ func main() {
 	}
 	fmt.Println("Successfully connected to database!")
 	defer pool.Close()
+
 	app := &App{DB: pool, JWT_KEY: jwtKey}
 
 	router := app.setUpRouter()

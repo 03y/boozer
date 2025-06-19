@@ -155,7 +155,6 @@
             </div>
         </div>
 
-        <!-- Move scripts to end of body -->
         <script src="node_modules/argon2-browser/lib/argon2.js"></script>
         <script>
             const API_BASE_URL = "https://192.168.0.34:6969";
@@ -164,29 +163,11 @@
                 try {
                     const username = document.getElementById("username").value;
                     const password = document.getElementById("password").value;
-                    const salt = "6666millionwaystodie"; // TODO: change this
 
                     if (!username || !password) {
                         alert("Please enter both username and password");
                         return;
                     }
-
-                    const hash = await argon2.hash({
-                        pass: password,
-                        salt: salt,
-                        time: 3,
-                        mem: 65536,
-                        parallelism: 2,
-                        type: argon2.ArgonType.Argon2id,
-                        hashLen: 32,
-                    });
-
-                    // Convert to standard Argon2 encoded format
-                    const salt64 = btoa(salt);
-                    const hash64 = btoa(
-                        String.fromCharCode(...new Uint8Array(hash.hash)),
-                    );
-                    const encodedHash = `$argon2id$v=19$m=65536,t=3,p=2$${salt64}$${hash64}`;
 
                     const response = await fetch(`${API_BASE_URL}/signup`, {
                         method: "POST",
@@ -195,13 +176,14 @@
                         },
                         body: JSON.stringify({
                             username: username,
-                            password: encodedHash,
+                            password: password,
                         }),
                     });
 
                     if (response.status === 201) {
                         alert("Signup complete!");
-                        window.location.href = "index.html";
+                        window.location.href = "login.html";
+                        // TODO: could login automatically
                     } else {
                         alert("Signup failed");
                     }
