@@ -22,6 +22,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/argon2"
 )
@@ -196,12 +197,12 @@ func (a *App) GetItem(c *gin.Context) {
 	var beer models.Item
 	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE item_id=$1", c.Param("item_id")).Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
 	if err != nil {
-		if err != nil { // TODO: if rows = 0
+		if err == pgx.ErrNoRows {
 			fmt.Println(err)
-			c.Status(http.StatusInternalServerError)
+			c.Status(http.StatusNotFound)
 			return
 		}
-		c.Status(http.StatusNotFound)
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 
@@ -330,13 +331,13 @@ func (a *App) GetUser(c *gin.Context) {
 	var user UserNoPw
 	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE user_id=$1", c.Param("user_id")).Scan(&user.User_id, &user.Username, &user.Created)
 	if err != nil {
-		if err != nil { // TODO: if rows = 0
+		if err == pgx.ErrNoRows {
 			fmt.Println(err)
-			c.Status(http.StatusInternalServerError)
+			c.Status(http.StatusNotFound)
 			return
 		}
 
-		c.Status(http.StatusNotFound)
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 
@@ -364,7 +365,7 @@ func (a *App) AddConsumption(c *gin.Context) {
 	var itemId int
 	err = a.DB.QueryRow(context.Background(), "SELECT item_id FROM items WHERE item_id=$1", newConsumption.Item_id).Scan(&itemId)
 	if err != nil {
-		if err != nil { // TODO: if rows = 0
+		if err == pgx.ErrNoRows {
 			fmt.Println(err)
 		}
 		c.Status(http.StatusInternalServerError)
@@ -457,7 +458,7 @@ func (a *App) GetConsumption(c *gin.Context) {
 	var usernameLookup string
 	err = a.DB.QueryRow(context.Background(), "SELECT consumptions.consumption_id, consumptions.item_id, consumptions.user_id, users.username, consumptions.time FROM consumptions INNER JOIN users ON consumptions.user_id=users.user_id WHERE consumptions.consumption_id=$1", c.Param("consumption_id")).Scan(&consumption.Consumption_id, &consumption.Item_id, &consumption.User_id, &usernameLookup, &consumption.Time)
 	if err != nil {
-		if err != nil { // TODO: if rows = 0
+		if err == pgx.ErrNoRows {
 			fmt.Println(err)
 		}
 		c.Status(http.StatusNotFound)
