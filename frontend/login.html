@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>🍺 Boozer - Login</title>
+        <link rel="stylesheet" type="text/css" href="styles/style.css"></link>
+        <link rel="stylesheet" type="text/css" href="styles/forms.css"></link>
+    </head>
+    <body>
+        <nav>
+            <a href="./index.html">Leaderboard</a>
+            <a href="./items.html">Inventory</a>
+            <a href="./profile.html">Profile</a>
+            <a href="./login.html" class="active">Login</a>
+        </nav>
+
+        <header>
+            <h1>🍺 Boozer - Login</h1>
+        </header>
+
+        <div class="container">
+            <div class="login-section">
+                <div class="login-form">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" />
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" />
+                        <div class="smallprint"
+                        <p>
+                            Don't have an account?
+                            <a href="./signup.html">Create an account</a>
+                        </p>
+                    </div>
+                    </div>
+                    <button type="button" class="login-btn" onclick="login()">
+                        Login
+                    </button>
+                    <div class="smallprint">
+                    <p >
+                        Login requires strictly necessary cookies. See:
+                        <a href="./legal.html" target="_blank">Legal</a>
+                    </p</div>
+
+                </div>
+            </div>
+        </div>
+
+        <script src="node_modules/argon2-browser/lib/argon2.js"></script>
+        <script>
+            const API_BASE_URL = "https://192.168.0.34:6969";
+
+            async function login() {
+                try {
+                    const username = document.getElementById("username").value;
+                    const password = document.getElementById("password").value;
+
+                    if (!username || !password) {
+                        alert("Please enter both username and password");
+                        return;
+                    }
+
+                    const response = await fetch(
+                        `${API_BASE_URL}/authenticate`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                                username: username,
+                                password: password,
+                            }),
+                        },
+                    );
+
+                    const data = await response.json();
+
+                    if (data.token) {
+                        localStorage.setItem("token", data.token);
+                        window.location.href = "index.html";
+                    } else {
+                        alert("Login failed: Invalid credentials");
+                    }
+                } catch (error) {
+                    console.error("Login error:", error);
+                    alert("Failed to login. Please try again.");
+                }
+            }
+        </script>
+    </body>
+</html>
