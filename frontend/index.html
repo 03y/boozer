@@ -11,8 +11,7 @@
         <nav>
             <a href="./index.html" class="active">Leaderboard</a>
             <a href="./items.html">Inventory</a>
-            <a id="profile-name" href="./profile.html">Profile</a>
-            <a href="./login.html">Login</a>
+            <a id="login-link" href="./login.html">Login</a>
         </nav>
 
         <header>
@@ -170,14 +169,36 @@
             }
 
             async function loadUser() {
-                const profileLink = document.getElementById("profile-name");
-
+                const loginLink = document.getElementById("login-link");
                 let token = localStorage.getItem("token");
-                if (token) {
-                    profileLink.innerHTML = "Hello";
 
-                    let decodedToken = jwt.decode(JSON.parse(token));
-                    console.log("Claims: ", decodedToken);
+                if (token == null) return;
+
+                try {
+                    let myHeaders = new Headers();
+                    myHeaders.append("Authorization", "Bearer " + token);
+                    let requestOptions = {
+                        method: "GET",
+                        headers: myHeaders,
+                        redirect: "follow",
+                    };
+
+                    const response = await fetch(
+                        `${API_BASE_URL}/username`,
+                        requestOptions,
+                    );
+
+                    if (response.ok) {
+                        // If status is 200-299
+                        let data = await response.json();
+
+                        loginLink.innerHTML = "Hi " + data.username + "!";
+                        loginLink.href = "./profile.html";
+                    } else {
+                        throw new Error(response.status);
+                    }
+                } catch (error) {
+                    console.log("There was an error", error);
                 }
             }
 
