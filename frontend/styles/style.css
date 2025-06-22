@@ -1,0 +1,58 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: darkslateblue;
+    color: white;
+}
+
+nav {
+    background-color: #333;
+    overflow: hidden;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+nav a {
+    flex: 1;
+    min-width: 100px;
+    color: white;
+    text-align: center;
+    padding: 14px 20px;
+    text-decoration: none;
+}
+
+nav a:hover {
+    background-color: #575757;
+}
+
+nav a.active {
+    background-color: #969696;
+}
+
+header {
+    text-align: center;
+    margin: 20px 0;
+    padding: 0 10px;
+}
+
+header h1 {
+    font-size: clamp(24px, 5vw, 36px);
+    margin: 10px 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media screen and (max-width: 480px) {
+    .signup-section,
+    .login-section {
+        margin: 20px 10px;
+        padding: 15px;
+    }
+}
