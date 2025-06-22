@@ -19,5 +19,6 @@ Here is the requested information in markdown tables:
 | POST   | `/signup`             | `username` (string), `password` (argon2)        |                                                  |
 | POST   | `/authenticate`       | `username` (string), `password` (argon2)        |                                                  |
 | GET    | `/user/:user_id`      | user_id (int) in URL                            |                                                  |
+| GET    | `/username            |                                                 | requires JWT token (obtain from `/authenticate`) |
 | GET    | `/leaderboard/items`  |                                                 | returns 50 rows, sorted by # of consumptions     |
 | GET    | `/leaderboard/users`  |                                                 | returns 50 rows, sorted by # of consumptions     |
