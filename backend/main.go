@@ -320,15 +320,7 @@ func (a *App) Authenticate(c *gin.Context) {
 }
 
 func (a *App) GetUser(c *gin.Context) {
-	// TODO: this is some repetition from models/models.go
-	// because the password field will be delivered to the user (even though we dont retrieve from db)
-	type UserNoPw struct {
-		User_id  int    `json:"user_id"`
-		Username string `json:"username"`
-		Created  int    `json:"created"` // unix timestamp
-	}
-
-	var user UserNoPw
+	var user models.UserNoPw
 	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE user_id=$1", c.Param("user_id")).Scan(&user.User_id, &user.Username, &user.Created)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -342,6 +334,19 @@ func (a *App) GetUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
+}
+
+func (a *App) GetUsername(c *gin.Context) {
+	tokenString := c.Request.Header["Authorization"][0]
+	tokenString = strings.Replace(tokenString, "Bearer ", "", 1) // TODO: do this in other places too
+
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	c.JSON(http.StatusOK, claims)
 }
 
 func (a *App) AddConsumption(c *gin.Context) {
@@ -555,6 +560,7 @@ func (a *App) setUpRouter() *gin.Engine {
 
 	// get user
 	router.GET("/user/:user_id", a.GetUser)
+	router.GET("/username", a.GetUsername)
 
 	// get consumption
 	router.GET("/consumption/:consumption_id", a.GetConsumption) // TODO: implement auth

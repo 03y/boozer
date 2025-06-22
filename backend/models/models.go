@@ -7,6 +7,12 @@ type User struct {
 	Created  int    `json:"created"`  // unix timestamp
 }
 
+type UserNoPw struct {
+	User_id  int    `json:"user_id"`
+	Username string `json:"username"`
+	Created  int    `json:"created"` // unix timestamp
+}
+
 type Item struct {
 	Item_id int     `json:"item_id"`
 	Name    string  `json:"name"`
