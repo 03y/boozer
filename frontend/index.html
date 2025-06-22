@@ -4,14 +4,14 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>🍺 Boozer - Leaderboard</title>
-        <link rel="stylesheet" type="text/css" href="styles/style.css"></link>
-        <link rel="stylesheet" type="text/css" href="styles/leaderboard.css"></link>
+        <link rel="stylesheet" type="text/css" href="styles/style.css" />
+        <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
     </head>
     <body>
         <nav>
             <a href="./index.html" class="active">Leaderboard</a>
             <a href="./items.html">Inventory</a>
-            <a href="./profile.html">Profile</a>
+            <a id="profile-name" href="./profile.html">Profile</a>
             <a href="./login.html">Login</a>
         </nav>
 
@@ -37,7 +37,7 @@
         </div>
 
         <script>
-            const API_BASE_URL = "https://192.168.0.34:6969";
+            const API_BASE_URL = "https://192.168.0.34:6969"; // TODO: update
 
             async function fetchLeaderboard(type) {
                 try {
@@ -169,8 +169,21 @@
                 }
             }
 
+            async function loadUser() {
+                const profileLink = document.getElementById("profile-name");
+
+                let token = localStorage.getItem("token");
+                if (token) {
+                    profileLink.innerHTML = "Hello";
+
+                    let decodedToken = jwt.decode(JSON.parse(token));
+                    console.log("Claims: ", decodedToken);
+                }
+            }
+
             // Load leaderboards when page loads
             document.addEventListener("DOMContentLoaded", loadLeaderboards);
+            document.addEventListener("DOMContentLoaded", loadUser);
         </script>
     </body>
 </html>

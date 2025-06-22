@@ -4,8 +4,8 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>🍺 Boozer - Login</title>
-        <link rel="stylesheet" type="text/css" href="styles/style.css"></link>
-        <link rel="stylesheet" type="text/css" href="styles/forms.css"></link>
+        <link rel="stylesheet" type="text/css" href="styles/style.css">
+        <link rel="stylesheet" type="text/css" href="styles/forms.css">
     </head>
     <body>
         <nav>
@@ -26,10 +26,12 @@
                         <label for="username">Username</label>
                         <input type="text" id="username" name="username" />
                     </div>
+                    <br>
                     <div class="form-group">
                         <label for="password">Password</label>
                         <input type="password" id="password" name="password" />
                     </div>
+                    <br>
                     <div class="age-restriction">
                         <input type="checkbox" name="over18" id="over18" />
                         <label for="over18"><b>I am over 18</b></label>
@@ -52,14 +54,10 @@
 
             async function signup() {
                 try {
-                    window.onload = function () {
-                        document
-                            .getElementById("over18")
-                            .addEventListener("change", function () {
-                                if (!this.checked)
-                                    alert("You must be over 18 to sign up.");
-                            });
-                    };
+                    if (!document.getElementById("over18").checked) {
+                      alert("Under 18s are not permitted to sign up");
+                      return;
+                    }
 
                     const username = document.getElementById("username").value;
                     const password = document.getElementById("password").value;
