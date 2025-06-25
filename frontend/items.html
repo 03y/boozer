@@ -3,21 +3,17 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>🍺 Boozer - Inventory</title>
+        <title>🍺 Boozer</title>
         <link rel="stylesheet" type="text/css" href="styles/style.css" />
         <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
+        <script src="scripts/auth.js"></script>
     </head>
     <body>
         <nav>
             <a href="./index.html">Leaderboard</a>
             <a href="./items.html" class="active">Inventory</a>
-            <a href="./profile.html">Profile</a>
-            <a href="./login.html">Login</a>
+            <a id="login-link" href="./login.html">Login</a>
         </nav>
-
-        <header>
-            <h1>🍺 Boozer - Inventory</h1>
-        </header>
 
         <div class="container">
             <div class="items-section">
@@ -28,8 +24,6 @@
         </div>
 
         <script>
-            const API_BASE_URL = "https://192.168.0.34:6969";
-
             async function fetchLeaderboard() {
                 try {
                     const response = await fetch(`${API_BASE_URL}/items`);
@@ -111,6 +105,7 @@
 
             // Load leaderboard when page loads
             document.addEventListener("DOMContentLoaded", loadLeaderboard);
+            document.addEventListener("DOMContentLoaded", getUser);
         </script>
     </body>
 </html>
