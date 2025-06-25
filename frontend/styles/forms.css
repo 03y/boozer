@@ -74,3 +74,11 @@ body {
     text-align: center;
     font-size: clamp(12px, 2vw, 14px);
 }
+
+@media screen and (max-width: 480px) {
+    .signup-section,
+    .login-section {
+        margin: 20px 10px;
+        padding: 15px;
+    }
+}
