@@ -3,9 +3,10 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>🍺 Boozer - Leaderboard</title>
+        <title>🍺 Boozer</title>
         <link rel="stylesheet" type="text/css" href="styles/style.css" />
         <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
+        <script src="scripts/auth.js"></script>
     </head>
     <body>
         <nav>
@@ -13,10 +14,6 @@
             <a href="./items.html">Inventory</a>
             <a id="login-link" href="./login.html">Login</a>
         </nav>
-
-        <header>
-            <h1>🍺 Boozer - Leaderboard</h1>
-        </header>
 
         <div class="container">
             <div class="leaderboard-section">
@@ -36,8 +33,6 @@
         </div>
 
         <script>
-            const API_BASE_URL = "https://192.168.0.34:6969"; // TODO: update
-
             async function fetchLeaderboard(type) {
                 try {
                     const response = await fetch(
@@ -168,43 +163,9 @@
                 }
             }
 
-            async function loadUser() {
-                const loginLink = document.getElementById("login-link");
-                let token = localStorage.getItem("token");
-
-                if (token == null) return;
-
-                try {
-                    let myHeaders = new Headers();
-                    myHeaders.append("Authorization", "Bearer " + token);
-                    let requestOptions = {
-                        method: "GET",
-                        headers: myHeaders,
-                        redirect: "follow",
-                    };
-
-                    const response = await fetch(
-                        `${API_BASE_URL}/username`,
-                        requestOptions,
-                    );
-
-                    if (response.ok) {
-                        // If status is 200-299
-                        let data = await response.json();
-
-                        loginLink.innerHTML = "Hi " + data.username + "!";
-                        loginLink.href = "./profile.html";
-                    } else {
-                        throw new Error(response.status);
-                    }
-                } catch (error) {
-                    console.log("There was an error", error);
-                }
-            }
-
             // Load leaderboards when page loads
             document.addEventListener("DOMContentLoaded", loadLeaderboards);
-            document.addEventListener("DOMContentLoaded", loadUser);
+            document.addEventListener("DOMContentLoaded", getUser);
         </script>
     </body>
 </html>
