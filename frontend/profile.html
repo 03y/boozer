@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>🍺 Boozer</title>
+        <link rel="stylesheet" type="text/css" href="styles/style.css" />
+        <script src="scripts/auth.js"></script>
+    </head>
+    <body>
+        <nav>
+            <a href="./index.html">Leaderboard</a>
+            <a href="./items.html">Inventory</a>
+            <a id="login-link" href="./profile.html">Profile</a>
+        </nav>
+
+        <div class="container">
+            <div class="profile-section">
+                <p><strong>Username:</strong> <span id="username"></span></p>
+                <p>
+                    <strong>Date Joined:</strong> <span id="date-joined"></span>
+                </p>
+                <p>
+                    <strong>Consumptions:</strong>
+                    <span id="consumptions"></span>
+                </p>
+            </div>
+
+            <!-- TODO: could add recent consumptions or something here -->
+        </div>
+
+        <script>
+            async function displayProfile() {
+                user = await getUser();
+
+                console.log(user);
+
+                document.getElementById("username").innerHTML = user.username;
+                const date = new Date(user.created * 1000);
+                const formattedDate = date.toLocaleDateString("en-UK", {
+                    year: "numeric",
+                    month: "numeric",
+                    day: "numeric",
+                });
+                document.getElementById("date-joined").innerHTML =
+                    formattedDate;
+                // document.getElementById("rank").innerHTML =
+
+                consumptionData = await getConsumptions(user.user_id);
+                document.getElementById("consumptions").innerHTML =
+                    consumptionData.consumptions;
+            }
+
+            displayProfile();
+        </script>
+    </body>
+</html>
