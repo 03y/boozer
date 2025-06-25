@@ -198,7 +198,6 @@ func (a *App) GetItem(c *gin.Context) {
 	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE item_id=$1", c.Param("item_id")).Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			fmt.Println(err)
 			c.Status(http.StatusNotFound)
 			return
 		}
@@ -324,7 +323,6 @@ func (a *App) GetUser(c *gin.Context) {
 	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE user_id=$1", c.Param("user_id")).Scan(&user.User_id, &user.Username, &user.Created)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			fmt.Println(err)
 			c.Status(http.StatusNotFound)
 			return
 		}
@@ -336,7 +334,7 @@ func (a *App) GetUser(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-func (a *App) GetUsername(c *gin.Context) {
+func (a *App) GetUserFromToken(c *gin.Context) {
 	tokenString := c.Request.Header["Authorization"][0]
 	tokenString = strings.Replace(tokenString, "Bearer ", "", 1) // TODO: do this in other places too
 
@@ -346,11 +344,30 @@ func (a *App) GetUsername(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, claims)
+	if claims["username"] != nil {
+		var user models.UserNoPw
+		err = a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE username=$1", claims["username"]).Scan(&user.User_id, &user.Username, &user.Created)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				c.Status(http.StatusNotFound)
+				return
+			}
+
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		c.JSON(http.StatusOK, user)
+	} else {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
 }
 
 func (a *App) AddConsumption(c *gin.Context) {
 	tokenString := c.Request.Header["Authorization"][0]
+	tokenString = strings.Replace(tokenString, "Bearer ", "", 1) // TODO: do this in other places too
+
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
 		fmt.Println(err)
