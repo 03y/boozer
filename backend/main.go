@@ -480,6 +480,26 @@ func (a *App) GetConsumption(c *gin.Context) {
 	c.JSON(http.StatusOK, consumption)
 }
 
+func (a *App) GetUserConsumptionCount(c *gin.Context) {
+	type ConsumptionData struct {
+		Consumptions int `json:"consumptions"`
+	}
+	var data ConsumptionData
+	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(*) FROM consumptions WHERE user_id=$1", c.Param("user_id")).Scan(&data.Consumptions)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusOK, data)
+}
+
 func (a *App) GetUserLeaderboard(c *gin.Context) {
 	rows, err := a.DB.Query(context.Background(), "SELECT users.username, COUNT(consumptions.item_id) AS drank FROM consumptions INNER JOIN users ON consumptions.user_id = users.user_id GROUP BY users.username ORDER BY drank DESC LIMIT 10;")
 	if err != nil {
@@ -560,7 +580,8 @@ func (a *App) setUpRouter() *gin.Engine {
 
 	// get user
 	router.GET("/user/:user_id", a.GetUser)
-	router.GET("/username", a.GetUsername)
+	router.GET("/user/me", a.GetUserFromToken)
+	router.GET("/consumptions/:user_id", a.GetUserConsumptionCount)
 
 	// get consumption
 	router.GET("/consumption/:consumption_id", a.GetConsumption) // TODO: implement auth
