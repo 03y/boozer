@@ -1,7 +1,21 @@
+:root {
+    --table-bg-color: rgba(255, 255, 255, 0.1);
+    --th-bg-color: rgba(0, 0, 0, 0.3);
+    --text-color: #fff;
+    --hover-bg-color: rgba(255, 255, 255, 0.1);
+    --select-bg-color: #fff;
+    --select-text-color: #333;
+    --select-hover-bg-color: #f0f0f0;
+    --error-bg-color: rgba(255, 107, 107, 0.1);
+    --rank-first-color: #ffd700;
+    --rank-second-color: #c0c0c0;
+    --rank-third-color: #cd7f32;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--table-bg-color);
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -17,27 +31,27 @@ td {
 }
 
 th {
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: var(--th-bg-color);
     font-weight: bold;
-    color: #fff;
+    color: var(--text-color);
 }
 
 tr:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--hover-bg-color);
 }
 
 select {
     padding: 10px;
     font-size: 16px;
     border-radius: 4px;
-    background-color: #fff;
+    background-color: var(--select-bg-color);
     border: none;
-    color: #333;
+    color: var(--select-text-color);
     cursor: pointer;
 }
 
 select:hover {
-    background-color: #f0f0f0;
+    background-color: var(--select-hover-bg-color);
 }
 
 .leaderboard-section {
@@ -58,26 +72,25 @@ select:hover {
 }
 
 .leaderboard-section h2 {
-    color: #fff;
+    color: var(--text-color);
     margin-bottom: 20px;
     text-align: center;
 }
 
 .rank {
     font-weight: bold;
-    color: #ffd700;
 }
 
 .rank.first {
-    color: #ffd700;
+    color: var(--rank-first-color);
 }
 
 .rank.second {
-    color: #c0c0c0;
+    color: var(--rank-second-color);
 }
 
 .rank.third {
-    color: #cd7f32;
+    color: var(--rank-third-color);
 }
 
 .loading {
@@ -91,7 +104,7 @@ select:hover {
     color: #ff6b6b;
     text-align: center;
     padding: 20px;
-    background-color: rgba(255, 107, 107, 0.1);
+    background-color: var(--error-bg-color);
     border-radius: 4px;
     margin: 20px 0;
 }
@@ -105,7 +118,6 @@ select:hover {
 }
 
 .leaderboard-column {
-    flex: 1 1 300px;
     min-width: 300px;
     width: 100%;
 }

@@ -16,6 +16,10 @@
         </nav>
 
         <div class="container">
+            <img src="./images/cat2.png" />
+        </div>
+
+        <div class="container">
             <div class="leaderboard-section">
                 <div class="leaderboard-column">
                     <h2>👤 Top Boozers</h2>
@@ -153,9 +157,7 @@
                 } catch (error) {
                     const errorHTML = `
                         <div class="error">
-                            <strong>Error loading leaderboard:</strong><br>
-                            ${error.message}<br>
-                            <small>Make sure the backend server is running on ${API_BASE_URL}</small>
+                            <strong>Error loading leaderboard</strong><br>
                         </div>
                     `;
                     usersContainer.innerHTML = errorHTML;
