@@ -2,12 +2,12 @@ body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: darkslateblue;
+    background-color: #3e2c23; /* Stout Brown */
     color: white;
 }
 
 nav {
-    background-color: #333;
+    background-color: #a68c75; /* Tobacco Tan */
     overflow: hidden;
     display: flex;
     flex-wrap: wrap;
@@ -23,11 +23,11 @@ nav a {
 }
 
 nav a:hover {
-    background-color: #575757;
+    background-color: #f5f2eb; /* Pint Foam Cream */
 }
 
 nav a.active {
-    background-color: #969696;
+    background-color: #506a4d; /* Tartan Green */
 }
 
 header {
@@ -39,6 +39,14 @@ header {
 header h1 {
     font-size: clamp(24px, 5vw, 36px);
     margin: 10px 0;
+}
+
+img {
+    display: block;
+    margin: 0 auto;
+    max-width: 20em;
+    height: auto;
+    border: 1px solid #ddd;
 }
 
 .container {
@@ -53,7 +61,10 @@ header h1 {
     margin: 30px auto;
     max-width: 400px;
     padding: 20px;
-    background-color: rgba(255, 255, 255, 0.1);
+    color: #3e2c23;
+    background-color: #f2c1c4; /* Whisker Pink */
+    border-color: #506a4d; /* Tartan Green */
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 4px solid #506a4d;
 }
