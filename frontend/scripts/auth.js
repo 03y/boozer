@@ -30,7 +30,7 @@ async function getUser() {
   }
 }
 
-async function getConsumptions(userId) {
+async function getConsumptionCount(userId) {
   let token = localStorage.getItem("token");
 
   if (token == null) {
@@ -45,7 +45,7 @@ async function getConsumptions(userId) {
     };
 
     const response = await fetch(
-      `${API_BASE_URL}/consumptions/${userId}`,
+      `${API_BASE_URL}/consumption_count/${userId}`,
       requestOptions,
     );
 

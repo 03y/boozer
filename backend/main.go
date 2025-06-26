@@ -501,7 +501,9 @@ func (a *App) GetUserConsumptionCount(c *gin.Context) {
 	type ConsumptionData struct {
 		Consumptions int `json:"consumptions"`
 	}
+
 	var data ConsumptionData
+
 	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(*) FROM consumptions WHERE user_id=$1", c.Param("user_id")).Scan(&data.Consumptions)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -515,6 +517,35 @@ func (a *App) GetUserConsumptionCount(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, data)
+}
+
+func (a *App) GetUserConsumptions(c *gin.Context) {
+	rows, err := a.DB.Query(context.Background(), "SELECT items.name, items.units, consumptions.time FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id WHERE user_id=$1 ORDER BY consumptions.time DESC LIMIT 25", c.Param("user_id"))
+	if err != nil {
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	type NamedConsumption struct {
+		Name  string  `json:"name"`
+		Units float32 `json:"units"`
+		Time  int     `json:"time"` // unix timestamp
+	}
+
+	consumptions := make([]NamedConsumption, 0)
+	for rows.Next() {
+		var consumption NamedConsumption
+		err := rows.Scan(&consumption.Name, &consumption.Units, &consumption.Time)
+		if err != nil {
+			fmt.Println(err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		consumptions = append(consumptions, consumption)
+	}
+
+	c.JSON(http.StatusOK, consumptions)
 }
 
 func (a *App) GetUserLeaderboard(c *gin.Context) {
@@ -598,7 +629,8 @@ func (a *App) setUpRouter() *gin.Engine {
 	// get user
 	router.GET("/user/:user_id", a.GetUser)
 	router.GET("/user/me", a.GetUserFromToken)
-	router.GET("/consumptions/:user_id", a.GetUserConsumptionCount)
+	router.GET("/consumption_count/:user_id", a.GetUserConsumptionCount)
+	router.GET("/consumptions/:user_id", a.GetUserConsumptions)
 
 	// get consumption
 	router.GET("/consumption/:consumption_id", a.GetConsumption) // TODO: implement auth

@@ -5,9 +5,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>🍺 Boozer</title>
         <link rel="stylesheet" type="text/css" href="styles/style.css" />
+        <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
         <script src="scripts/auth.js"></script>
     </head>
-    <body>
+    <body onload="displayProfile()">
         <nav>
             <a href="./index.html">Leaderboard</a>
             <a href="./items.html">Inventory</a>
@@ -26,32 +27,119 @@
                 </p>
             </div>
 
-            <!-- TODO: could add recent consumptions or something here -->
+            <div class="container">
+                <div class="consumptions-section">
+                    <div id="consumptions-container"></div>
+                </div>
+            </div>
         </div>
 
         <script>
             async function displayProfile() {
-                user = await getUser();
+                try {
+                    const user = await getUser();
 
-                console.log(user);
+                    if (!user) {
+                        console.error("User data is null or undefined.");
+                        document.getElementById("username").innerHTML =
+                            "Error loading user.";
+                        document.getElementById("date-joined").innerHTML = "";
+                        document.getElementById("consumptions").innerHTML = "";
+                        return;
+                    }
 
-                document.getElementById("username").innerHTML = user.username;
-                const date = new Date(user.created * 1000);
-                const formattedDate = date.toLocaleDateString("en-UK", {
-                    year: "numeric",
-                    month: "numeric",
-                    day: "numeric",
-                });
-                document.getElementById("date-joined").innerHTML =
-                    formattedDate;
-                // document.getElementById("rank").innerHTML =
+                    document.getElementById("username").innerHTML =
+                        user.username;
+                    const date = new Date(user.created * 1000);
+                    const formattedDate = date.toLocaleDateString("en-UK", {
+                        year: "numeric",
+                        month: "numeric",
+                        day: "numeric",
+                    });
+                    document.getElementById("date-joined").innerHTML =
+                        formattedDate;
 
-                consumptionData = await getConsumptions(user.user_id);
-                document.getElementById("consumptions").innerHTML =
-                    consumptionData.consumptions;
+                    const consumptionData = await getConsumptionCount(
+                        user.user_id,
+                    );
+                    document.getElementById("consumptions").innerHTML =
+                        consumptionData.consumptions;
+
+                    const consumptionsContainer = document.getElementById(
+                        "consumptions-container",
+                    );
+
+                    // Clear the loading message
+                    consumptionsContainer.innerHTML = "";
+
+                    try {
+                        const response = await fetch(
+                            `${API_BASE_URL}/consumptions/${user.user_id}`,
+                        );
+
+                        if (!response.ok) {
+                            throw new Error(
+                                `HTTP error! Status: ${response.status}`,
+                            );
+                        }
+
+                        const data = await response.json();
+
+                        if (!data || data.length === 0) {
+                            consumptionsContainer.innerHTML =
+                                '<div class="no-consumptions">No consumptions... get boozing!!!</div>';
+                            return;
+                        }
+
+                        let tableHTML = `
+                            <table class="consumption-table">
+                                <thead>
+                                    <tr>
+                                        <th>Beer</th>
+                                        <th>Units</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+
+                        data.forEach((consumption, index) => {
+                            const date = new Date(consumption.time * 1000);
+                            const formattedDate = date.toLocaleString("en-GB", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hourCycle: "h12",
+                            });
+                            tableHTML += `
+                                    <tr>
+                                        <td>${consumption.name || ""}</td>
+                                        <td>${consumption.units || ""}</td>
+                                        <td>${formattedDate}</td>
+                                    </tr>
+                            `;
+                        });
+
+                        tableHTML += `
+                                </tbody>
+                            </table>
+                        `;
+
+                        consumptionsContainer.innerHTML = tableHTML;
+                    } catch (error) {
+                        console.error("Error fetching consumptions:", error);
+                        consumptionsContainer.innerHTML = `<div class="error-message">Error loading consumptions.</div>`;
+                    }
+                } catch (error) {
+                    console.error("Error displaying profile:", error);
+                    document.getElementById("username").innerHTML =
+                        "Error loading profile.";
+                    document.getElementById("date-joined").innerHTML = "";
+                    document.getElementById("consumptions").innerHTML = "";
+                }
             }
-
-            displayProfile();
         </script>
     </body>
 </html>
