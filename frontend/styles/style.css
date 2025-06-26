@@ -1,13 +1,22 @@
+:root {
+    --stout-brown: #3e2c23;
+    --tabacco-tan: #a68c75;
+    --pint-foam-cream: #f5f2eb;
+    --tartan-green: #506a4d;
+    --whisker-pink: #f2c1c4;
+    --text-color: white;
+}
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #3e2c23; /* Stout Brown */
-    color: white;
+    background-color: var(--stout-brown);
+    color: var(--text-color);
 }
 
 nav {
-    background-color: #a68c75; /* Tobacco Tan */
+    background-color: var(--tabacco-tan);
     overflow: hidden;
     display: flex;
     flex-wrap: wrap;
@@ -16,18 +25,18 @@ nav {
 nav a {
     flex: 1;
     min-width: 100px;
-    color: white;
+    color: var(--text-color);
     text-align: center;
     padding: 14px 20px;
     text-decoration: none;
 }
 
 nav a:hover {
-    background-color: #f5f2eb; /* Pint Foam Cream */
+    background-color: var(--pint-foam-cream);
 }
 
 nav a.active {
-    background-color: #506a4d; /* Tartan Green */
+    background-color: var(--tartan-green);
 }
 
 header {
@@ -43,10 +52,11 @@ header h1 {
 
 img {
     display: block;
+    float: left;
     margin: 0 auto;
-    max-width: 20em;
+    max-width: 10em;
     height: auto;
-    border: 1px solid #ddd;
+    border: 1px solid var(--tartan-green);
 }
 
 .container {
@@ -61,10 +71,7 @@ img {
     margin: 30px auto;
     max-width: 400px;
     padding: 20px;
-    color: #3e2c23;
-    background-color: #f2c1c4; /* Whisker Pink */
-    border-color: #506a4d; /* Tartan Green */
+    background-color: var(--whisker-pink);
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border: 4px solid #506a4d;
 }
