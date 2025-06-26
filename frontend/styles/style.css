@@ -52,9 +52,8 @@ header h1 {
 
 img {
     display: block;
-    float: left;
     margin: 0 auto;
-    max-width: 10em;
+    max-width: clamp(50px, 50vw, 250px);
     height: auto;
     border: 1px solid var(--tartan-green);
 }
