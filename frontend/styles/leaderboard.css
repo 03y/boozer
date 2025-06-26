@@ -118,7 +118,6 @@ select:hover {
 }
 
 .leaderboard-column {
-    flex: 1 1 300px;
     min-width: 300px;
     width: 100%;
 }
