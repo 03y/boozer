@@ -83,10 +83,11 @@
                 const container = document.getElementById(
                     "leaderboard-container",
                 );
-                const titleElement = document.getElementById("inventoryTitle");
 
                 container.innerHTML =
                     '<div class="loading">Loading inventory...</div>';
+
+                // TODO: rename all the 'leaderboard' stuff to items
 
                 try {
                     const data = await fetchLeaderboard();
@@ -97,9 +98,8 @@
                         <div class="error">
                             <strong>Error loading leaderboard:</strong><br>
                             ${error.message}<br>
-                            <small>Make sure the backend server is running on ${API_BASE_URL}</small>
                         </div>
-                    `; // TODO: change these error messages to be less verbose
+                    `;
                 }
             }
 
