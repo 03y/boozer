@@ -308,7 +308,6 @@ func (a *App) Authenticate(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		// TODO: we should tell the user (moreso the frontend application) how long their token is valid for (when exp is implemented)
 		c.JSON(http.StatusOK, gin.H{"token": token})
 		fmt.Println("Successful auth for user", user.Username)
 	} else {
@@ -335,7 +334,7 @@ func (a *App) GetUser(c *gin.Context) {
 
 func (a *App) GetUserFromToken(c *gin.Context) {
 	tokenString := c.Request.Header["Authorization"][0]
-	tokenString = strings.Replace(tokenString, "Bearer ", "", 1) // TODO: do this in other places too
+	tokenString = strings.Replace(tokenString, "Bearer ", "", 1)
 
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
@@ -365,7 +364,7 @@ func (a *App) GetUserFromToken(c *gin.Context) {
 
 func (a *App) AddConsumption(c *gin.Context) {
 	tokenString := c.Request.Header["Authorization"][0]
-	tokenString = strings.Replace(tokenString, "Bearer ", "", 1) // TODO: do this in other places too
+	tokenString = strings.Replace(tokenString, "Bearer ", "", 1)
 
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
@@ -420,8 +419,8 @@ func (a *App) AddConsumption(c *gin.Context) {
 }
 
 func (a *App) RemoveConsumption(c *gin.Context) {
-	// do auth
 	tokenString := c.Request.Header["Authorization"][0]
+	tokenString = strings.Replace(tokenString, "Bearer ", "", 1)
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
 		fmt.Println(err)
@@ -467,6 +466,7 @@ func (a *App) RemoveConsumption(c *gin.Context) {
 func (a *App) GetConsumption(c *gin.Context) {
 	// auth first
 	tokenString := c.Request.Header["Authorization"][0]
+	tokenString = strings.Replace(tokenString, "Bearer ", "", 1)
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
 		fmt.Println(err)
@@ -621,7 +621,7 @@ func (a *App) setUpRouter() *gin.Engine {
 	router.GET("/consumptions/:user_id", a.GetUserConsumptions)
 
 	// get consumption
-	router.GET("/consumption/:consumption_id", a.GetConsumption) // TODO: implement auth
+	router.GET("/consumption/:consumption_id", a.GetConsumption)
 
 	// leaderboards
 	router.GET("/leaderboard/items", a.GetItemsLeaderboard)
