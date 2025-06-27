@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://192.168.0.34:6969"; // TODO: update
+const API_BASE_URL = "https://localhost/api/v1"; // TODO: update
 
 async function getUser() {
   let token = localStorage.getItem("token");

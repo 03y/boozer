@@ -1,0 +1,8 @@
+localhost {
+    root * .
+    file_server
+
+    handle_path /api/v1/* {
+        reverse_proxy http://localhost:6969
+    }
+}
