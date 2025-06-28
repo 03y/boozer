@@ -3,11 +3,12 @@ FROM golang:1.23.2-alpine AS builder
 
 WORKDIR /boozer
 
-COPY go.mod go.sum ./
-
-RUN go mod download
+COPY go.mod ./
+COPY go.sum ./
 
 COPY . .
+
+RUN go mod tidy
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags="-w -s" -o /boozer/boozer-backend .
 
