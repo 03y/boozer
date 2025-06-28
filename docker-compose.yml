@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: boozer-backend
+    ports:
+      - "6969:6969"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/boozer
+    volumes:
+      - ./backend/boozer.pem:/home/boozeruser/boozer.pem
+    depends_on:
+      - db
+    networks:
+      - boozer_net
+
+  db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    container_name: boozer_db
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=boozer
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - boozer_net
+
+networks:
+  boozer_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
