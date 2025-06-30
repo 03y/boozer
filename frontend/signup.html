@@ -4,15 +4,16 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>🍺 Boozer</title>
-        <link rel="stylesheet" type="text/css" href="styles/forms.css">
-        <link rel="stylesheet" type="text/css" href="styles/style.css">
+        <link rel="stylesheet" type="text/css" href="styles/forms.css" />
+        <link rel="stylesheet" type="text/css" href="styles/style.css" />
         <script src="scripts/auth.js"></script>
     </head>
     <body>
         <nav>
             <a href="./index.html">Leaderboard</a>
             <a href="./items.html">Inventory</a>
-            <a href="./login.html">Login</a>
+            <a id="login-link" href="./login.html">Login</a>
+            <a href="./submit.html">Get boozing!</a>
         </nav>
 
         <div class="container">
@@ -22,12 +23,12 @@
                         <label for="username">Username</label>
                         <input type="text" id="username" name="username" />
                     </div>
-                    <br>
+                    <br />
                     <div class="form-group">
                         <label for="password">Password</label>
                         <input type="password" id="password" name="password" />
                     </div>
-                    <br>
+                    <br />
                     <div class="age-restriction">
                         <input type="checkbox" name="over18" id="over18" />
                         <label for="over18"><b>I am over 18</b></label>
@@ -36,10 +37,11 @@
                         Signup
                     </button>
                     <div class="smallprint">
-                                        <p >
-                                            Login requires strictly necessary cookies. See:
-                                            <a href="./legal.html" target="_blank">Legal</a>
-                                        </p</div>
+                        <p>
+                            Login requires strictly necessary cookies. See:
+                            <a href="./legal.html" target="_blank">Legal</a>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -49,8 +51,8 @@
             async function signup() {
                 try {
                     if (!document.getElementById("over18").checked) {
-                      alert("Under 18s are not permitted to sign up");
-                      return;
+                        alert("Under 18s are not permitted to sign up");
+                        return;
                     }
 
                     const username = document.getElementById("username").value;
