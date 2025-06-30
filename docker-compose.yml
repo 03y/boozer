@@ -8,8 +8,6 @@ services:
       - "6969:6969"
     environment:
       - DATABASE_URL=postgres://postgres:postgres@db:5432/boozer
-    volumes:
-      - ./backend/boozer.pem:/home/boozeruser/boozer.pem
     depends_on:
       - db
     networks:
