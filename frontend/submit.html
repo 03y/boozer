@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>🍺 Boozer</title>
+        <link rel="stylesheet" type="text/css" href="styles/forms.css" />
+        <link rel="stylesheet" type="text/css" href="styles/style.css" />
+        <script src="scripts/auth.js"></script>
+    </head>
+    <body>
+        <nav>
+            <a href="./index.html">Leaderboard</a>
+            <a href="./items.html">Inventory</a>
+            <a id="login-link" href="./login.html">Login</a>
+            <a href="./submit.html" class="active">Get boozing!</a>
+        </nav>
+
+        <div class="container">
+            <div class="login-section">
+                <h2>Submit Consumption</h2>
+                <form id="consumptionForm">
+                    <div class="form-group">
+                        <label for="itemSearch">Item:</label>
+                        <input
+                            type="text"
+                            id="itemSearch"
+                            placeholder="Search for an item..."
+                            autocomplete="off"
+                        />
+                        <div id="itemDropdown" class="dropdown-content"></div>
+                        <input type="hidden" id="selectedItemId" />
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity">Quantity:</label>
+                        <input
+                            type="number"
+                            id="quantity"
+                            value="1"
+                            min="1"
+                            max="100"
+                        />
+                    </div>
+                    <button type="submit" class="submit-btn">Submit</button>
+                </form>
+                <p id="message" class="hidden"></p>
+            </div>
+        </div>
+
+        <script>
+            let items = [];
+
+            async function fetchItems() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/items`);
+                    if (!response.ok) {
+                        throw new Error(
+                            `HTTP error! status: ${response.status}`,
+                        );
+                    }
+                    items = await response.json();
+                } catch (error) {
+                    console.error("Error fetching items:", error);
+                }
+            }
+
+            function renderDropdown(filter = "") {
+                const dropdown = document.getElementById("itemDropdown");
+                dropdown.innerHTML = "";
+                const filteredItems = items.filter((item) =>
+                    item.name.toLowerCase().includes(filter.toLowerCase()),
+                );
+
+                if (filteredItems.length === 0 && filter !== "") {
+                    const noResults = document.createElement("div");
+                    noResults.classList.add("dropdown-item");
+                    noResults.textContent = "No items found.";
+                    dropdown.appendChild(noResults);
+                } else {
+                    filteredItems.forEach((item) => {
+                        const div = document.createElement("div");
+                        div.classList.add("dropdown-item");
+                        div.textContent = item.name;
+                        div.dataset.itemId = item.item_id;
+                        div.addEventListener("click", () => {
+                            document.getElementById("itemSearch").value =
+                                item.name;
+                            document.getElementById("selectedItemId").value =
+                                item.item_id;
+                            dropdown.style.display = "none";
+                        });
+                        dropdown.appendChild(div);
+                    });
+                }
+                dropdown.style.display =
+                    filteredItems.length > 0 || filter !== ""
+                        ? "block"
+                        : "none";
+            }
+
+            async function submitConsumption(event) {
+                event.preventDefault();
+
+                const messageElement = document.getElementById("message");
+                messageElement.classList.add("hidden");
+                messageElement.textContent = "";
+
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    messageElement.textContent =
+                        "You must be logged in to submit consumption.";
+                    messageElement.classList.remove("success");
+                    messageElement.classList.remove("hidden");
+                    messageElement.classList.add("error");
+                    return;
+                }
+
+                const itemId = document.getElementById("selectedItemId").value;
+                const quantity = document.getElementById("quantity").value;
+
+                if (!itemId) {
+                    messageElement.textContent = "Please select an item.";
+                    messageElement.classList.remove("success");
+                    messageElement.classList.remove("hidden");
+                    messageElement.classList.add("error");
+                    return;
+                }
+
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/submit/consumption`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`,
+                            },
+                            body: JSON.stringify({
+                                item_id: parseInt(itemId),
+                                quantity: parseInt(quantity), // Backend only expects item_id, quantity is not used for now
+                            }),
+                        },
+                    );
+
+                    if (response.status === 201) {
+                        messageElement.textContent =
+                            "Consumption submitted successfully!";
+                        messageElement.classList.remove("error");
+                        messageElement.classList.add("success");
+                        document.getElementById("consumptionForm").reset();
+                        document.getElementById("selectedItemId").value = "";
+                    } else if (response.status === 401) {
+                        messageElement.textContent =
+                            "Unauthorized. Please log in again.";
+                        messageElement.classList.remove("success");
+                        messageElement.classList.add("error");
+                    } else {
+                        const errorData = await response.json();
+                        messageElement.textContent = `Error: ${errorData.message || response.statusText}`;
+                        messageElement.classList.remove("success");
+                        messageElement.classList.add("error");
+                    }
+                } catch (error) {
+                    console.error("Error submitting consumption:", error);
+                    messageElement.textContent =
+                        "An error occurred while submitting consumption.";
+                    messageElement.classList.remove("success");
+                    messageElement.classList.add("error");
+                }
+                messageElement.classList.remove("hidden");
+            }
+
+            document.addEventListener("DOMContentLoaded", async () => {
+                const consumptionForm =
+                    document.getElementById("consumptionForm");
+                const messageElement = document.getElementById("message");
+                const token = localStorage.getItem("token");
+
+                if (!token) {
+                    consumptionForm.style.display = "none";
+                    messageElement.textContent =
+                        "You must be logged in to submit consumptions.";
+                    messageElement.classList.remove("success");
+                    messageElement.classList.remove("hidden");
+                    messageElement.classList.add("error");
+                    return;
+                }
+
+                await fetchItems();
+                renderDropdown();
+
+                const itemSearch = document.getElementById("itemSearch");
+                itemSearch.addEventListener("input", (e) => {
+                    renderDropdown(e.target.value);
+                });
+
+                itemSearch.addEventListener("focus", () => {
+                    renderDropdown(itemSearch.value);
+                });
+
+                document.addEventListener("click", (e) => {
+                    if (!e.target.closest(".form-group")) {
+                        document.getElementById("itemDropdown").style.display =
+                            "none";
+                    }
+                });
+
+                consumptionForm.addEventListener("submit", submitConsumption);
+            });
+
+            document.addEventListener("DOMContentLoaded", getUser);
+        </script>
+    </body>
+</html>
