@@ -8,10 +8,12 @@ COPY go.sum ./
 
 COPY . .
 
+# compile go
 RUN go mod tidy
-
 RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags="-w -s" -o /boozer/boozer-backend .
 
+# create private key
+RUN apk add openssl
 RUN openssl ecparam -name prime256v1 -genkey -noout -out boozer.pem
 
 # run
