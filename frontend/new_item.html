@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>🍺 Boozer</title>
+        <link rel="stylesheet" type="text/css" href="styles/forms.css" />
+        <link rel="stylesheet" type="text/css" href="styles/style.css" />
+        <script src="scripts/auth.js"></script>
+    </head>
+    <body>
+        <nav>
+            <a href="./index.html">Leaderboard</a>
+            <a href="./items.html">Inventory</a>
+            <a id="login-link" href="./login.html">Login</a>
+            <a href="./submit.html">Get boozing!</a>
+        </nav>
+
+        <div class="container">
+            <div class="login-section">
+                <h2>Submit Item</h2>
+                <form id="itemForm">
+                    <div class="form-group">
+                        <label for="itemName">Name:</label>
+                        <input
+                            type="text"
+                            maxlength="40"
+                            id="itemName"
+                            autocomplete="off"
+                        />
+                        <label for="itemUnits">Units:</label>
+                        <input
+                            type="number"
+                            step="0.1"
+                            min="0.0"
+                            max="30.0"
+                            id="itemUnits"
+                            autocomplete="off"
+                        />
+                    </div>
+                    <button type="submit" class="submit-btn">Submit</button>
+                </form>
+                <p id="message" class="hidden"></p>
+            </div>
+        </div>
+
+        <script>
+            async function submitItem(event) {
+                event.preventDefault();
+
+                const messageElement = document.getElementById("message");
+                messageElement.classList.add("hidden");
+                messageElement.textContent = "";
+
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    messageElement.textContent =
+                        "You must be logged in to submit items.";
+                    messageElement.classList.remove("success");
+                    messageElement.classList.remove("hidden");
+                    messageElement.classList.add("error");
+                    return;
+                }
+
+                const itemName = document.getElementById("itemName").value;
+                const itemUnits = document.getElementById("itemUnits").value;
+
+                if (!itemName || !itemUnits) {
+                    messageElement.textContent =
+                        "Please enter item information.";
+                    messageElement.classList.remove("success");
+                    messageElement.classList.remove("hidden");
+                    messageElement.classList.add("error");
+                    return;
+                }
+
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/submit/item`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`,
+                            },
+                            body: JSON.stringify({
+                                name: itemName,
+                                units: parseFloat(itemUnits),
+                            }),
+                        },
+                    );
+
+                    if (response.status === 201) {
+                        messageElement.textContent =
+                            "Item submitted successfully!";
+                        messageElement.classList.remove("error");
+                        messageElement.classList.add("success");
+                        document.getElementById("itemForm").reset();
+                        document.getElementById("itemName").value = "";
+                        document.getElementById("itemUnits").value = "";
+                    } else if (response.status === 401) {
+                        messageElement.textContent =
+                            "Unauthorised. Please log in again.";
+                        messageElement.classList.remove("success");
+                        messageElement.classList.add("error");
+                    } else {
+                        const errorData = await response.json();
+                        messageElement.textContent = `Error: ${errorData.message || response.statusText}`;
+                        messageElement.classList.remove("success");
+                        messageElement.classList.add("error");
+                    }
+                } catch (error) {
+                    console.error("Error submitting item:", error);
+                    messageElement.textContent =
+                        "An error occurred while submitting item. Perhaps it already exists? check the inventory!";
+                    messageElement.classList.remove("success");
+                    messageElement.classList.add("error");
+                }
+                messageElement.classList.remove("hidden");
+            }
+
+            document.addEventListener("DOMContentLoaded", async () => {
+                const itemForm = document.getElementById("itemForm");
+                const messageElement = document.getElementById("message");
+                const token = localStorage.getItem("token");
+
+                if (!token) {
+                    itemForm.style.display = "none";
+                    messageElement.textContent =
+                        "You must be logged in to submit items.";
+                    messageElement.classList.remove("success");
+                    messageElement.classList.remove("hidden");
+                    messageElement.classList.add("error");
+                    return;
+                }
+
+                itemForm.addEventListener("submit", submitItem);
+            });
+
+            document.addEventListener("DOMContentLoaded", getUser);
+        </script>
+    </body>
+</html>

@@ -31,6 +31,12 @@
                         <div id="itemDropdown" class="dropdown-content"></div>
                         <input type="hidden" id="selectedItemId" />
                     </div>
+                    <div class="mediumprint">
+                        <p>
+                            Item not listed?
+                            <a href="./new_item.html"> Add it!</a>
+                        </p>
+                    </div>
                     <!-- <div class="form-group">
                         <label for="quantity">Quantity:</label>
                         <input
@@ -108,7 +114,7 @@
                 const token = localStorage.getItem("token");
                 if (!token) {
                     messageElement.textContent =
-                        "You must be logged in to submit consumption.";
+                        "You must be logged in to submit consumptions.";
                     messageElement.classList.remove("success");
                     messageElement.classList.remove("hidden");
                     messageElement.classList.add("error");
@@ -151,7 +157,7 @@
                         document.getElementById("selectedItemId").value = "";
                     } else if (response.status === 401) {
                         messageElement.textContent =
-                            "Unauthorized. Please log in again.";
+                            "Unauthorised. Please log in again.";
                         messageElement.classList.remove("success");
                         messageElement.classList.add("error");
                     } else {

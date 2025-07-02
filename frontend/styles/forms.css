@@ -5,6 +5,7 @@
     --button-font-size: clamp(14px, 3vw, 16px);
     --error-font-size: clamp(14px, 3vw, 16px);
     --smallprint-font-size: clamp(12px, 2vw, 14px);
+    --smallprint-font-size: clamp(16px, 4vw, 18px);
     --section-bg-color: rgba(255, 255, 255, 0.1);
     --button-primary-color: #4caf50;
     --button-primary-hover-color: #45a049;
@@ -97,6 +98,11 @@ body {
 .smallprint {
     text-align: center;
     font-size: var(--smallprint-font-size);
+}
+
+.mediumprint {
+    text-align: center;
+    font-size: var(--mediumprint-font-size);
 }
 
 @media screen and (max-width: 480px) {

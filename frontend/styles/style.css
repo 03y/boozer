@@ -58,6 +58,10 @@ img {
     border: 1px solid var(--tartan-green);
 }
 
+a {
+    color: var(--text-color);
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
