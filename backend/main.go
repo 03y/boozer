@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
@@ -45,7 +46,7 @@ type App struct {
 }
 
 const NAME string = "🍺 boozer"
-const VERSION string = "0.3-Alpha"
+const VERSION string = "Alpha"
 
 var ARGON2_PARAMS = &params{
 	memory:      65536,
@@ -563,7 +564,7 @@ func (a *App) GetUserLeaderboard(c *gin.Context) {
 			fmt.Println(err)
 			c.Status(http.StatusNotFound)
 			return
-		}
+	}
 		leaderboard = append(leaderboard, user)
 	}
 
@@ -631,9 +632,27 @@ func (a *App) setUpRouter() *gin.Engine {
 }
 
 func main() {
-	fmt.Printf("%s %s\n", NAME, VERSION)
+	logDir := "logs"
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "error creating log directory: %v\n", err)
+		os.Exit(1)
+	}
+
+	logFilename := fmt.Sprintf("%s/%s.log", logDir, time.Now().UTC().Format("2006-01-02_15-04"))
+	logFile, err := os.OpenFile(logFilename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error opening log file: %v\n", err)
+		os.Exit(1)
+	}
+	defer logFile.Close()
+
+	logger := slog.New(slog.NewJSONHandler(logFile, nil))
+	slog.SetDefault(logger)
+
+	slog.Info("starting up", "name", NAME, "version", VERSION)
 
 	if len(os.Args) < 2 {
+		slog.Error("missing required command-line arguments")
 		fmt.Println("Usage: ./boozer <URL>:<PORT>")
 		fmt.Println("Note: cert.pem and key.pem must exist in the current directory")
 		return
@@ -641,14 +660,14 @@ func main() {
 
 	jwtKey, err := loadKey("boozer.pem")
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("failed to load JWT key", "error", err)
 		os.Exit(1)
 	}
 
 	// DATABASE_URL='postgres://username:password@localhost:5432/database_name'
 	config, err := pgxpool.ParseConfig(os.Getenv("DATABASE_URL"))
 	if err != nil {
-		fmt.Println("WARNING: Error parsing config:", err)
+		slog.Error("error parsing database config", "error", err)
 		os.Exit(1)
 	}
 
@@ -662,10 +681,10 @@ func main() {
 	// connect
 	pool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
-		fmt.Println("Failed to create connection pool:", err)
+		slog.Error("failed to create connection pool", "error", err)
 		os.Exit(1)
 	}
-	fmt.Println("Successfully connected to database!")
+	slog.Info("successfully connected to database")
 	defer pool.Close()
 
 	app := &App{DB: pool, JWT_KEY: jwtKey}
@@ -673,15 +692,15 @@ func main() {
 	router := app.setUpRouter()
 
 	var listen string = os.Args[1]
-	fmt.Printf("\nLets get boozing! 🍻\nListening on %s...\n\n", listen)
+	fmt.Println("Lets get boozing! 🍻")
+	slog.Info("starting server", "address", listen)
 
 	srv := &http.Server{
 		Addr:    listen,
 		Handler: router,
 	}
 
-	fmt.Println("Starting HTTP server on", listen)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		fmt.Println("Error starting HTTP server:", err)
+		slog.Error("error starting HTTP server", "error", err)
 	}
 }
