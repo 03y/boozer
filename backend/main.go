@@ -564,7 +564,7 @@ func (a *App) GetUserLeaderboard(c *gin.Context) {
 			fmt.Println(err)
 			c.Status(http.StatusNotFound)
 			return
-	}
+		}
 		leaderboard = append(leaderboard, user)
 	}
 
@@ -596,7 +596,8 @@ func (a *App) GetItemsLeaderboard(c *gin.Context) {
 
 /* ******************************************************************************** */
 
-func (a *App) setUpRouter() *gin.Engine {
+func (a *App) setUpRouter(logFile *os.File) *gin.Engine {
+	gin.DefaultWriter = logFile
 	router := gin.Default()
 
 	// adding new items/consumptions
@@ -639,7 +640,9 @@ func main() {
 	}
 
 	logFilename := fmt.Sprintf("%s/%s.log", logDir, time.Now().UTC().Format("2006-01-02_15-04"))
+	ginLogFilename := fmt.Sprintf("%s/%s_GIN.log", logDir, time.Now().UTC().Format("2006-01-02_15-04"))
 	logFile, err := os.OpenFile(logFilename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	ginLogFile, err := os.OpenFile(ginLogFilename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error opening log file: %v\n", err)
 		os.Exit(1)
@@ -689,7 +692,7 @@ func main() {
 
 	app := &App{DB: pool, JWT_KEY: jwtKey}
 
-	router := app.setUpRouter()
+	router := app.setUpRouter(ginLogFile)
 
 	var listen string = os.Args[1]
 	fmt.Println("Lets get boozing! 🍻")
