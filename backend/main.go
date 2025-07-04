@@ -10,6 +10,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log/slog"
 	"net/http"
@@ -596,8 +597,8 @@ func (a *App) GetItemsLeaderboard(c *gin.Context) {
 
 /* ******************************************************************************** */
 
-func (a *App) setUpRouter(logFile *os.File) *gin.Engine {
-	gin.DefaultWriter = logFile
+func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
+	gin.DefaultWriter = writer
 	router := gin.Default()
 
 	// adding new items/consumptions
@@ -647,9 +648,10 @@ func main() {
 		fmt.Fprintf(os.Stderr, "error opening log file: %v\n", err)
 		os.Exit(1)
 	}
-	defer logFile.Close()
+	defer ginLogFile.Close()
 
-	logger := slog.New(slog.NewJSONHandler(logFile, nil))
+	multiWriter := io.MultiWriter(os.Stdout, logFile)
+	logger := slog.New(slog.NewJSONHandler(multiWriter, nil))
 	slog.SetDefault(logger)
 
 	slog.Info("starting up", "name", NAME, "version", VERSION)
@@ -692,7 +694,8 @@ func main() {
 
 	app := &App{DB: pool, JWT_KEY: jwtKey}
 
-	router := app.setUpRouter(ginLogFile)
+	ginMultiWriter := io.MultiWriter(os.Stdout, ginLogFile)
+	router := app.setUpRouter(ginMultiWriter)
 
 	var listen string = os.Args[1]
 	fmt.Println("Lets get boozing! 🍻")
