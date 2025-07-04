@@ -46,7 +46,7 @@ type App struct {
 	JWT_KEY *ecdsa.PrivateKey
 }
 
-const NAME string = "🍺 boozer"
+const NAME string = "boozer"
 const VERSION string = "Alpha"
 
 var ARGON2_PARAMS = &params{
@@ -60,7 +60,7 @@ var ARGON2_PARAMS = &params{
 func plaintextToEncodedHash(input string) (encodedHash string, err error) {
 	salt, err := generateRandomBytes(ARGON2_PARAMS.saltLength)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error generating random bytes", "error", err)
 		return "", err
 	}
 
@@ -77,7 +77,7 @@ func plaintextToEncodedHash(input string) (encodedHash string, err error) {
 func hash(input string) (hash []byte, err error) {
 	salt, err := generateRandomBytes(ARGON2_PARAMS.saltLength)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error generating random bytes", "error", err)
 		return nil, err
 	}
 
@@ -212,7 +212,7 @@ func (a *App) GetItem(c *gin.Context) {
 func (a *App) GetItemList(c *gin.Context) {
 	rows, err := a.DB.Query(context.Background(), "SELECT * FROM items ORDER BY added DESC")
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error getting item list", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -222,7 +222,7 @@ func (a *App) GetItemList(c *gin.Context) {
 		var beer models.Item
 		err := rows.Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
 		if err != nil {
-			fmt.Println(err)
+			slog.Error("error scanning item", "error", err)
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -236,7 +236,7 @@ func (a *App) AddItem(c *gin.Context) {
 	var newBeer models.Item
 	err := c.BindJSON(&newBeer)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error binding JSON", "error", err)
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -250,7 +250,7 @@ func (a *App) AddItem(c *gin.Context) {
 
 	_, err = a.DB.Exec(context.Background(), "INSERT INTO items (name, units, added) VALUES ($1, $2, $3)", newBeer.Name, newBeer.Units, newBeer.Added)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error adding item", "error", err)
 		c.Status(http.StatusBadRequest) // it was probably the clients fault
 		return
 	}
@@ -263,11 +263,11 @@ func (a *App) AddUser(c *gin.Context) {
 
 	err := c.BindJSON(&newUser)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error binding JSON", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
-	if len(newUser.Username) < 1 || len(newUser.Username) > 20 {
+	if len(newUser.Username) <= 3 || len(newUser.Username) >= 20 {
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -278,7 +278,7 @@ func (a *App) AddUser(c *gin.Context) {
 
 	_, err = a.DB.Exec(context.Background(), "INSERT INTO users (username, password, created) VALUES ($1, $2, $3)", newUser.Username, hashedPassword, newUser.Created)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error adding user", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -291,7 +291,7 @@ func (a *App) Authenticate(c *gin.Context) {
 	var user models.User
 	err := c.BindJSON(&user)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error binding JSON", "error", err)
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -306,12 +306,12 @@ func (a *App) Authenticate(c *gin.Context) {
 		// create jwt
 		token, err := a.generateJWT(user)
 		if err != nil {
-			fmt.Println(err)
+			slog.Error("error generating JWT", "error", err)
 			c.Status(http.StatusInternalServerError)
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"token": token})
-		fmt.Println("Successful auth for user", user.Username)
+		slog.Info("successful auth", "user", user.Username)
 	} else {
 		c.Status(http.StatusBadRequest)
 		return
@@ -370,7 +370,7 @@ func (a *App) AddConsumption(c *gin.Context) {
 
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error parsing JWT", "error", err)
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -378,7 +378,7 @@ func (a *App) AddConsumption(c *gin.Context) {
 	var newConsumption models.Consumption
 	err = c.BindJSON(&newConsumption)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error binding JSON", "error", err)
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -388,7 +388,7 @@ func (a *App) AddConsumption(c *gin.Context) {
 	err = a.DB.QueryRow(context.Background(), "SELECT item_id FROM items WHERE item_id=$1", newConsumption.Item_id).Scan(&itemId)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			fmt.Println(err)
+			slog.Error("item not found", "error", err)
 		}
 		c.Status(http.StatusInternalServerError)
 		return
@@ -404,7 +404,7 @@ func (a *App) AddConsumption(c *gin.Context) {
 	var id_lookup string
 	err = a.DB.QueryRow(context.Background(), "SELECT user_id FROM users WHERE username=$1", claims["username"]).Scan(&id_lookup)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error looking up user ID", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -412,7 +412,7 @@ func (a *App) AddConsumption(c *gin.Context) {
 
 	_, err = a.DB.Exec(context.Background(), "INSERT INTO consumptions (user_id, item_id, time) VALUES ($1, $2, $3)", newConsumption.User_id, newConsumption.Item_id, newConsumption.Time)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error adding consumption", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -425,7 +425,7 @@ func (a *App) RemoveConsumption(c *gin.Context) {
 	tokenString = strings.Replace(tokenString, "Bearer ", "", 1)
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error parsing JWT", "error", err)
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -434,7 +434,7 @@ func (a *App) RemoveConsumption(c *gin.Context) {
 	var newConsumption models.Consumption
 	err = c.BindJSON(&newConsumption)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error binding JSON", "error", err)
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -443,21 +443,21 @@ func (a *App) RemoveConsumption(c *gin.Context) {
 	var usernameLookup string
 	err = a.DB.QueryRow(context.Background(), "SELECT users.username FROM consumptions INNER JOIN users ON consumptions.user_id=users.user_id WHERE consumptions.consumption_id=$1", newConsumption.Consumption_id).Scan(&usernameLookup)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error looking up username", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
 
 	// check authenticated user is the user associated with consumption
 	if usernameLookup != claims["username"] {
-		fmt.Println("User", claims["username"], "tried to delete a consumption record from", usernameLookup, "!")
+		slog.Warn("user tried to delete another user's consumption", "offending_user", claims["username"], "user", usernameLookup)
 		c.Status(http.StatusBadRequest)
 		return
 	}
 
 	_, err = a.DB.Exec(context.Background(), "DELETE FROM consumptions WHERE consumption_id=$1", newConsumption.Consumption_id)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error deleting consumption", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -471,7 +471,7 @@ func (a *App) GetConsumption(c *gin.Context) {
 	tokenString = strings.Replace(tokenString, "Bearer ", "", 1)
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error parsing JWT", "error", err)
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -482,7 +482,7 @@ func (a *App) GetConsumption(c *gin.Context) {
 	err = a.DB.QueryRow(context.Background(), "SELECT consumptions.consumption_id, consumptions.item_id, consumptions.user_id, users.username, consumptions.time FROM consumptions INNER JOIN users ON consumptions.user_id=users.user_id WHERE consumptions.consumption_id=$1", c.Param("consumption_id")).Scan(&consumption.Consumption_id, &consumption.Item_id, &consumption.User_id, &usernameLookup, &consumption.Time)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			fmt.Println(err)
+			slog.Error("consumption not found", "error", err)
 		}
 		c.Status(http.StatusNotFound)
 		return
@@ -490,7 +490,7 @@ func (a *App) GetConsumption(c *gin.Context) {
 
 	// check user matches
 	if claims["username"] != usernameLookup {
-		fmt.Println("authenticated user didnt match consumptions user")
+		slog.Warn("authenticated user didnt match consumptions user", "authenticated_user", claims["username"], "consumption_user", usernameLookup)
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -512,7 +512,7 @@ func (a *App) GetUserConsumptionCount(c *gin.Context) {
 			return
 		}
 
-		fmt.Println(err)
+		slog.Error("error getting user consumption count", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -523,7 +523,7 @@ func (a *App) GetUserConsumptionCount(c *gin.Context) {
 func (a *App) GetUserConsumptions(c *gin.Context) {
 	rows, err := a.DB.Query(context.Background(), "SELECT items.name, items.units, consumptions.time FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id WHERE user_id=$1 ORDER BY consumptions.time DESC LIMIT 25", c.Param("user_id"))
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error getting user consumptions", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -539,7 +539,7 @@ func (a *App) GetUserConsumptions(c *gin.Context) {
 		var consumption NamedConsumption
 		err := rows.Scan(&consumption.Name, &consumption.Units, &consumption.Time)
 		if err != nil {
-			fmt.Println(err)
+			slog.Error("error scanning consumption", "error", err)
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -552,7 +552,7 @@ func (a *App) GetUserConsumptions(c *gin.Context) {
 func (a *App) GetUserLeaderboard(c *gin.Context) {
 	rows, err := a.DB.Query(context.Background(), "SELECT users.username, COUNT(consumptions.item_id) AS drank FROM consumptions INNER JOIN users ON consumptions.user_id = users.user_id GROUP BY users.username ORDER BY drank DESC LIMIT 10;")
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error getting user leaderboard", "error", err)
 		c.Status(http.StatusNotFound)
 		return
 	}
@@ -562,7 +562,7 @@ func (a *App) GetUserLeaderboard(c *gin.Context) {
 		var user models.LeaderboardUser
 		err := rows.Scan(&user.Username, &user.Consumed)
 		if err != nil {
-			fmt.Println(err)
+			slog.Error("error scanning user", "error", err)
 			c.Status(http.StatusNotFound)
 			return
 		}
@@ -575,7 +575,7 @@ func (a *App) GetUserLeaderboard(c *gin.Context) {
 func (a *App) GetItemsLeaderboard(c *gin.Context) {
 	rows, err := a.DB.Query(context.Background(), "SELECT items.item_id, items.name, items.units, items.added, COUNT(items.item_id) AS drank FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id GROUP BY items.item_id, items.name, items.units, items.added ORDER BY drank DESC LIMIT 50;")
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("error getting items leaderboard", "error", err)
 		c.Status(http.StatusNotFound)
 		return
 	}
@@ -585,7 +585,7 @@ func (a *App) GetItemsLeaderboard(c *gin.Context) {
 		var item models.LeaderboardItem
 		err := rows.Scan(&item.Item_id, &item.Name, &item.Units, &item.Added, &item.Consumed)
 		if err != nil {
-			fmt.Println(err)
+			slog.Error("error scanning item", "error", err)
 			c.Status(http.StatusNotFound)
 			return
 		}
@@ -636,7 +636,7 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 func main() {
 	logDir := "logs"
 	if err := os.MkdirAll(logDir, 0755); err != nil {
-		fmt.Fprintf(os.Stderr, "error creating log directory: %v\n", err)
+		slog.Error("error creating log directory", "error", err)
 		os.Exit(1)
 	}
 
@@ -645,7 +645,7 @@ func main() {
 	logFile, err := os.OpenFile(logFilename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	ginLogFile, err := os.OpenFile(ginLogFilename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error opening log file: %v\n", err)
+		slog.Error("error opening log file", "error", err)
 		os.Exit(1)
 	}
 	defer ginLogFile.Close()
@@ -698,7 +698,7 @@ func main() {
 	router := app.setUpRouter(ginMultiWriter)
 
 	var listen string = os.Args[1]
-	fmt.Println("Lets get boozing! 🍻")
+	slog.Info("Lets get boozing! 🍻")
 	slog.Info("starting server", "address", listen)
 
 	srv := &http.Server{
