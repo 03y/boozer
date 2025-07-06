@@ -13,7 +13,7 @@ RUN go mod tidy
 RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags="-w -s" -o /boozer/boozer-backend .
 
 # create private key
-RUN apk add openssl
+RUN apk add --no-cache openssl
 RUN openssl ecparam -name prime256v1 -genkey -noout -out boozer.pem
 
 # run
@@ -25,6 +25,8 @@ WORKDIR /home/boozeruser
 
 COPY --from=builder /boozer/boozer-backend .
 COPY --from=builder /boozer/boozer.pem .
+
+RUN chown boozeruser:boozergroup boozer.pem
 
 # change user
 USER boozeruser
