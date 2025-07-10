@@ -1,21 +1,21 @@
 :root {
-    --table-bg-color: rgba(255, 255, 255, 0.1);
-    --th-bg-color: rgba(0, 0, 0, 0.3);
-    --text-color: #fff;
-    --hover-bg-color: rgba(255, 255, 255, 0.1);
-    --select-bg-color: #fff;
-    --select-text-color: #333;
-    --select-hover-bg-color: #f0f0f0;
-    --error-bg-color: rgba(255, 107, 107, 0.1);
-    --rank-first-color: #ffd700;
-    --rank-second-color: #c0c0c0;
-    --rank-third-color: #cd7f32;
+    --table-bg-colour: rgba(255, 255, 255, 0.1);
+    --th-bg-colour: rgba(0, 0, 0, 0.3);
+    --text-colour: #fff;
+    --hover-bg-colour: rgba(255, 255, 255, 0.1);
+    --select-bg-colour: #fff;
+    --select-text-colour: #333;
+    --select-hover-bg-colour: #f0f0f0;
+    --error-bg-colour: rgba(255, 107, 107, 0.1);
+    --rank-first-colour: #ffd700;
+    --rank-second-colour: #c0c0c0;
+    --rank-third-colour: #cd7f32;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    background-color: var(--table-bg-color);
+    background-color: var(--table-bg-colour);
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -31,27 +31,27 @@ td {
 }
 
 th {
-    background-color: var(--th-bg-color);
+    background-color: var(--th-bg-colour);
     font-weight: bold;
-    color: var(--text-color);
+    color: var(--text-colour);
 }
 
 tr:hover {
-    background-color: var(--hover-bg-color);
+    background-colour: var(--hover-bg-colour);
 }
 
 select {
     padding: 10px;
     font-size: 16px;
     border-radius: 4px;
-    background-color: var(--select-bg-color);
+    background-color: var(--select-bg-colour);
     border: none;
-    color: var(--select-text-color);
+    color: var(--select-text-colour);
     cursor: pointer;
 }
 
 select:hover {
-    background-color: var(--select-hover-bg-color);
+    background-color: var(--select-hover-bg-colour);
 }
 
 .leaderboard-section {
@@ -72,7 +72,7 @@ select:hover {
 }
 
 .leaderboard-section h2 {
-    color: var(--text-color);
+    color: var(--text-colour);
     margin-bottom: 20px;
     text-align: center;
 }
@@ -82,15 +82,15 @@ select:hover {
 }
 
 .rank.first {
-    color: var(--rank-first-color);
+    color: var(--rank-first-colour);
 }
 
 .rank.second {
-    color: var(--rank-second-color);
+    color: var(--rank-second-colour);
 }
 
 .rank.third {
-    color: var(--rank-third-color);
+    color: var(--rank-third-colour);
 }
 
 .loading {
@@ -104,7 +104,7 @@ select:hover {
     color: #ff6b6b;
     text-align: center;
     padding: 20px;
-    background-color: var(--error-bg-color);
+    background-color: var(--error-bg-colour);
     border-radius: 4px;
     margin: 20px 0;
 }

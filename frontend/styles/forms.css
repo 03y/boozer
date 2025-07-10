@@ -7,8 +7,8 @@
     --smallprint-font-size: clamp(12px, 2vw, 14px);
     --smallprint-font-size: clamp(16px, 4vw, 18px);
     --section-bg-color: rgba(255, 255, 255, 0.1);
-    --button-primary-color: #4caf50;
-    --button-primary-hover-color: #45a049;
+    --green-button-primary-colour: #4caf50;
+    --green-button-hover-colour: #45a049;
 }
 
 body {
@@ -58,7 +58,7 @@ body {
 .signup-btn,
 .login-btn,
 .submit-btn {
-    background-color: var(--button-primary-color);
+    background-color: var(--green-button-primary-colour);
     color: white;
     padding: 12px;
     border: none;
@@ -72,7 +72,7 @@ body {
 .signup-btn:hover,
 .login-btn:hover,
 .submit-btn:hover {
-    background-color: var(--button-primary-hover-color);
+    background-color: var(--green-button-hover-colour);
 }
 
 .success {

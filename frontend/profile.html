@@ -29,6 +29,14 @@
             </div>
 
             <div class="container">
+                <div class="logout">
+                    <button type="submit" class="logout-btn" id="logout-btn">
+                        Logout
+                    </button>
+                </div>
+            </div>
+
+            <div class="container">
                 <div class="consumptions-section">
                     <div id="consumptions-container"></div>
                 </div>
@@ -139,6 +147,20 @@
                         "Error loading profile.";
                     document.getElementById("date-joined").innerHTML = "";
                     document.getElementById("consumptions").innerHTML = "";
+                }
+
+                function logout() {
+                    try {
+                        localStorage.removeItem("token");
+                        window.location.href = "index.html";
+                    } catch (error) {
+                        console.error("Error logging out:", error);
+                    }
+                }
+
+                const logoutButton = document.getElementById("logout-btn");
+                if (logoutButton) {
+                    logoutButton.addEventListener("click", logout);
                 }
             }
         </script>
