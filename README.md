@@ -21,10 +21,10 @@ Boozer is a database which stores users, drinks and consumptions!
 * Use [TDD](https://en.wikipedia.org/wiki/Test-driven\_development).
 ## Plan
 **No time restraint on stages**
-1. DB & backend implementation of users and items.
-2. DB & backend implementation of uses of items.
-3. Frontend implementations (web, bot).
-4. Data analysis on uses.
+- [x] DB & backend implementation of users and items.
+- [x] DB & backend implementation of uses of items.
+- [ ] Frontend implementations (web, bot).
+- [ ] Data analysis on uses.
 
 Here is a prettier version of your markdown content:
 
@@ -35,6 +35,12 @@ Here is a prettier version of your markdown content:
 | **DB**        | PostgreSQL     |
 | **Backend**   | Go             |
 | **Frontend**  | HTML / Bot     |
+
+---
+
+## Getting Started
+
+The easiest way to run the entire application stack is with Docker Compose. For detailed instructions, please see the [backend documentation](./backend/README.md).
 
 ---
 
