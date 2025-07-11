@@ -310,12 +310,18 @@ func (a *App) Authenticate(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"token": token})
+		c.SetCookie("token", token, 3600, "/", "", true, true)
+		c.Status(http.StatusOK)
 		slog.Info("successful auth", "user", user.Username)
 	} else {
 		c.Status(http.StatusBadRequest)
 		return
 	}
+}
+
+func (a *App) Logout(c *gin.Context) {
+	c.SetCookie("token", "", -1, "/", "", true, true)
+	c.Status(http.StatusOK)
 }
 
 func (a *App) GetUser(c *gin.Context) {
@@ -335,8 +341,11 @@ func (a *App) GetUser(c *gin.Context) {
 }
 
 func (a *App) GetUserFromToken(c *gin.Context) {
-	tokenString := c.Request.Header["Authorization"][0]
-	tokenString = strings.Replace(tokenString, "Bearer ", "", 1)
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
 
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
@@ -365,8 +374,11 @@ func (a *App) GetUserFromToken(c *gin.Context) {
 }
 
 func (a *App) AddConsumption(c *gin.Context) {
-	tokenString := c.Request.Header["Authorization"][0]
-	tokenString = strings.Replace(tokenString, "Bearer ", "", 1)
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
 
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
@@ -421,8 +433,11 @@ func (a *App) AddConsumption(c *gin.Context) {
 }
 
 func (a *App) RemoveConsumption(c *gin.Context) {
-	tokenString := c.Request.Header["Authorization"][0]
-	tokenString = strings.Replace(tokenString, "Bearer ", "", 1)
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
 		slog.Error("error parsing JWT", "error", err)
@@ -467,8 +482,11 @@ func (a *App) RemoveConsumption(c *gin.Context) {
 
 func (a *App) GetConsumption(c *gin.Context) {
 	// auth first
-	tokenString := c.Request.Header["Authorization"][0]
-	tokenString = strings.Replace(tokenString, "Bearer ", "", 1)
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
 		slog.Error("error parsing JWT", "error", err)
@@ -616,6 +634,7 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	// create & authenticate accounts
 	router.POST("/signup", a.AddUser)
 	router.POST("/authenticate", a.Authenticate)
+	router.POST("/logout", a.Logout)
 
 	// get user
 	router.GET("/user/:user_id", a.GetUser)

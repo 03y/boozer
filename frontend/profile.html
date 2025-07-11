@@ -68,12 +68,6 @@
                     document.getElementById("date-joined").innerHTML =
                         formattedDate;
 
-                    const consumptionData = await getConsumptionCount(
-                        user.user_id,
-                    );
-                    document.getElementById("consumptions").innerHTML =
-                        consumptionData.consumptions;
-
                     const consumptionsContainer = document.getElementById(
                         "consumptions-container",
                     );
@@ -149,10 +143,16 @@
                     document.getElementById("consumptions").innerHTML = "";
                 }
 
-                function logout() {
+                async function logout() {
                     try {
-                        localStorage.removeItem("token");
-                        window.location.href = "index.html";
+                        const response = await fetch(`${API_BASE_URL}/logout`, {
+                            method: "POST",
+                        });
+                        if (response.ok) {
+                            window.location.href = "index.html";
+                        } else {
+                            console.error("Logout failed");
+                        }
                     } catch (error) {
                         console.error("Error logging out:", error);
                     }

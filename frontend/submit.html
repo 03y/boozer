@@ -111,18 +111,7 @@
                 messageElement.classList.add("hidden");
                 messageElement.textContent = "";
 
-                const token = localStorage.getItem("token");
-                if (!token) {
-                    messageElement.textContent =
-                        "You must be logged in to submit consumptions.";
-                    messageElement.classList.remove("success");
-                    messageElement.classList.remove("hidden");
-                    messageElement.classList.add("error");
-                    return;
-                }
-
                 const itemId = document.getElementById("selectedItemId").value;
-                // const quantity = document.getElementById("quantity").value;
 
                 if (!itemId) {
                     messageElement.textContent = "Please select an item.";
@@ -139,11 +128,9 @@
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",
-                                Authorization: `Bearer ${token}`,
                             },
                             body: JSON.stringify({
                                 item_id: parseInt(itemId),
-                                // quantity: parseInt(quantity), // Backend only expects item_id, quantity is not used for now
                             }),
                         },
                     );
@@ -177,12 +164,12 @@
             }
 
             document.addEventListener("DOMContentLoaded", async () => {
+                const user = await getUser();
                 const consumptionForm =
                     document.getElementById("consumptionForm");
                 const messageElement = document.getElementById("message");
-                const token = localStorage.getItem("token");
 
-                if (!token) {
+                if (!user) {
                     consumptionForm.style.display = "none";
                     messageElement.textContent =
                         "You must be logged in to submit consumptions.";
@@ -213,8 +200,6 @@
 
                 consumptionForm.addEventListener("submit", submitConsumption);
             });
-
-            document.addEventListener("DOMContentLoaded", getUser);
         </script>
     </body>
 </html>

@@ -52,16 +52,6 @@
                 messageElement.classList.add("hidden");
                 messageElement.textContent = "";
 
-                const token = localStorage.getItem("token");
-                if (!token) {
-                    messageElement.textContent =
-                        "You must be logged in to submit items.";
-                    messageElement.classList.remove("success");
-                    messageElement.classList.remove("hidden");
-                    messageElement.classList.add("error");
-                    return;
-                }
-
                 const itemName = document.getElementById("itemName").value;
                 const itemUnits = document.getElementById("itemUnits").value;
 
@@ -81,7 +71,6 @@
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",
-                                Authorization: `Bearer ${token}`,
                             },
                             body: JSON.stringify({
                                 name: itemName,
@@ -120,11 +109,11 @@
             }
 
             document.addEventListener("DOMContentLoaded", async () => {
+                const user = await getUser();
                 const itemForm = document.getElementById("itemForm");
                 const messageElement = document.getElementById("message");
-                const token = localStorage.getItem("token");
 
-                if (!token) {
+                if (!user) {
                     itemForm.style.display = "none";
                     messageElement.textContent =
                         "You must be logged in to submit items.";
@@ -136,8 +125,6 @@
 
                 itemForm.addEventListener("submit", submitItem);
             });
-
-            document.addEventListener("DOMContentLoaded", getUser);
         </script>
     </body>
 </html>
