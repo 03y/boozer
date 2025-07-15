@@ -15,6 +15,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -260,6 +261,8 @@ func (a *App) AddItem(c *gin.Context) {
 
 func (a *App) AddUser(c *gin.Context) {
 	var newUser models.User
+	// legal usernames are a-z A-Z 0-9 and underscore
+	const pattern = `^[a-zA-z0-9_`
 
 	err := c.BindJSON(&newUser)
 	if err != nil {
@@ -267,7 +270,17 @@ func (a *App) AddUser(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
+
 	if len(newUser.Username) <= 3 || len(newUser.Username) >= 20 {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	matched, err := regexp.MatchString(pattern, newUser.Username)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	} else if !matched {
 		c.Status(http.StatusBadRequest)
 		return
 	}
