@@ -1,32 +1,29 @@
 # 🍺 Boozer
-Boozer is a database which stores users, drinks and consumptions!
+Boozer is a platform which stores users, beers and consumptions!
 
 ## Team
-1. [03y](https://github.com/03y): backend, sysadmin
-2. [Adam-W2](https://github.com/Adam-W2): dba, data
-3. [EuanRobertson1](https://github.com/EuanRobertson1): full-stack(?), possibly also dba & data
+1. [03y](https://github.com/03y): full-stack, sysadmin
+2. [Adam-W2](https://github.com/Adam-W2): frontend(?), data analysis
+3. [EuanRobertson1](https://github.com/EuanRobertson1): full-stack(?)
 4. [Choob303](https://github.com/Choob303): requirements gathering and user testing
 
 ## Outline
 * Data sourced from dbas and users.
     * This means the data will be sparse at first, but item uses will conform to a bell-curve. Once most of the commonly used items are added, adding new items will be rare.
-    * Choob303 has good knowledge of items, could create a small tool for adding lots of new items.
-* User creates account, adds items and records uses of items.
+* User creates account, adds items and records consumptions.
 
 ## Workflow
 * Monorepo for backend (api), frontend(s) and db scripts (and laster on data analysis stuff).
-* CI for baclend (gh actions).
+* CI for backend (gh actions).
 * Use issues and PRs to keep track of work.
     * Review PRs before merge: increase understanding of project.
-* Use [TDD](https://en.wikipedia.org/wiki/Test-driven\_development).
+* Use BDD
 ## Plan
 **No time restraint on stages**
 - [x] DB & backend implementation of users and items.
 - [x] DB & backend implementation of uses of items.
-- [ ] Frontend implementations (web, bot).
-- [ ] Data analysis on uses.
-
-Here is a prettier version of your markdown content:
+- [ ] Frontend implementations (in progress).
+- [ ] Data analysis.
 
 ## Stack
 
@@ -34,7 +31,7 @@ Here is a prettier version of your markdown content:
 |---------------|----------------|
 | **DB**        | PostgreSQL     |
 | **Backend**   | Go             |
-| **Frontend**  | HTML / Bot     |
+| **Frontend**  | HTML/JS        |
 
 ---
 
@@ -59,7 +56,7 @@ The easiest way to run the entire application stack is with Docker Compose. For 
 - **[Go](https://go.dev)**.
   - **[Gin for HTTP API](https://pkg.go.dev/github.com/gin-gonic/gin)**.
   - **[PGX for DB connection](https://github.com/jackc/pgx)**.
-    - **[Mock tests (for TDD)](https://github.com/jackc/pgmock)**.
+  - **BDD tests with [hurl](https://hurl.dev)**.
 - More details in the **[Backend Specification](./docs/backend.md)**.
 
 ---
@@ -67,7 +64,6 @@ The easiest way to run the entire application stack is with Docker Compose. For 
 ## Frontend
 
 - **Web Frontend**:
-  - Basic **HTML + JS** should suffice.
+  - Basic **HTML + JS** (possibly look into use of JS framework).
   - Ensure it performs well on **mobile devices**.
-- **Discord bot** built with **Python 3**.
 - More details in the **[Frontend Specification](./docs/frontend.md)**.
