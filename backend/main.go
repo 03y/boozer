@@ -262,7 +262,7 @@ func (a *App) AddItem(c *gin.Context) {
 func (a *App) AddUser(c *gin.Context) {
 	var newUser models.User
 	// legal usernames are a-z A-Z 0-9 and underscore
-	const pattern = `^[a-zA-z0-9_]+$`
+	const pattern = `^[a-zA-z0-9_]+`
 
 	err := c.BindJSON(&newUser)
 	if err != nil {
@@ -553,7 +553,7 @@ func (a *App) GetUserConsumptionCount(c *gin.Context) {
 }
 
 func (a *App) GetUserConsumptions(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT items.name, items.units, consumptions.time FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id WHERE user_id=$1 ORDER BY consumptions.time DESC LIMIT 25", c.Param("user_id"))
+	rows, err := a.DB.Query(context.Background(), "SELECT consumptions.consumption_id, items.name, items.units, consumptions.time FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id WHERE user_id=$1 ORDER BY consumptions.time DESC LIMIT 25", c.Param("user_id"))
 	if err != nil {
 		slog.Error("error getting user consumptions", "error", err)
 		c.Status(http.StatusInternalServerError)
@@ -561,15 +561,16 @@ func (a *App) GetUserConsumptions(c *gin.Context) {
 	}
 
 	type NamedConsumption struct {
-		Name  string  `json:"name"`
-		Units float32 `json:"units"`
-		Time  int     `json:"time"` // unix timestamp
+		Consumption_id int     `json:"consumption_id"`
+		Name           string  `json:"name"`
+		Units          float32 `json:"units"`
+		Time           int     `json:"time"` // unix timestamp
 	}
 
 	consumptions := make([]NamedConsumption, 0)
 	for rows.Next() {
 		var consumption NamedConsumption
-		err := rows.Scan(&consumption.Name, &consumption.Units, &consumption.Time)
+		err := rows.Scan(&consumption.Consumption_id, &consumption.Name, &consumption.Units, &consumption.Time)
 		if err != nil {
 			slog.Error("error scanning consumption", "error", err)
 			c.Status(http.StatusInternalServerError)

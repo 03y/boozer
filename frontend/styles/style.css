@@ -86,6 +86,17 @@ a {
     max-width: 200px;
 }
 
+.del-btn {
+    background-color: var(--red-button-primary-colour);
+    color: white;
+    padding: 2px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: var(--button-font-size);
+    width: 50%;
+}
+
 .logout-btn {
     background-color: var(--red-button-primary-colour);
     color: white;
@@ -96,4 +107,24 @@ a {
     font-size: var(--button-font-size);
     margin-top: 10px;
     width: 100%;
+}
+
+.success {
+    color: #2ecc71;
+    text-align: center;
+    padding: 20px;
+    background-color: rgba(46, 204, 113, 0.1);
+    border-radius: 4px;
+    margin: 20px 0;
+    font-size: var(--success-font-size);
+}
+
+.error {
+    color: #ff6b6b;
+    text-align: center;
+    padding: 20px;
+    background-color: rgba(255, 107, 107, 0.1);
+    border-radius: 4px;
+    margin: 20px 0;
+    font-size: var(--error-font-size);
 }

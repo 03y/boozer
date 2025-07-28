@@ -7,6 +7,7 @@
     --select-text-colour: #333;
     --select-hover-bg-colour: #f0f0f0;
     --error-bg-colour: rgba(255, 107, 107, 0.1);
+    --error-font-size: clamp(14px, 3vw, 16px);
     --rank-first-colour: #ffd700;
     --rank-second-colour: #c0c0c0;
     --rank-third-colour: #cd7f32;
@@ -37,7 +38,12 @@ th {
 }
 
 tr:hover {
-    background-colour: var(--hover-bg-colour);
+    background-color: var(--hover-bg-colour);
+}
+
+tr.selected {
+    background-color: var(--select-bg-colour);
+    color: var(--select-text-colour);
 }
 
 select {

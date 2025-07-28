@@ -3,7 +3,6 @@
     --label-font-size: clamp(14px, 3vw, 16px);
     --input-font-size: clamp(14px, 3vw, 16px);
     --button-font-size: clamp(14px, 3vw, 16px);
-    --error-font-size: clamp(14px, 3vw, 16px);
     --smallprint-font-size: clamp(12px, 2vw, 14px);
     --smallprint-font-size: clamp(16px, 4vw, 18px);
     --section-bg-color: rgba(255, 255, 255, 0.1);
@@ -73,26 +72,6 @@ body {
 .login-btn:hover,
 .submit-btn:hover {
     background-color: var(--green-button-hover-colour);
-}
-
-.success {
-    color: #2ecc71;
-    text-align: center;
-    padding: 20px;
-    background-color: rgba(46, 204, 113, 0.1);
-    border-radius: 4px;
-    margin: 20px 0;
-    font-size: var(--success-font-size);
-}
-
-.error {
-    color: #ff6b6b;
-    text-align: center;
-    padding: 20px;
-    background-color: rgba(255, 107, 107, 0.1);
-    border-radius: 4px;
-    margin: 20px 0;
-    font-size: var(--error-font-size);
 }
 
 .smallprint {

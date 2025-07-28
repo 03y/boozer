@@ -36,6 +36,8 @@
                 </div>
             </div>
 
+            <div id="message-container"></div>
+
             <div class="container">
                 <div class="consumptions-section">
                     <div id="consumptions-container"></div>
@@ -44,6 +46,42 @@
         </div>
 
         <script>
+            async function remove_consumption(consumption_id) {
+                const messageContainer =
+                    document.getElementById("message-container");
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/remove/consumption`,
+                        {
+                            method: "POST",
+                            body: JSON.stringify({
+                                consumption_id: consumption_id,
+                            }),
+                        },
+                    );
+                    if (response.ok) {
+                        messageContainer.innerHTML =
+                            '<div class="success">Consumption removed successfully!</div>';
+                        setTimeout(() => {
+                            messageContainer.innerHTML = "";
+                        }, 3000);
+                        displayProfile();
+                    } else {
+                        messageContainer.innerHTML =
+                            '<div class="error">Failed to remove consumption.</div>';
+                        setTimeout(() => {
+                            messageContainer.innerHTML = "";
+                        }, 3000);
+                    }
+                } catch (error) {
+                    messageContainer.innerHTML =
+                        '<div class="error">Error removing consumption.</div>';
+                    setTimeout(() => {
+                        messageContainer.innerHTML = "";
+                    }, 3000);
+                }
+            }
+
             async function displayProfile() {
                 try {
                     const user = await getUser();
@@ -83,7 +121,6 @@
 
                         document.getElementById("consumptions").innerHTML =
                             data.consumptions;
-
                     } catch (error) {
                         console.error("Error fetching consumptions:", error);
                         consumptionsContainer.innerHTML = `<div class="error-message">Error loading consumptions.</div>`;
@@ -122,6 +159,7 @@
                                         <th>Beer</th>
                                         <th>Units</th>
                                         <th>Time</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -142,6 +180,7 @@
                                         <td>${consumption.name || "Unnamed Item"}</td>
                                         <td>${consumption.units}</td>
                                         <td>${formattedDate}</td>
+                                        <td><button class="del-btn" onclick="remove_consumption(${consumption.consumption_id})">Delete</button></td>
                                     </tr>
                             `;
                         });
