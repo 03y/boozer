@@ -6,7 +6,7 @@
     --whisker-pink: #f2c1c4;
     --text-color: white;
     --red-button-primary-colour: #ff6b6b;
-    --red-button-hover-colour: #45a049;
+    --red-button-hover-colour: #e65e5e;
 }
 
 body {
@@ -81,6 +81,11 @@ a {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+.delete {
+    margin: 16px;
+    max-width: 200px;
+}
+
 .logout {
     margin: 8px auto;
     max-width: 200px;
@@ -94,7 +99,7 @@ a {
     border-radius: 4px;
     cursor: pointer;
     font-size: var(--button-font-size);
-    width: 50%;
+    width: 100%;
 }
 
 .logout-btn {
@@ -107,6 +112,11 @@ a {
     font-size: var(--button-font-size);
     margin-top: 10px;
     width: 100%;
+}
+
+.logout-btn:hover,
+.del-btn:hover {
+    background-color: var(--red-button-hover-colour);
 }
 
 .success {

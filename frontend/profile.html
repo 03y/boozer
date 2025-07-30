@@ -45,7 +45,75 @@
             </div>
         </div>
 
+        <div class="container">
+            <div class="delete">
+                <button type="submit" class="del-btn" id="del-btn">
+                    Delete Selected Consumptions
+                </button>
+            </div>
+        </div>
+
         <script>
+            async function delete_selected() {
+                const checkboxes = document.querySelectorAll(
+                    'input[name="selected"]:checked',
+                );
+                const messageContainer =
+                    document.getElementById("message-container");
+
+                if (checkboxes.length === 0) {
+                    messageContainer.innerHTML =
+                        '<div class="error">No consumptions selected.</div>';
+                    setTimeout(() => {
+                        messageContainer.innerHTML = "";
+                    }, 3000);
+                    return;
+                }
+
+                const consumptionRows = Array.from(checkboxes).map(
+                    (checkbox) => {
+                        const row = checkbox.closest("tr");
+                        const rowIndex = Array.from(
+                            row.parentNode.children,
+                        ).indexOf(row);
+                        return rowIndex;
+                    },
+                );
+
+                try {
+                    const user = await getUser();
+                    const response = await fetch(
+                        `${API_BASE_URL}/consumptions/${user.user_id}`,
+                    );
+                    const consumptions = await response.json();
+
+                    for (let i = 0; i < consumptionRows.length; i++) {
+                        const consumption = consumptions[consumptionRows[i]];
+                        if (consumption && consumption.consumption_id) {
+                            await fetch(`${API_BASE_URL}/remove/consumption`, {
+                                method: "POST",
+                                body: JSON.stringify({
+                                    consumption_id: consumption.consumption_id,
+                                }),
+                            });
+                        }
+                    }
+
+                    messageContainer.innerHTML =
+                        '<div class="success">Selected consumptions removed successfully!</div>';
+                    setTimeout(() => {
+                        messageContainer.innerHTML = "";
+                    }, 3000);
+                    displayProfile();
+                } catch (error) {
+                    messageContainer.innerHTML =
+                        '<div class="error">Error removing consumptions.</div>';
+                    setTimeout(() => {
+                        messageContainer.innerHTML = "";
+                    }, 3000);
+                }
+            }
+
             async function remove_consumption(consumption_id) {
                 const messageContainer =
                     document.getElementById("message-container");
@@ -153,17 +221,17 @@
                         }
 
                         let tableHTML = `
-                            <table class="consumption-table">
-                                <thead>
-                                    <tr>
-                                        <th>Beer</th>
-                                        <th>Units</th>
-                                        <th>Time</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                        `;
+                              <table class="consumption-table">
+                                  <thead>
+                                      <tr>
+                                          <th></th>
+                                          <th>Beer</th>
+                                          <th>Units</th>
+                                          <th>Time</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody>
+                          `;
 
                         data.forEach((consumption, index) => {
                             const date = new Date(consumption.time * 1000);
@@ -176,19 +244,19 @@
                                 hourCycle: "h12",
                             });
                             tableHTML += `
-                                    <tr>
-                                        <td>${consumption.name || "Unnamed Item"}</td>
-                                        <td>${consumption.units}</td>
-                                        <td>${formattedDate}</td>
-                                        <td><button class="del-btn" onclick="remove_consumption(${consumption.consumption_id})">Delete</button></td>
-                                    </tr>
-                            `;
+                                      <tr>
+                                        <td><input type="checkbox" name="selected" id="selected"/></td>
+                                          <td>${consumption.name || "Unnamed Item"}</td>
+                                          <td>${consumption.units}</td>
+                                          <td>${formattedDate}</td>
+                                      </tr>
+                              `;
                         });
 
                         tableHTML += `
-                                </tbody>
-                            </table>
-                        `;
+                                  </tbody>
+                              </table>
+                          `;
 
                         consumptionsContainer.innerHTML = tableHTML;
                     } catch (error) {
@@ -221,6 +289,11 @@
                 const logoutButton = document.getElementById("logout-btn");
                 if (logoutButton) {
                     logoutButton.addEventListener("click", logout);
+                }
+
+                const deleteButton = document.getElementById("del-btn");
+                if (deleteButton) {
+                    deleteButton.addEventListener("click", delete_selected);
                 }
             }
         </script>
