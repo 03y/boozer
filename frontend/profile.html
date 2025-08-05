@@ -53,22 +53,29 @@
             </div>
         </div>
 
+        <div id="delete-modal" class="modal">
+            <div class="modal-content">
+                <p>
+                    Are you sure you want to delete the selected consumptions?
+                </p>
+                <div class="modal-buttons">
+                    <button id="confirm-delete-btn" class="confirm-btn">
+                        Delete
+                    </button>
+                    <button id="cancel-delete-btn" class="cancel-btn">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <script>
-            async function delete_selected() {
+            async function confirm_delete() {
                 const checkboxes = document.querySelectorAll(
                     'input[name="selected"]:checked',
                 );
                 const messageContainer =
                     document.getElementById("message-container");
-
-                if (checkboxes.length === 0) {
-                    messageContainer.innerHTML =
-                        '<div class="error">No consumptions selected.</div>';
-                    setTimeout(() => {
-                        messageContainer.innerHTML = "";
-                    }, 3000);
-                    return;
-                }
 
                 const consumptionRows = Array.from(checkboxes).map(
                     (checkbox) => {
@@ -111,7 +118,29 @@
                     setTimeout(() => {
                         messageContainer.innerHTML = "";
                     }, 3000);
+                } finally {
+                    const modal = document.getElementById("delete-modal");
+                    modal.style.display = "none";
                 }
+            }
+
+            async function delete_selected() {
+                const checkboxes = document.querySelectorAll(
+                    'input[name="selected"]:checked',
+                );
+                const messageContainer =
+                    document.getElementById("message-container");
+
+                if (checkboxes.length === 0) {
+                    messageContainer.innerHTML =
+                        '<div class="error">No consumptions selected.</div>';
+                    setTimeout(() => {
+                        messageContainer.innerHTML = "";
+                    }, 3000);
+                    return;
+                }
+                const modal = document.getElementById("delete-modal");
+                modal.style.display = "block";
             }
 
             async function remove_consumption(consumption_id) {
@@ -294,6 +323,24 @@
                 const deleteButton = document.getElementById("del-btn");
                 if (deleteButton) {
                     deleteButton.addEventListener("click", delete_selected);
+                }
+
+                const confirmDeleteButton =
+                    document.getElementById("confirm-delete-btn");
+                if (confirmDeleteButton) {
+                    confirmDeleteButton.addEventListener(
+                        "click",
+                        confirm_delete,
+                    );
+                }
+
+                const cancelDeleteButton =
+                    document.getElementById("cancel-delete-btn");
+                if (cancelDeleteButton) {
+                    cancelDeleteButton.addEventListener("click", () => {
+                        const modal = document.getElementById("delete-modal");
+                        modal.style.display = "none";
+                    });
                 }
             }
         </script>
