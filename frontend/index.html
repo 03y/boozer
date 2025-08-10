@@ -23,6 +23,17 @@
         <div class="container">
             <div class="leaderboard-section">
                 <div class="leaderboard-column">
+                    <h2>🍻 Recent Activity</h2>
+                    <div id="feed-table" class="leaderboard-container">
+                        <div class="loading">Loading recent activity...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="leaderboard-section">
+                <div class="leaderboard-column">
                     <h2>👤 Top Boozers</h2>
                     <div id="users-leaderboard" class="leaderboard-container">
                         <div class="loading">Loading users leaderboard...</div>
@@ -38,6 +49,30 @@
         </div>
 
         <script>
+            async function fetchFeed() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/feed`, {
+                        method: "GET",
+                        credentials: "include",
+                        headers: {
+                            Accept: "application/json",
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(
+                            `HTTP error! status: ${response.status}`,
+                        );
+                    }
+
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error("Error fetching feed:", error);
+                    throw error;
+                }
+            }
+
             async function fetchLeaderboard(type) {
                 try {
                     const response = await fetch(
@@ -129,6 +164,96 @@
                 return tableHTML;
             }
 
+            function getRelativeTime(timestamp) {
+                if (!timestamp) {
+                    return "Unknown";
+                }
+
+                const now = new Date();
+                // Convert Unix timestamp (seconds) to milliseconds
+                const past = new Date(timestamp * 1000);
+
+                if (isNaN(past.getTime())) {
+                    return "Invalid date";
+                }
+
+                const diffMs = now - past;
+
+                if (diffMs < 0) {
+                    return "Unknown"; // beer consumption in the future...
+                }
+
+                const minutes = Math.floor(diffMs / (1000 * 60));
+                const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+                if (days > 0) {
+                    return days === 1 ? "1 day ago" : `${days} days ago`;
+                } else if (hours > 0) {
+                    return hours === 1 ? "1 hour ago" : `${hours} hours ago`;
+                } else if (minutes > 0) {
+                    return minutes === 1
+                        ? "1 minute ago"
+                        : `${minutes} minutes ago`;
+                } else {
+                    return "Just now";
+                }
+            }
+
+            function createFeedTable(data) {
+                if (!data || data.length === 0) {
+                    return '<div class="error">No recent activity found.</div>';
+                }
+
+                let tableHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Item</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                data.forEach((consumption) => {
+                    const relativeTime = getRelativeTime(consumption.time);
+                    tableHTML += `
+                        <tr>
+                            <td>${consumption.username || "Unknown User"}</td>
+                            <td>${consumption.name || "Unknown Item"}</td>
+                            <td>${relativeTime}</td>
+                        </tr>
+                    `;
+                });
+
+                tableHTML += `
+                        </tbody>
+                    </table>
+                `;
+
+                return tableHTML;
+            }
+
+            async function loadFeed() {
+                const feedContainer = document.getElementById("feed-table");
+                feedContainer.innerHTML =
+                    '<div class="loading">Loading recent activity...</div>';
+
+                try {
+                    const feedData = await fetchFeed();
+                    feedContainer.innerHTML = createFeedTable(feedData);
+                } catch (error) {
+                    const errorHTML = `
+                        <div class="error">
+                            <strong>Error loading feed</strong><br>
+                        </div>
+                    `;
+                    feedContainer.innerHTML = errorHTML;
+                }
+            }
+
             async function loadLeaderboards() {
                 const usersContainer =
                     document.getElementById("users-leaderboard");
@@ -165,6 +290,7 @@
                 }
             }
 
+            document.addEventListener("DOMContentLoaded", loadFeed);
             document.addEventListener("DOMContentLoaded", loadLeaderboards);
             document.addEventListener("DOMContentLoaded", getUser);
         </script>

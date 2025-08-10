@@ -628,6 +628,29 @@ func (a *App) GetItemsLeaderboard(c *gin.Context) {
 	c.JSON(http.StatusOK, leaderboard)
 }
 
+func (a *App) GetFeed(c *gin.Context) {
+	rows, err := a.DB.Query(context.Background(), "SELECT users.username, items.name, consumptions.time FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id INNER JOIN users ON consumptions.user_id = users.user_id ORDER BY consumptions.time DESC LIMIT 10;")
+	if err != nil {
+		slog.Error("error getting feed", "error", err)
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	feed := make([]models.FeedConsumption, 0)
+	for rows.Next() {
+		var consumption models.FeedConsumption
+		err := rows.Scan(&consumption.Username, &consumption.Name, &consumption.Time)
+		if err != nil {
+			slog.Error("error scanning consumption", "error", err)
+			c.Status(http.StatusNotFound)
+			return
+		}
+		feed = append(feed, consumption)
+	}
+
+	c.JSON(http.StatusOK, feed)
+}
+
 /* ******************************************************************************** */
 
 func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
@@ -663,6 +686,9 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	// leaderboards
 	router.GET("/leaderboard/items", a.GetItemsLeaderboard)
 	router.GET("/leaderboard/users", a.GetUserLeaderboard)
+
+	// feed
+	router.GET("/feed", a.GetFeed)
 
 	return router
 }
