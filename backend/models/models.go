@@ -36,3 +36,9 @@ type LeaderboardItem struct {
 	Consumed int `json:"consumed"`
 	Item
 }
+
+type FeedConsumption struct {
+	Username string `json:"username"`
+	Name     string `json:"name"`
+	Time     int    `json:"time"` // unix timestamp
+}
