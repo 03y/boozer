@@ -629,7 +629,7 @@ func (a *App) GetItemsLeaderboard(c *gin.Context) {
 }
 
 func (a *App) GetFeed(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT items.name, users.username, consumptions.time FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id INNER JOIN users ON consumptions.user_id = users.user_id ORDER BY consumptions.time DESC LIMIT 10;")
+	rows, err := a.DB.Query(context.Background(), "SELECT users.username, items.name, consumptions.time FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id INNER JOIN users ON consumptions.user_id = users.user_id ORDER BY consumptions.time DESC LIMIT 10;")
 	if err != nil {
 		slog.Error("error getting feed", "error", err)
 		c.Status(http.StatusNotFound)
