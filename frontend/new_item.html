@@ -28,15 +28,56 @@
                             id="itemName"
                             autocomplete="off"
                         />
-                        <label for="itemUnits">Units:</label>
-                        <input
-                            type="number"
-                            step="0.1"
-                            min="0.0"
-                            max="30.0"
-                            id="itemUnits"
-                            autocomplete="off"
-                        />
+                        <div class="toggle-switch">
+                            <label class="switch">
+                                <input
+                                    type="checkbox"
+                                    id="itemUnitsType"
+                                    name="itemUnitsType"
+                                />
+                                <span class="slider round"></span>
+                            </label>
+                            <label for="itemUnitsType" class="toggle-label"
+                                >ABV %</label
+                            >
+                        </div>
+
+                        <div class="units-input" id="unitsSection">
+                            <label for="itemUnits">Units:</label>
+                            <input
+                                type="number"
+                                step="0.1"
+                                min="0.0"
+                                max="30.0"
+                                id="itemUnits"
+                                autocomplete="off"
+                            />
+                        </div>
+
+                        <div
+                            class="abv-input"
+                            id="abvSection"
+                            style="display: none"
+                        >
+                            <label for="itemABV">ABV (%):</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0.0"
+                                max="100.0"
+                                id="itemABV"
+                                autocomplete="off"
+                            />
+
+                            <label for="itemVolume">Volume (ml):</label>
+                            <input
+                                type="number"
+                                min="0"
+                                max="10000"
+                                id="itemVolume"
+                                autocomplete="off"
+                            />
+                        </div>
                     </div>
                     <button type="submit" class="submit-btn">Submit</button>
                 </form>
@@ -53,15 +94,39 @@
                 messageElement.textContent = "";
 
                 const itemName = document.getElementById("itemName").value;
-                const itemUnits = document.getElementById("itemUnits").value;
+                const isABVMode =
+                    document.getElementById("itemUnitsType").checked;
 
-                if (!itemName || !itemUnits) {
-                    messageElement.textContent =
-                        "Please enter item information.";
-                    messageElement.classList.remove("success");
-                    messageElement.classList.remove("hidden");
-                    messageElement.classList.add("error");
-                    return;
+                let itemUnits;
+                if (isABVMode) {
+                    const itemABV = document.getElementById("itemABV").value;
+                    const itemVolume =
+                        document.getElementById("itemVolume").value;
+
+                    if (!itemName || !itemABV || !itemVolume) {
+                        messageElement.textContent =
+                            "Please enter item name, ABV, and volume.";
+                        messageElement.classList.remove("success");
+                        messageElement.classList.remove("hidden");
+                        messageElement.classList.add("error");
+                        return;
+                    }
+
+                    // calculate units from abv and volume: units = (abv*vol) / 1000
+                    itemUnits =
+                        (parseFloat(itemABV) * parseFloat(itemVolume)) / 1000;
+                } else {
+                    itemUnits = document.getElementById("itemUnits").value;
+
+                    if (!itemName || !itemUnits) {
+                        messageElement.textContent =
+                            "Please enter item name and units.";
+                        messageElement.classList.remove("success");
+                        messageElement.classList.remove("hidden");
+                        messageElement.classList.add("error");
+                        return;
+                    }
+                    itemUnits = parseFloat(itemUnits);
                 }
 
                 try {
@@ -74,7 +139,7 @@
                             },
                             body: JSON.stringify({
                                 name: itemName,
-                                units: parseFloat(itemUnits),
+                                units: itemUnits,
                             }),
                         },
                     );
@@ -84,9 +149,23 @@
                             "Item submitted successfully!";
                         messageElement.classList.remove("error");
                         messageElement.classList.add("success");
+
+                        // preserve toggle state
+                        const toggleState =
+                            document.getElementById("itemUnitsType").checked;
+
                         document.getElementById("itemForm").reset();
+
+                        // restore toggle state and update ui
+                        document.getElementById("itemUnitsType").checked =
+                            toggleState;
+                        toggleInputs();
+
+                        // clear input values
                         document.getElementById("itemName").value = "";
                         document.getElementById("itemUnits").value = "";
+                        document.getElementById("itemABV").value = "";
+                        document.getElementById("itemVolume").value = "";
                     } else if (response.status === 401) {
                         messageElement.textContent =
                             "Unauthorised. Please log in again.";
@@ -108,6 +187,23 @@
                 messageElement.classList.remove("hidden");
             }
 
+            // toggle function for abv slider
+            function toggleInputs() {
+                const toggleSwitch = document.getElementById("itemUnitsType");
+                const unitsSection = document.getElementById("unitsSection");
+                const abvSection = document.getElementById("abvSection");
+
+                if (toggleSwitch.checked) {
+                    // abv mode: hide units, show abv inputs
+                    unitsSection.style.display = "none";
+                    abvSection.style.display = "block";
+                } else {
+                    // units mode: show units, hide abv inputs
+                    unitsSection.style.display = "block";
+                    abvSection.style.display = "none";
+                }
+            }
+
             document.addEventListener("DOMContentLoaded", async () => {
                 const user = await getUser();
                 const itemForm = document.getElementById("itemForm");
@@ -124,6 +220,12 @@
                 }
 
                 itemForm.addEventListener("submit", submitItem);
+
+                const toggleSwitch = document.getElementById("itemUnitsType");
+                toggleSwitch.addEventListener("change", toggleInputs);
+
+                // set initial state for toggle
+                toggleInputs();
             });
         </script>
     </body>
