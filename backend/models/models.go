@@ -32,6 +32,11 @@ type LeaderboardUser struct {
 	Username string `json:"username"`
 }
 
+type LeaderboardUserUnits struct {
+	Units    float32 `json:"units"`
+	Username string  `json:"username"`
+}
+
 type LeaderboardItem struct {
 	Consumed int `json:"consumed"`
 	Item
