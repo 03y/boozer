@@ -324,7 +324,7 @@ func (a *App) Authenticate(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		c.SetCookie("token", token, 3600, "/", "", true, true)
+		c.SetCookie("token", token, 12*3600, "/", "", true, true) // 12 hour cookie
 		c.Status(http.StatusOK)
 		slog.Info("successful auth", "user", user.Username)
 	} else {
