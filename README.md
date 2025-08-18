@@ -1,6 +1,8 @@
 # 🍺 Boozer
 Boozer is a web app which stores users, beers and consumptions!
 
+<img src="docs/resources/screenshot.png" alt="screenshot of home page" width="500em"/>
+
 ## Outline
 - Data sourced from users.
     - This means the data will be sparse at first, but item uses will conform to a bell-curve. Once most of the commonly used items are added, adding new items will be rare.
