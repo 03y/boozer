@@ -28,7 +28,18 @@ td {
     text-align: left;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     font-size: clamp(14px, 3vw, 16px);
+}
+
+th:first-child,
+td:first-child {
+    white-space: nowrap;
+    word-break: normal;
+}
+
+th:not(:first-child),
+td:not(:first-child) {
     word-break: break-word;
+    word-wrap: break-word;
 }
 
 th {
