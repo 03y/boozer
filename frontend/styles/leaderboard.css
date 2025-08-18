@@ -123,6 +123,29 @@ select:hover {
     margin-bottom: 20px;
 }
 
+#leaderboard-type-selector {
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 6px;
+    background-color: var(--select-bg-colour);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--select-text-colour);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 100px;
+}
+
+#leaderboard-type-selector:hover {
+    background-color: var(--select-hover-bg-colour);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+#leaderboard-type-selector:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
 .leaderboard-column {
     min-width: 300px;
     width: 100%;

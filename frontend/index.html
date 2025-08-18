@@ -34,9 +34,24 @@
         <div class="container">
             <div class="leaderboard-section">
                 <div class="leaderboard-column">
+                    <div class="leaderboard-controls">
+                        <select id="leaderboard-type-selector">
+                            <option value="users">Drinks</option>
+                            <option value="users_units">Units</option>
+                        </select>
+                    </div>
                     <h2>👤 Top Boozers</h2>
                     <div id="users-leaderboard" class="leaderboard-container">
                         <div class="loading">Loading users leaderboard...</div>
+                    </div>
+                    <div
+                        id="users-units-leaderboard"
+                        class="leaderboard-container"
+                        style="display: none"
+                    >
+                        <div class="loading">
+                            Loading users units leaderboard...
+                        </div>
                     </div>
                 </div>
                 <div class="leaderboard-column">
@@ -136,8 +151,8 @@
                         <thead>
                             <tr>
                                 <th>Rank</th>
-                                ${type === "users" ? "<th>User</th>" : "<th>Item</th>"}
-                                <th>Consumed</th>
+                                ${type === "users" || type === "users_units" ? "<th>User</th>" : "<th>Item</th>"}
+                                <th>${type === "users_units" ? "Units" : "Consumed"}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -147,11 +162,12 @@
                     const rankClass = getRankClass(index);
                     const rankDisplay = getRankDisplay(index);
 
+                    // yeah it says 'item' but can actually be a user
                     tableHTML += `
                         <tr>
                             <td class="rank ${rankClass}">${rankDisplay}</td>
-                            <td>${type === "users" ? item.username || "Unknown User" : item.name || "Unknown Item"}</td>
-                            <td>${item.consumed || 0}</td>
+                            <td>${type === "users" || type === "users_units" ? item.username || "Unknown User" : item.name || "Unknown Item"}</td>
+                            <td>${type === "users" ? item.consumed : item.units}</td>
                         </tr>
                     `;
                 });
@@ -254,27 +270,49 @@
                 }
             }
 
-            async function loadLeaderboards() {
+            async function loadUsersLeaderboard(type = "users") {
                 const usersContainer =
                     document.getElementById("users-leaderboard");
+                const usersUnitsContainer = document.getElementById(
+                    "users-units-leaderboard",
+                );
+
+                usersContainer.style.display = "none";
+                usersUnitsContainer.style.display = "none";
+
+                // show the appropriate container and set loading state
+                const activeContainer =
+                    type === "users_units"
+                        ? usersUnitsContainer
+                        : usersContainer;
+                activeContainer.style.display = "block";
+                activeContainer.innerHTML =
+                    '<div class="loading">Loading leaderboard...</div>';
+
+                try {
+                    const data = await fetchLeaderboard(type);
+                    activeContainer.innerHTML = createLeaderboardTable(
+                        data,
+                        type,
+                    );
+                } catch (error) {
+                    const errorHTML = `
+                        <div class="error">
+                            <strong>Error loading leaderboard</strong><br>
+                        </div>
+                    `;
+                    activeContainer.innerHTML = errorHTML;
+                }
+            }
+
+            async function loadItemsLeaderboard() {
                 const itemsContainer =
                     document.getElementById("items-leaderboard");
-
-                usersContainer.innerHTML =
-                    '<div class="loading">Loading users leaderboard...</div>';
                 itemsContainer.innerHTML =
                     '<div class="loading">Loading items leaderboard...</div>';
 
                 try {
-                    const [usersData, itemsData] = await Promise.all([
-                        fetchLeaderboard("users"),
-                        fetchLeaderboard("items"),
-                    ]);
-
-                    usersContainer.innerHTML = createLeaderboardTable(
-                        usersData,
-                        "users",
-                    );
+                    const itemsData = await fetchLeaderboard("items");
                     itemsContainer.innerHTML = createLeaderboardTable(
                         itemsData,
                         "items",
@@ -285,14 +323,34 @@
                             <strong>Error loading leaderboard</strong><br>
                         </div>
                     `;
-                    usersContainer.innerHTML = errorHTML;
                     itemsContainer.innerHTML = errorHTML;
+                }
+            }
+
+            async function loadLeaderboards() {
+                await loadUsersLeaderboard("users");
+                await loadItemsLeaderboard();
+            }
+
+            function setupLeaderboardSelector() {
+                const selector = document.getElementById(
+                    "leaderboard-type-selector",
+                );
+                if (selector) {
+                    selector.addEventListener("change", function () {
+                        const selectedType = this.value;
+                        loadUsersLeaderboard(selectedType);
+                    });
                 }
             }
 
             document.addEventListener("DOMContentLoaded", loadFeed);
             document.addEventListener("DOMContentLoaded", loadLeaderboards);
             document.addEventListener("DOMContentLoaded", getUser);
+            document.addEventListener(
+                "DOMContentLoaded",
+                setupLeaderboardSelector,
+            );
         </script>
     </body>
 </html>
