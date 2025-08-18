@@ -605,6 +605,29 @@ func (a *App) GetUserLeaderboard(c *gin.Context) {
 	c.JSON(http.StatusOK, leaderboard)
 }
 
+func (a *App) GetUserLeaderboardUnits(c *gin.Context) {
+	rows, err := a.DB.Query(context.Background(), "SELECT users.username, SUM(items.units) AS total_units FROM consumptions INNER JOIN users ON consumptions.user_id = users.user_id INNER JOIN items ON consumptions.item_id = items.item_id GROUP BY users.username ORDER BY total_units DESC LIMIT 10;")
+	if err != nil {
+		slog.Error("error getting user units leaderboard", "error", err)
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	leaderboard := make([]models.LeaderboardUserUnits, 0)
+	for rows.Next() {
+		var user models.LeaderboardUserUnits
+		err := rows.Scan(&user.Username, &user.Units)
+		if err != nil {
+			slog.Error("error scanning user", "error", err)
+			c.Status(http.StatusNotFound)
+			return
+		}
+		leaderboard = append(leaderboard, user)
+	}
+
+	c.JSON(http.StatusOK, leaderboard)
+}
+
 func (a *App) GetItemsLeaderboard(c *gin.Context) {
 	rows, err := a.DB.Query(context.Background(), "SELECT items.item_id, items.name, items.units, items.added, COUNT(items.item_id) AS drank FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id GROUP BY items.item_id, items.name, items.units, items.added ORDER BY drank DESC LIMIT 50;")
 	if err != nil {
@@ -686,6 +709,7 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	// leaderboards
 	router.GET("/leaderboard/items", a.GetItemsLeaderboard)
 	router.GET("/leaderboard/users", a.GetUserLeaderboard)
+	router.GET("/leaderboard/users_units", a.GetUserLeaderboardUnits)
 
 	// feed
 	router.GET("/feed", a.GetFeed)
