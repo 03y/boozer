@@ -167,7 +167,7 @@
                         <tr>
                             <td class="rank ${rankClass}">${rankDisplay}</td>
                             <td>${type === "users" || type === "users_units" ? item.username || "Unknown User" : item.name || "Unknown Item"}</td>
-                            <td>${type === "users" ? item.consumed : item.units}</td>
+                            <td>${type === "users" ? item.consumed : type === "items" ? item.consumed : item.units}</td>
                         </tr>
                     `;
                 });
