@@ -34,13 +34,13 @@
         <div class="container">
             <div class="leaderboard-section">
                 <div class="leaderboard-column">
+                    <h2>👤 Top Boozers</h2>
                     <div class="leaderboard-controls">
                         <select id="leaderboard-type-selector">
-                            <option value="users">Drinks</option>
-                            <option value="users_units">Units</option>
+                            <option value="users">🍻 Drinks</option>
+                            <option value="users_units">📊 Units</option>
                         </select>
                     </div>
-                    <h2>👤 Top Boozers</h2>
                     <div id="users-leaderboard" class="leaderboard-container">
                         <div class="loading">Loading users leaderboard...</div>
                     </div>
@@ -152,7 +152,7 @@
                             <tr>
                                 <th>Rank</th>
                                 ${type === "users" || type === "users_units" ? "<th>User</th>" : "<th>Item</th>"}
-                                <th>${type === "users_units" ? "Units" : "Consumed"}</th>
+                                <th>${type === "users_units" ? "Units" : "Drank"}</th>
                             </tr>
                         </thead>
                         <tbody>
