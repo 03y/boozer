@@ -267,3 +267,90 @@ input:checked {
 input:checked:disabled {
     background-color: var(--tartan-green);
 }
+
+.footer {
+    background-color: var(--tabacco-tan);
+    padding: 20px 0;
+    margin-top: 40px;
+    border-top: 2px solid var(--tartan-green);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    min-height: 60px;
+}
+
+.footer-left {
+    flex: 1;
+    text-align: left;
+    color: var(--text-color);
+    font-size: 14px;
+    min-width: 200px;
+    margin-top: 2.5%;
+    margin-left: 2.5%;
+}
+
+.footer-left a {
+    color: var(--text-color);
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.footer-left a:hover {
+    color: var(--pint-foam-cream);
+}
+
+.footer-centre {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 120px;
+}
+
+.footer-centre .button-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.footer-right {
+    flex: 1;
+    text-align: right;
+    color: var(--text-color);
+    font-size: 14px;
+    font-weight: bold;
+    min-width: 150px;
+    margin-top: 2.5%;
+    margin-right: 2.5%;
+}
+
+@media (max-width: 768px) {
+    .footer {
+        flex-direction: column;
+        text-align: center;
+        padding: 15px 10px;
+        gap: 10px;
+    }
+
+    .footer-left,
+    .footer-centre,
+    .footer-right {
+        text-align: center;
+        min-width: unset;
+        width: 100%;
+    }
+
+    .footer-left {
+        order: 2;
+    }
+
+    .footer-centre {
+        order: 1;
+    }
+
+    .footer-right {
+        order: 3;
+    }
+}
