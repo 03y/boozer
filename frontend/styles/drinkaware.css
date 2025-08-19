@@ -1,0 +1,59 @@
+.button-container {
+    display: inline-block;
+    border: 2px solid #333;
+    background: #000;
+}
+
+.drinkaware-button {
+    width: 120px;
+    height: 40px;
+    background: linear-gradient(135deg, #e60012 0%, #c8000f 100%);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.text-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+}
+
+.text-top {
+    color: white;
+    font-family: "Arial", sans-serif;
+    font-size: 8px;
+    font-weight: bold;
+    text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.2px;
+    line-height: 1;
+    margin-bottom: 2px;
+}
+
+.text-bottom {
+    color: white;
+    font-family: "Arial", sans-serif;
+    font-size: 8px;
+    font-weight: bold;
+    text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.2px;
+    line-height: 1;
+}
+
+.drinkaware-button:hover {
+    background: linear-gradient(135deg, #ff0015 0%, #d4001a 100%);
+}
+
+.info {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #666;
+}
