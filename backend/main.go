@@ -13,6 +13,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log/slog"
+	"math"
 	"net/http"
 	"os"
 	"regexp"
@@ -191,6 +192,11 @@ func parseJWT(tokenString string, privateKey *ecdsa.PrivateKey) (jwt.MapClaims, 
 	}
 }
 
+func round(value float64, precision int) float64 {
+	multiplier := math.Pow(10, float64(precision))
+	return math.Round(value*multiplier) / multiplier
+}
+
 /* ******************************************************************************** */
 /* API endpoints */
 /* ******************************************************************************** */
@@ -248,6 +254,7 @@ func (a *App) AddItem(c *gin.Context) {
 	}
 
 	newBeer.Added = int(time.Now().Unix())
+	newBeer.Units = float32(round(float64(newBeer.Units), 1)) // round units to 1 decimal place
 
 	_, err = a.DB.Exec(context.Background(), "INSERT INTO items (name, units, added) VALUES ($1, $2, $3)", newBeer.Name, newBeer.Units, newBeer.Added)
 	if err != nil {
@@ -622,6 +629,7 @@ func (a *App) GetUserLeaderboardUnits(c *gin.Context) {
 			c.Status(http.StatusNotFound)
 			return
 		}
+		user.Units = float32(round(float64(user.Units), 1))
 		leaderboard = append(leaderboard, user)
 	}
 
