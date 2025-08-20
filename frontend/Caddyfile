@@ -3,6 +3,13 @@ localhost {
     file_server
 
     handle_path /api/v1/* {
+        rate_limit {
+            zone api {
+                key {http.request.remote.ip}
+                events 100
+                window 1m
+            }
+        }
         reverse_proxy http://localhost:6969
     }
 }
