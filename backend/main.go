@@ -682,6 +682,71 @@ func (a *App) GetFeed(c *gin.Context) {
 	c.JSON(http.StatusOK, feed)
 }
 
+func (a *App) ChangePassword(c *gin.Context) {
+	// get token
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	// get username from token
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	// get passwords from request
+	var passwords models.ChangePassword
+	err = c.BindJSON(&passwords)
+	if err != nil {
+		slog.Error("error binding JSON", "error", err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	// get the hash we have in the db
+	var storedHash string
+	err = a.DB.QueryRow(context.Background(), "SELECT password FROM users WHERE username=$1", claims["username"]).Scan(&storedHash)
+	if err != nil {
+		slog.Error("error getting stored hash", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// compare
+	match, err := comparePasswordAndHash(passwords.OldPassword, storedHash)
+	if err != nil {
+		slog.Error("error comparing password and hash", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	if match {
+		// hash new password
+		hashedPassword, err := plaintextToEncodedHash(passwords.NewPassword)
+		if err != nil {
+			slog.Error("error hashing password", "error", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		// update db
+		_, err = a.DB.Exec(context.Background(), "UPDATE users SET password=$1 WHERE username=$2", hashedPassword, claims["username"])
+		if err != nil {
+			slog.Error("error updating password", "error", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		c.Status(http.StatusOK)
+	} else {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+}
+
 /* ******************************************************************************** */
 
 func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
@@ -700,12 +765,13 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	router.GET("/item/:item_id", a.GetItem)
 	router.GET("/items", a.GetItemList)
 
-	// create & authenticate accounts
+	// accounts
 	router.POST("/signup", a.AddUser)
 	router.POST("/authenticate", a.Authenticate)
 	router.POST("/logout", a.Logout)
+	router.PUT("/change_password", a.ChangePassword)
 
-	// get user
+	// get user data
 	router.GET("/user/:user_id", a.GetUser)
 	router.GET("/user/me", a.GetUserFromToken)
 	router.GET("/consumption_count/:user_id", a.GetUserConsumptionCount)
