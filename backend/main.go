@@ -765,15 +765,15 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	router.GET("/item/:item_id", a.GetItem)
 	router.GET("/items", a.GetItemList)
 
-	// create & authenticate accounts
+	// accounts
 	router.POST("/signup", a.AddUser)
 	router.POST("/authenticate", a.Authenticate)
 	router.POST("/logout", a.Logout)
+	router.PUT("/change_password", a.ChangePassword)
 
-	// get user
+	// get user data
 	router.GET("/user/:user_id", a.GetUser)
 	router.GET("/user/me", a.GetUserFromToken)
-	router.PUT("/user/password", a.ChangePassword)
 	router.GET("/consumption_count/:user_id", a.GetUserConsumptionCount)
 	router.GET("/consumptions/:user_id", a.GetUserConsumptions)
 
