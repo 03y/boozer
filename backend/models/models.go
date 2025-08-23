@@ -13,6 +13,11 @@ type UserNoPw struct {
 	Created  int    `json:"created"` // unix timestamp
 }
 
+type ChangePassword struct {
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+}
+
 type Item struct {
 	Item_id int     `json:"item_id"`
 	Name    string  `json:"name"`
