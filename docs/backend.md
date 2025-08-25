@@ -17,9 +17,9 @@ Note: requests to the backend are limited to 100 requests/minute.
 | POST   | `/signup`                      | `username` (string), `password` (string)        |                                                      |
 | POST   | `/authenticate`                | `username` (string), `password` (string)        | returns `HttpOnly` cookie                            |
 | POST   | `/logout`                      |                                                 | clears authentication cookie                         |
-| GET    | `/user/:user_id`               | user_id (int) in URL                            |                                                      |
-| GET    | `/consumptions/:user_id`       | user_id (int) in URL                            | requires authentication cookie                       |
-| GET    | `/consumption/:consumption_id` | user_id (int) in URL                            | requires authentication cookie                       |
+| GET    | `/user/:username`              | username (string) in URL                        |                                                      |
+| GET    | `/consumptions/:username`      | username (string) in URL                        | requires authentication cookie                       |
+| GET    | `/consumption/:consumption_id` | consumption_id (int) in URL                     | requires authentication cookie                       |
 | GET    | `/username`                    |                                                 | requires authentication cookie                       |
 | GET    | `/leaderboard/items`           |                                                 | returns 50 rows, sorted by # of consumptions         |
 | GET    | `/leaderboard/users`           |                                                 | returns 50 rows, sorted by # of consumptions         |
