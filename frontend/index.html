@@ -166,7 +166,7 @@
                     tableHTML += `
                         <tr>
                             <td class="rank ${rankClass}">${rankDisplay}</td>
-                            <td>${type === "users" || type === "users_units" ? item.username || "Unknown User" : item.name || "Unknown Item"}</td>
+                            <td>${type === "users" || type === "users_units" ? (item.username ? `<a href="./user.html?username=${item.username}">${item.username}</a>` : "Unknown User") : item.name || "Unknown Item"}</td>
                             <td>${type === "users" ? item.consumed : type === "items" ? item.consumed : item.units}</td>
                         </tr>
                     `;
@@ -237,9 +237,9 @@
                     const relativeTime = getRelativeTime(consumption.time);
                     tableHTML += `
                         <tr>
-                            <td>${consumption.username || "Unknown User"}</td>
-                            <td>${consumption.name || "Unknown Item"}</td>
-                            <td>${relativeTime}</td>
+                          <td>${consumption.username ? `<a href="./user.html?username=${consumption.username}">${consumption.username}</a>` : "Unknown User"}</td>
+                          <td>${consumption.name || "Unknown Item"}</td>
+                          <td>${relativeTime}</td>
                         </tr>
                     `;
                 });
