@@ -30,7 +30,11 @@
 
             <div class="container">
                 <div class="logout">
-                    <button type="button" class="logout-btn" onclick="location.href='change_password.html'">
+                    <button
+                        type="button"
+                        class="logout-btn"
+                        onclick="location.href='change_password.html'"
+                    >
                         Change Password
                     </button>
                     <button type="submit" class="logout-btn" id="logout-btn">
@@ -93,7 +97,7 @@
                 try {
                     const user = await getUser();
                     const response = await fetch(
-                        `${API_BASE_URL}/consumptions/${user.user_id}`,
+                        `${API_BASE_URL}/consumptions/${user.username}`,
                     );
                     const consumptions = await response.json();
 
@@ -208,7 +212,7 @@
 
                     try {
                         const response = await fetch(
-                            `${API_BASE_URL}/consumption_count/${user.user_id}`,
+                            `${API_BASE_URL}/consumption_count/${user.username}`,
                         );
 
                         if (!response.ok) {
@@ -235,7 +239,7 @@
 
                     try {
                         const response = await fetch(
-                            `${API_BASE_URL}/consumptions/${user.user_id}`,
+                            `${API_BASE_URL}/consumptions/${user.username}`,
                         );
 
                         if (!response.ok) {

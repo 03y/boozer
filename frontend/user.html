@@ -42,10 +42,10 @@
                     const urlParams = new URLSearchParams(
                         window.location.search,
                     );
-                    const USER_ID = urlParams.get("id");
+                    const USERNAME = urlParams.get("username");
 
                     const response = await fetch(
-                        `${API_BASE_URL}/user/${USER_ID}`,
+                        `${API_BASE_URL}/user/${USERNAME}`,
                     );
 
                     if (response.ok) {
@@ -74,7 +74,7 @@
 
                     try {
                         const response = await fetch(
-                            `${API_BASE_URL}/consumption_count/${user.user_id}`,
+                            `${API_BASE_URL}/consumption_count/${user.username}`,
                         );
 
                         if (!response.ok) {
@@ -101,7 +101,7 @@
 
                     try {
                         const response = await fetch(
-                            `${API_BASE_URL}/consumptions/${user.user_id}`,
+                            `${API_BASE_URL}/consumptions/${user.username}`,
                         );
 
                         if (!response.ok) {
