@@ -347,7 +347,7 @@ func (a *App) Logout(c *gin.Context) {
 
 func (a *App) GetUser(c *gin.Context) {
 	var user models.UserNoPw
-	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE user_id=$1", c.Param("user_id")).Scan(&user.User_id, &user.Username, &user.Created)
+	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE username=$1", c.Param("username")).Scan(&user.User_id, &user.Username, &user.Created)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			c.Status(http.StatusNotFound)
@@ -544,7 +544,7 @@ func (a *App) GetUserConsumptionCount(c *gin.Context) {
 
 	var data ConsumptionData
 
-	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(*) FROM consumptions WHERE user_id=$1", c.Param("user_id")).Scan(&data.Consumptions)
+	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(*) FROM consumptions INNER JOIN users ON consumptions.user_id = users.user_id WHERE users.username=$1", c.Param("username")).Scan(&data.Consumptions)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			c.Status(http.StatusNotFound)
@@ -560,7 +560,7 @@ func (a *App) GetUserConsumptionCount(c *gin.Context) {
 }
 
 func (a *App) GetUserConsumptions(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT consumptions.consumption_id, items.name, items.units, consumptions.time FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id WHERE user_id=$1 ORDER BY consumptions.time DESC LIMIT 25", c.Param("user_id"))
+	rows, err := a.DB.Query(context.Background(), "SELECT consumptions.consumption_id, items.name, items.units, consumptions.time FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id INNER JOIN users ON consumptions.user_id = users.user_id WHERE users.username=$1 ORDER BY consumptions.time DESC LIMIT 25", c.Param("username"))
 	if err != nil {
 		slog.Error("error getting user consumptions", "error", err)
 		c.Status(http.StatusInternalServerError)
@@ -772,10 +772,10 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	router.PUT("/change_password", a.ChangePassword)
 
 	// get user data
-	router.GET("/user/:user_id", a.GetUser)
+	router.GET("/user/:username", a.GetUser)
 	router.GET("/user/me", a.GetUserFromToken)
-	router.GET("/consumption_count/:user_id", a.GetUserConsumptionCount)
-	router.GET("/consumptions/:user_id", a.GetUserConsumptions)
+	router.GET("/consumption_count/:username", a.GetUserConsumptionCount)
+	router.GET("/consumptions/:username", a.GetUserConsumptions)
 
 	// get consumption
 	router.GET("/consumption/:consumption_id", a.GetConsumption)
