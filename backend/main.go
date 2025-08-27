@@ -240,8 +240,21 @@ func (a *App) GetItemList(c *gin.Context) {
 }
 
 func (a *App) AddItem(c *gin.Context) {
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		slog.Error("error parsing JWT", "error", err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
 	var newBeer models.Item
-	err := c.BindJSON(&newBeer)
+	err = c.BindJSON(&newBeer)
 	if err != nil {
 		slog.Error("error binding JSON", "error", err)
 		c.Status(http.StatusBadRequest)
@@ -261,6 +274,8 @@ func (a *App) AddItem(c *gin.Context) {
 		slog.Error("error adding item", "error", err)
 		c.Status(http.StatusBadRequest) // it was probably the clients fault
 		return
+	} else {
+		slog.Info("new item added", "user_id", claims["username"], "item", newBeer.Name)
 	}
 
 	c.Status(http.StatusCreated)
@@ -302,6 +317,8 @@ func (a *App) AddUser(c *gin.Context) {
 		slog.Error("error adding user", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
+	} else {
+		slog.Info("new account created", "username", newUser.Username)
 	}
 
 	c.Status(http.StatusCreated)
@@ -319,7 +336,8 @@ func (a *App) Authenticate(c *gin.Context) {
 
 	// get the hash we have in the db
 	var storedHash string
-	err = a.DB.QueryRow(context.Background(), "SELECT password FROM users WHERE username=$1", user.Username).Scan(&storedHash)
+	var userId int
+	err = a.DB.QueryRow(context.Background(), "SELECT user_id, password FROM users WHERE username=$1", user.Username).Scan(&userId, &storedHash)
 
 	// compare
 	match, err := comparePasswordAndHash(user.Password, storedHash)
@@ -333,9 +351,10 @@ func (a *App) Authenticate(c *gin.Context) {
 		}
 		c.SetCookie("token", token, 12*3600, "/", "", true, true) // 12 hour cookie
 		c.Status(http.StatusOK)
-		slog.Info("successful auth", "user", user.Username)
+		slog.Info("successful auth", "user_id", userId)
 	} else {
 		c.Status(http.StatusBadRequest)
+		slog.Info("failed auth", "user_id", userId)
 		return
 	}
 }
@@ -391,7 +410,6 @@ func (a *App) GetUserFromToken(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
-
 }
 
 func (a *App) AddConsumption(c *gin.Context) {
@@ -448,6 +466,8 @@ func (a *App) AddConsumption(c *gin.Context) {
 		slog.Error("error adding consumption", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
+	} else {
+		slog.Info("consumption added", "user_id", newConsumption.User_id, "item_id", newConsumption.Item_id)
 	}
 
 	c.Status(http.StatusCreated)
@@ -467,8 +487,8 @@ func (a *App) RemoveConsumption(c *gin.Context) {
 	}
 
 	// get the consumption requested for deletion (although we will only read the id)
-	var newConsumption models.Consumption
-	err = c.BindJSON(&newConsumption)
+	var consumption models.Consumption
+	err = c.BindJSON(&consumption)
 	if err != nil {
 		slog.Error("error binding JSON", "error", err)
 		c.Status(http.StatusBadRequest)
@@ -477,7 +497,7 @@ func (a *App) RemoveConsumption(c *gin.Context) {
 
 	// get username from consumption id, check that is the authenticated user
 	var usernameLookup string
-	err = a.DB.QueryRow(context.Background(), "SELECT users.username FROM consumptions INNER JOIN users ON consumptions.user_id=users.user_id WHERE consumptions.consumption_id=$1", newConsumption.Consumption_id).Scan(&usernameLookup)
+	err = a.DB.QueryRow(context.Background(), "SELECT users.username FROM consumptions INNER JOIN users ON consumptions.user_id=users.user_id WHERE consumptions.consumption_id=$1", consumption.Consumption_id).Scan(&usernameLookup)
 	if err != nil {
 		slog.Error("error looking up username", "error", err)
 		c.Status(http.StatusInternalServerError)
@@ -491,11 +511,13 @@ func (a *App) RemoveConsumption(c *gin.Context) {
 		return
 	}
 
-	_, err = a.DB.Exec(context.Background(), "DELETE FROM consumptions WHERE consumption_id=$1", newConsumption.Consumption_id)
+	_, err = a.DB.Exec(context.Background(), "DELETE FROM consumptions WHERE consumption_id=$1", consumption.Consumption_id)
 	if err != nil {
 		slog.Error("error deleting consumption", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
+	} else {
+		slog.Info("consumption removed", "user", claims["username"], "consumption_id", consumption.Consumption_id)
 	}
 
 	c.Status(http.StatusOK)
@@ -708,7 +730,8 @@ func (a *App) ChangePassword(c *gin.Context) {
 
 	// get the hash we have in the db
 	var storedHash string
-	err = a.DB.QueryRow(context.Background(), "SELECT password FROM users WHERE username=$1", claims["username"]).Scan(&storedHash)
+	var userId string
+	err = a.DB.QueryRow(context.Background(), "SELECT user_id, password FROM users WHERE username=$1", claims["username"]).Scan(&userId, &storedHash)
 	if err != nil {
 		slog.Error("error getting stored hash", "error", err)
 		c.Status(http.StatusInternalServerError)
@@ -738,11 +761,14 @@ func (a *App) ChangePassword(c *gin.Context) {
 			slog.Error("error updating password", "error", err)
 			c.Status(http.StatusInternalServerError)
 			return
+		} else {
+			slog.Info("password changed for", "user_id", userId)
 		}
 
 		c.Status(http.StatusOK)
 	} else {
 		c.Status(http.StatusBadRequest)
+		slog.Info("wrong password submitted while attempting to change password", "user_id", userId)
 		return
 	}
 }
@@ -751,7 +777,7 @@ func (a *App) ChangePassword(c *gin.Context) {
 
 func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	gin.DefaultWriter = writer
-	router := gin.Default()
+	router := gin.New()
 
 	// adding new items/consumptions
 	router.POST("/submit/item", a.AddItem) // TODO: maybe add field for who added it, add auth for this
@@ -799,14 +825,11 @@ func main() {
 	}
 
 	logFilename := fmt.Sprintf("%s/%s.log", logDir, time.Now().UTC().Format("2006-01-02_15-04"))
-	ginLogFilename := fmt.Sprintf("%s/%s_GIN.log", logDir, time.Now().UTC().Format("2006-01-02_15-04"))
 	logFile, err := os.OpenFile(logFilename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	ginLogFile, err := os.OpenFile(ginLogFilename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		slog.Error("error opening log file", "error", err)
 		os.Exit(1)
 	}
-	defer ginLogFile.Close()
 
 	multiWriter := io.MultiWriter(os.Stdout, logFile)
 	logger := slog.New(slog.NewJSONHandler(multiWriter, nil))
@@ -852,8 +875,7 @@ func main() {
 
 	app := &App{DB: pool, JWT_KEY: jwtKey}
 
-	ginMultiWriter := io.MultiWriter(os.Stdout, ginLogFile)
-	router := app.setUpRouter(ginMultiWriter)
+	router := app.setUpRouter(io.Discard)
 
 	var listen string = os.Args[1]
 	slog.Info("Lets get boozing! 🍻")
