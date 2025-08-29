@@ -94,7 +94,7 @@ body {
 .dropdown-content {
     display: none;
     position: absolute;
-    top: 100%; /* Position below the input */
+    top: 50%; /* Position below the input */
     left: 0; /* Align with the left edge of the input */
     background-color: rgba(40, 40, 40, 0.95); /* Darker background */
     min-width: 100%;
