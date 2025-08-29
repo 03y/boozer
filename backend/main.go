@@ -318,7 +318,7 @@ func (a *App) AddUser(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	} else {
-		slog.Info("new account created", "username", newUser.Username, "ip", c.Request.RemoteAddr)
+		slog.Info("new account created", "username", newUser.Username, "ip", c.Request.Header.Get("X-Real-IP"))
 	}
 
 	c.Status(http.StatusCreated)
@@ -559,12 +559,23 @@ func (a *App) GetConsumption(c *gin.Context) {
 	c.JSON(http.StatusOK, consumption)
 }
 
-func (a *App) GetUserConsumptionCount(c *gin.Context) {
-	type ConsumptionData struct {
-		Consumptions int `json:"consumptions"`
+func (a *App) GetTotalConsumptionCount(c *gin.Context) {
+	var data models.ConsumptionCount
+
+	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(consumption_id) FROM consumptions").Scan(&data.Consumptions)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			slog.Error("couldnt get total consumption count", "error", err)
+		}
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	var data ConsumptionData
+	c.JSON(http.StatusOK, data)
+}
+
+func (a *App) GetUserConsumptionCount(c *gin.Context) {
+	var data models.ConsumptionCount
 
 	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(*) FROM consumptions INNER JOIN users ON consumptions.user_id = users.user_id WHERE users.username=$1", c.Param("username")).Scan(&data.Consumptions)
 	if err != nil {
@@ -800,6 +811,7 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	// get user data
 	router.GET("/user/:username", a.GetUser)
 	router.GET("/user/me", a.GetUserFromToken)
+	router.GET("/consumption_count", a.GetTotalConsumptionCount)
 	router.GET("/consumption_count/:username", a.GetUserConsumptionCount)
 	router.GET("/consumptions/:username", a.GetUserConsumptions)
 

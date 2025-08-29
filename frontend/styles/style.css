@@ -5,6 +5,8 @@
     --tartan-green: #506a4d;
     --whisker-pink: #f2c1c4;
     --text-color: white;
+    --title-color: white;
+    --motd-color: #ffd700;
     --red-button-primary-colour: #ff6b6b;
     --red-button-hover-colour: #e65e5e;
 }
@@ -72,13 +74,30 @@ a {
     box-sizing: border-box;
 }
 
-.profile-section {
+.profile-section,
+.title-section {
     margin: 30px auto;
     max-width: 400px;
     padding: 20px;
     background-color: var(--table-bg-colour);
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.title-section {
+    text-align: center;
+    margin: 5px auto;
+}
+
+.title-section h1 {
+    font-size: 2.5em;
+    color: var(--title-color);
+}
+
+.title-section h2 {
+    font-size: 1em;
+    font-style: italic;
+    color: var(--motd-color);
 }
 
 .delete {
