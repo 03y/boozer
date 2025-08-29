@@ -1,5 +1,4 @@
 :root {
-    --text-color: Arial, sans-serif;
     --label-font-size: clamp(14px, 3vw, 16px);
     --input-font-size: clamp(14px, 3vw, 16px);
     --button-font-size: clamp(14px, 3vw, 16px);

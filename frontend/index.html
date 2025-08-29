@@ -17,7 +17,10 @@
         </nav>
 
         <div class="container">
-            <img src="./images/cat2.png" />
+            <div class="title-section">
+                <h1>Boozer 🍺</h1>
+                <h2 id="consumption-count"></h2>
+            </div>
         </div>
 
         <div class="container">
@@ -351,6 +354,39 @@
                 "DOMContentLoaded",
                 setupLeaderboardSelector,
             );
+
+            async function loadConsumptionCount() {
+                const consumptionCountContainer =
+                    document.getElementById("consumption-count");
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/consumption_count`,
+                        {
+                            method: "GET",
+                            credentials: "include",
+                            headers: {
+                                Accept: "application/json",
+                            },
+                        },
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(
+                            `HTTP error! status: ${response.status}`,
+                        );
+                    }
+
+                    const data = await response.json();
+                    if (data.consumptions > 0) {
+                        consumptionCountContainer.innerHTML = `Tracking ${data.consumptions} consumptions!`;
+                    }
+                } catch (error) {
+                    consumptionCountContainer.innerHTML =
+                        "could not get consumption count";
+                }
+            }
+
+            document.addEventListener("DOMContentLoaded", loadConsumptionCount);
         </script>
 
         <div class="footer">
