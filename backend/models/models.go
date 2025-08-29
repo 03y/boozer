@@ -26,10 +26,19 @@ type Item struct {
 }
 
 type Consumption struct {
-	Consumption_id int `json:"consumption_id"`
-	User_id        int `json:"user_id"`
-	Item_id        int `json:"item_id"`
-	Time           int `json:"time"` // unix timestamp
+	Consumption_id int      `json:"consumption_id"`
+	User_id        int      `json:"user_id"`
+	Item_id        int      `json:"item_id"`
+	Time           int      `json:"time"`            // unix timestamp
+	Price          *float32 `json:"price,omitempty"` // pointer as may be null
+}
+
+type NamedConsumption struct {
+	Consumption_id int      `json:"consumption_id"`
+	Name           string   `json:"name"`
+	Units          float32  `json:"units"`
+	Time           int      `json:"time"`            // unix timestamp
+	Price          *float32 `json:"price,omitempty"` // pointer as may be null
 }
 
 type LeaderboardUser struct {

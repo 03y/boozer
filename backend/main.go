@@ -461,7 +461,7 @@ func (a *App) AddConsumption(c *gin.Context) {
 	}
 	newConsumption.User_id, _ = strconv.Atoi(id_lookup)
 
-	_, err = a.DB.Exec(context.Background(), "INSERT INTO consumptions (user_id, item_id, time) VALUES ($1, $2, $3)", newConsumption.User_id, newConsumption.Item_id, newConsumption.Time)
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO consumptions (user_id, item_id, time, price) VALUES ($1, $2, $3, $4)", newConsumption.User_id, newConsumption.Item_id, newConsumption.Time, newConsumption.Price)
 	if err != nil {
 		slog.Error("error adding consumption", "error", err)
 		c.Status(http.StatusInternalServerError)
@@ -593,24 +593,17 @@ func (a *App) GetUserConsumptionCount(c *gin.Context) {
 }
 
 func (a *App) GetUserConsumptions(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT consumptions.consumption_id, items.name, items.units, consumptions.time FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id INNER JOIN users ON consumptions.user_id = users.user_id WHERE users.username=$1 ORDER BY consumptions.time DESC LIMIT 25", c.Param("username"))
+	rows, err := a.DB.Query(context.Background(), "SELECT consumptions.consumption_id, items.name, items.units, consumptions.time, consumptions.price FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id INNER JOIN users ON consumptions.user_id = users.user_id WHERE users.username=$1 ORDER BY consumptions.time DESC LIMIT 25", c.Param("username"))
 	if err != nil {
 		slog.Error("error getting user consumptions", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
 
-	type NamedConsumption struct {
-		Consumption_id int     `json:"consumption_id"`
-		Name           string  `json:"name"`
-		Units          float32 `json:"units"`
-		Time           int     `json:"time"` // unix timestamp
-	}
-
-	consumptions := make([]NamedConsumption, 0)
+	consumptions := make([]models.NamedConsumption, 0)
 	for rows.Next() {
-		var consumption NamedConsumption
-		err := rows.Scan(&consumption.Consumption_id, &consumption.Name, &consumption.Units, &consumption.Time)
+		var consumption models.NamedConsumption
+		err := rows.Scan(&consumption.Consumption_id, &consumption.Name, &consumption.Units, &consumption.Time, &consumption.Price)
 		if err != nil {
 			slog.Error("error scanning consumption", "error", err)
 			c.Status(http.StatusInternalServerError)
