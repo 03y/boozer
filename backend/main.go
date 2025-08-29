@@ -318,7 +318,7 @@ func (a *App) AddUser(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	} else {
-		slog.Info("new account created", "username", newUser.Username, "ip", c.Request.Header.Get("X-Real-IP"))
+		slog.Info("new account created", "username", newUser.Username, "ip", c.Request.RemoteAddr)
 	}
 
 	c.Status(http.StatusCreated)
