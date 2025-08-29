@@ -20,7 +20,8 @@ CREATE TABLE consumptions(
     consumption_id  SERIAL      PRIMARY KEY,
     item_id         SERIAL      REFERENCES items,
     user_id         SERIAL      REFERENCES users,
-    time            INT         NOT NULL
+    time            INT         NOT NULL,
+    price           FLOAT       NULL
 );
 
 INSERT INTO items (name, units, added) VALUES ('Früh Kölsch',2.4, EXTRACT(epoch FROM now()));
