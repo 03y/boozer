@@ -52,3 +52,7 @@ type FeedConsumption struct {
 	Name     string `json:"name"`
 	Time     int    `json:"time"` // unix timestamp
 }
+
+type ConsumptionCount struct {
+	Consumptions int `json:"consumptions"`
+}
