@@ -467,7 +467,7 @@ func (a *App) AddConsumption(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	} else {
-		slog.Info("consumption added", "user_id", newConsumption.User_id, "item_id", newConsumption.Item_id)
+		slog.Info("consumption added", "user_id", newConsumption.User_id, "item_id", newConsumption.Item_id, "price", newConsumption.Price)
 	}
 
 	c.Status(http.StatusCreated)
