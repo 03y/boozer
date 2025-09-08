@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>🍺 Boozer</title>
+        <link rel="stylesheet" type="text/css" href="styles/style.css" />
+        <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
+        <script src="scripts/auth.js"></script>
+    </head>
+    <body onload="displayItem()">
+        <nav>
+            <a href="./index.html">Leaderboard</a>
+            <a href="./items.html">Inventory</a>
+            <a id="login-link" href="./profile.html">Profile</a>
+            <a href="./submit.html">Get boozing!</a>
+        </nav>
+
+        <div class="container">
+            <div class="profile-section">
+                <p><strong>Name:</strong> <span id="name"></span></p>
+                <p>
+                    <strong>Date Added:</strong> <span id="date-added"></span>
+                </p>
+                <p>
+                    <strong>Consumptions:</strong>
+                    <span id="consumptions"></span>
+                </p>
+            </div>
+        </div>
+
+        <script>
+            async function displayItem() {
+                try {
+                    const urlParams = new URLSearchParams(
+                        window.location.search,
+                    );
+                    const NAME = urlParams.get("name");
+
+                    const response = await fetch(
+                        `${API_BASE_URL}/item/${NAME}`,
+                    );
+
+                    if (response.ok) {
+                        item = await response.json();
+                    }
+
+                    if (!item) {
+                        document.getElementById("name").innerHTML =
+                            "Error loading item.";
+                        document.getElementById("date-added").innerHTML = "";
+                        return;
+                    }
+
+                    document.getElementById("name").innerHTML = item.name;
+                    const date = new Date(item.added * 1000);
+                    const formattedDate = date.toLocaleDateString("en-UK", {
+                        year: "numeric",
+                        month: "numeric",
+                        day: "numeric",
+                    });
+                    document.getElementById("date-added").innerHTML =
+                        formattedDate;
+                } catch (error) {
+                    document.getElementById("name").innerHTML =
+                        "Error loading item.";
+                    document.getElementById("date-added").innerHTML = "";
+                }
+            }
+        </script>
+    </body>
+</html>
