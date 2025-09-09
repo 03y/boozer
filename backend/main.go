@@ -202,8 +202,8 @@ func round(value float64, precision int) float64 {
 /* ******************************************************************************** */
 
 func (a *App) GetItem(c *gin.Context) {
-	var beer models.Item
-	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE item_id=$1", c.Param("item_id")).Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
+	var item models.Item
+	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE name=$1", c.Param("name")).Scan(&item.Item_id, &item.Name, &item.Units, &item.Added)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			c.Status(http.StatusNotFound)
@@ -213,7 +213,7 @@ func (a *App) GetItem(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, beer)
+	c.JSON(http.StatusOK, item)
 }
 
 func (a *App) GetItemList(c *gin.Context) {
@@ -792,7 +792,7 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	router.POST("/remove/consumption", a.RemoveConsumption)
 
 	// getting items
-	router.GET("/item/:item_id", a.GetItem)
+	router.GET("/item/:name", a.GetItem)
 	router.GET("/items", a.GetItemList)
 
 	// accounts
