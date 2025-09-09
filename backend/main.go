@@ -812,9 +812,9 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	router.GET("/consumption/:consumption_id", a.GetConsumption)
 
 	// leaderboards
-	router.GET("/leaderboard/items", a.GetItemsLeaderboard)
-	router.GET("/leaderboard/users", a.GetUserLeaderboard)
-	router.GET("/leaderboard/users_units", a.GetUserLeaderboardUnits)
+	router.GET("/leaderboards/items", a.GetItemsLeaderboard)
+	router.GET("/leaderboards/users", a.GetUserLeaderboard)
+	router.GET("/leaderboards/users-by-units", a.GetUserLeaderboardUnits)
 
 	// feed
 	router.GET("/feed", a.GetFeed)

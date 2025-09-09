@@ -41,7 +41,7 @@
                     <div class="leaderboard-controls">
                         <select id="leaderboard-type-selector">
                             <option value="users">🍻 Drinks</option>
-                            <option value="users_units">📊 Units</option>
+                            <option value="users-by-units">📊 Units</option>
                         </select>
                     </div>
                     <div id="users-leaderboard" class="leaderboard-container">
@@ -94,7 +94,7 @@
             async function fetchLeaderboard(type) {
                 try {
                     const response = await fetch(
-                        `${API_BASE_URL}/leaderboard/${type}`,
+                        `${API_BASE_URL}/leaderboards/${type}`,
                         {
                             method: "GET",
                             credentials: "include",
@@ -154,8 +154,8 @@
                         <thead>
                             <tr>
                                 <th>Rank</th>
-                                ${type === "users" || type === "users_units" ? "<th>User</th>" : "<th>Item</th>"}
-                                <th>${type === "users_units" ? "Units" : "Drank"}</th>
+                                ${type === "users" || type === "users-by-units" ? "<th>User</th>" : "<th>Item</th>"}
+                                <th>${type === "users-by-units" ? "Units" : "Drank"}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -169,7 +169,7 @@
                     tableHTML += `
                         <tr>
                             <td class="rank ${rankClass}">${rankDisplay}</td>
-                            <td>${type === "users" || type === "users_units" ? (item.username ? `<a href="./user.html?username=${item.username}">${item.username}</a>` : "Unknown User") : item.name || "Unknown Item"}</td>
+                            <td>${type === "users" || type === "users-by-units" ? (item.username ? `<a href="./user.html?username=${item.username}">${item.username}</a>` : "Unknown User") : item.name ? `<a href="./item.html?name=${item.name}">${item.name}</a>` : "Unknown Item"}</td>
                             <td>${type === "users" ? item.consumed : type === "items" ? item.consumed : item.units}</td>
                         </tr>
                     `;
@@ -241,7 +241,7 @@
                     tableHTML += `
                         <tr>
                           <td>${consumption.username ? `<a href="./user.html?username=${consumption.username}">${consumption.username}</a>` : "Unknown User"}</td>
-                          <td>${consumption.name || "Unknown Item"}</td>
+                          <td>${consumption.name ? `<a href="./item.html?name=${consumption.name}">${consumption.name}</a>` : "Unknown Item"}</td>
                           <td>${relativeTime}</td>
                         </tr>
                     `;
@@ -285,7 +285,7 @@
 
                 // show the appropriate container and set loading state
                 const activeContainer =
-                    type === "users_units"
+                    type === "users-by-units"
                         ? usersUnitsContainer
                         : usersContainer;
                 activeContainer.style.display = "block";
