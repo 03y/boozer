@@ -7,6 +7,7 @@
         <link rel="stylesheet" type="text/css" href="styles/style.css" />
         <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
         <script src="scripts/auth.js"></script>
+        <script src="scripts/leaderboard.js"></script>
     </head>
     <body>
         <nav>
@@ -142,45 +143,6 @@
                     default:
                         return `#${index + 1}`;
                 }
-            }
-
-            function createLeaderboardTable(data, type) {
-                if (!data || data.length === 0) {
-                    return `<div class="error">No ${type} found in leaderboard.</div>`;
-                }
-
-                let tableHTML = `
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                ${type === "users" || type === "users-by-units" ? "<th>User</th>" : "<th>Item</th>"}
-                                <th>${type === "users-by-units" ? "Units" : "Drank"}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-
-                data.forEach((item, index) => {
-                    const rankClass = getRankClass(index);
-                    const rankDisplay = getRankDisplay(index);
-
-                    // yeah it says 'item' but can actually be a user
-                    tableHTML += `
-                        <tr>
-                            <td class="rank ${rankClass}">${rankDisplay}</td>
-                            <td>${type === "users" || type === "users-by-units" ? (item.username ? `<a href="./user.html?username=${item.username}">${item.username}</a>` : "Unknown User") : item.name ? `<a href="./item.html?name=${item.name}">${item.name}</a>` : "Unknown Item"}</td>
-                            <td>${type === "users" ? item.consumed : type === "items" ? item.consumed : item.units}</td>
-                        </tr>
-                    `;
-                });
-
-                tableHTML += `
-                        </tbody>
-                    </table>
-                `;
-
-                return tableHTML;
             }
 
             function getRelativeTime(timestamp) {

@@ -201,6 +201,29 @@ func round(value float64, precision int) float64 {
 /* API endpoints */
 /* ******************************************************************************** */
 
+func (a *App) GetItems(c *gin.Context) {
+	rows, err := a.DB.Query(context.Background(), "SELECT * FROM items ORDER BY added DESC")
+	if err != nil {
+		slog.Error("error getting item list", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	items := make([]models.Item, 0)
+	for rows.Next() {
+		var item models.Item
+		err := rows.Scan(&item.Item_id, &item.Name, &item.Units, &item.Added)
+		if err != nil {
+			slog.Error("error scanning item", "error", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		items = append(items, item)
+	}
+
+	c.JSON(http.StatusOK, items)
+}
+
 func (a *App) GetItem(c *gin.Context) {
 	var item models.Item
 	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE name=$1", c.Param("name")).Scan(&item.Item_id, &item.Name, &item.Units, &item.Added)
@@ -216,27 +239,43 @@ func (a *App) GetItem(c *gin.Context) {
 	c.JSON(http.StatusOK, item)
 }
 
-func (a *App) GetItemList(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT * FROM items ORDER BY added DESC")
+func (a *App) GetItemConsumptionCount(c *gin.Context) {
+	var data models.ConsumptionCount
+	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(1) FROM consumptions c INNER JOIN items i ON c.item_id=i.item_id WHERE i.name=$1", c.Param("name")).Scan(&data.Consumptions)
 	if err != nil {
-		slog.Error("error getting item list", "error", err)
+		if err == pgx.ErrNoRows {
+			c.Status(http.StatusNotFound)
+			return
+		}
 		c.Status(http.StatusInternalServerError)
 		return
 	}
 
-	beers := make([]models.Item, 0)
+	c.JSON(http.StatusOK, data)
+}
+
+// get a list of users who have consumed this item, and how many times
+func (a *App) GetItemUserConsumptionCount(c *gin.Context) {
+	rows, err := a.DB.Query(context.Background(), "SELECT u.username, COUNT(1) FROM consumptions c INNER JOIN users u ON c.user_id=u.user_id INNER JOIN items i ON c.item_id=i.item_id WHERE i.name=$1 GROUP BY u.username ORDER BY count DESC LIMIT 50;", c.Param("name"))
+	if err != nil {
+		slog.Error("error getting user list", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	users := make([]models.LeaderboardUser, 0)
 	for rows.Next() {
-		var beer models.Item
-		err := rows.Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
+		var user models.LeaderboardUser
+		err := rows.Scan(&user.Username, &user.Consumed)
 		if err != nil {
-			slog.Error("error scanning item", "error", err)
+			slog.Error("error scanning user", "error", err)
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		beers = append(beers, beer)
+		users = append(users, user)
 	}
 
-	c.JSON(http.StatusOK, beers)
+	c.JSON(http.StatusOK, users)
 }
 
 func (a *App) AddItem(c *gin.Context) {
@@ -792,8 +831,10 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	router.POST("/remove/consumption", a.RemoveConsumption)
 
 	// getting items
-	router.GET("/item/:name", a.GetItem)
-	router.GET("/items", a.GetItemList)
+	router.GET("/items", a.GetItems)
+	router.GET("/items/:name", a.GetItem)
+	router.GET("/items/:name/leaderboard", a.GetItemUserConsumptionCount)
+	router.GET("/items/:name/consumptions", a.GetItemConsumptionCount)
 
 	// accounts
 	router.POST("/signup", a.AddUser)

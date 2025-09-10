@@ -7,8 +7,9 @@
         <link rel="stylesheet" type="text/css" href="styles/style.css" />
         <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
         <script src="scripts/auth.js"></script>
+        <script src="scripts/leaderboard.js"></script>
     </head>
-    <body onload="displayItem()">
+    <body>
         <nav>
             <a href="./index.html">Leaderboard</a>
             <a href="./items.html">Inventory</a>
@@ -29,16 +30,26 @@
             </div>
         </div>
 
+        <div class="container">
+            <div class="leaderboard-section">
+                <div class="leaderboard-column">
+                    <div id="users-leaderboard" class="leaderboard-container">
+                        <div class="loading">Loading leaderboard...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <script>
+            const urlParams = new URLSearchParams(
+                window.location.search,
+            );
+            const NAME = urlParams.get("name");
+
             async function displayItem() {
                 try {
-                    const urlParams = new URLSearchParams(
-                        window.location.search,
-                    );
-                    const NAME = urlParams.get("name");
-
                     const response = await fetch(
-                        `${API_BASE_URL}/item/${NAME}`,
+                        `${API_BASE_URL}/items/${NAME}`,
                     );
 
                     if (response.ok) {
@@ -67,6 +78,47 @@
                     document.getElementById("date-added").innerHTML = "";
                 }
             }
+
+            async function loadConsumptionCount() {
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/items/${NAME}/consumptions`,
+                    );
+
+                    if (response.ok) {
+                        data = await response.json();
+                    }
+
+                    if (data.consumptions > 0) {
+                        document.getElementById("consumptions").innerHTML = data.consumptions;
+                    }
+                } catch (error) {
+                    document.getElementById("name").innerHTML =
+                        "Error loading item.";
+                    document.getElementById("date-added").innerHTML = "";
+                }
+            }
+
+            async function loadLeaderboard() {
+                const response = await fetch(
+                    `${API_BASE_URL}/items/${NAME}/leaderboard`,
+                );
+
+                if (response.ok) {
+                    users = await response.json();
+                }
+
+                const usersContainer =
+                    document.getElementById("users-leaderboard");
+                usersContainer.innerHTML =
+                    '<div class="loading">Loading users leaderboard...</div>';
+
+                usersContainer.innerHTML = createLeaderboardTable(users, "users");
+            }
+
+            document.addEventListener("DOMContentLoaded", displayItem);
+            document.addEventListener("DOMContentLoaded", loadConsumptionCount);
+            document.addEventListener("DOMContentLoaded", loadLeaderboard);
         </script>
     </body>
 </html>
