@@ -53,7 +53,6 @@
                     }
 
                     if (!user) {
-                        console.error("User data is null or undefined.");
                         document.getElementById("username").innerHTML =
                             "Error loading user.";
                         document.getElementById("date-joined").innerHTML = "";
@@ -88,7 +87,6 @@
                         document.getElementById("consumptions").innerHTML =
                             data.consumptions;
                     } catch (error) {
-                        console.error(error);
                         consumptionsContainer.innerHTML = `<div class="error-message">Error loading consumptions.</div>`;
                     }
 
@@ -155,11 +153,9 @@
 
                         consumptionsContainer.innerHTML = tableHTML;
                     } catch (error) {
-                        console.error("Error fetching consumptions:", error);
                         consumptionsContainer.innerHTML = `<div class="error-message">Error loading consumptions.</div>`;
                     }
                 } catch (error) {
-                    console.error("Error displaying profile:", error);
                     document.getElementById("username").innerHTML =
                         "Error loading profile.";
                     document.getElementById("date-joined").innerHTML = "";

@@ -7,6 +7,7 @@
         <link rel="stylesheet" type="text/css" href="styles/style.css" />
         <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
         <script src="scripts/auth.js"></script>
+        <script src="scripts/leaderboard.js"></script>
     </head>
     <body>
         <nav>
@@ -41,7 +42,7 @@
                     <div class="leaderboard-controls">
                         <select id="leaderboard-type-selector">
                             <option value="users">🍻 Drinks</option>
-                            <option value="users_units">📊 Units</option>
+                            <option value="users-by-units">📊 Units</option>
                         </select>
                     </div>
                     <div id="users-leaderboard" class="leaderboard-container">
@@ -94,7 +95,7 @@
             async function fetchLeaderboard(type) {
                 try {
                     const response = await fetch(
-                        `${API_BASE_URL}/leaderboard/${type}`,
+                        `${API_BASE_URL}/leaderboards/${type}`,
                         {
                             method: "GET",
                             credentials: "include",
@@ -118,70 +119,6 @@
                 }
             }
 
-            function getRankClass(index) {
-                switch (index) {
-                    case 0:
-                        return "first";
-                    case 1:
-                        return "second";
-                    case 2:
-                        return "third";
-                    default:
-                        return "";
-                }
-            }
-
-            function getRankDisplay(index) {
-                switch (index) {
-                    case 0:
-                        return "🥇";
-                    case 1:
-                        return "🥈";
-                    case 2:
-                        return "🥉";
-                    default:
-                        return `#${index + 1}`;
-                }
-            }
-
-            function createLeaderboardTable(data, type) {
-                if (!data || data.length === 0) {
-                    return `<div class="error">No ${type} found in leaderboard.</div>`;
-                }
-
-                let tableHTML = `
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                ${type === "users" || type === "users_units" ? "<th>User</th>" : "<th>Item</th>"}
-                                <th>${type === "users_units" ? "Units" : "Drank"}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-
-                data.forEach((item, index) => {
-                    const rankClass = getRankClass(index);
-                    const rankDisplay = getRankDisplay(index);
-
-                    // yeah it says 'item' but can actually be a user
-                    tableHTML += `
-                        <tr>
-                            <td class="rank ${rankClass}">${rankDisplay}</td>
-                            <td>${type === "users" || type === "users_units" ? (item.username ? `<a href="./user.html?username=${item.username}">${item.username}</a>` : "Unknown User") : item.name || "Unknown Item"}</td>
-                            <td>${type === "users" ? item.consumed : type === "items" ? item.consumed : item.units}</td>
-                        </tr>
-                    `;
-                });
-
-                tableHTML += `
-                        </tbody>
-                    </table>
-                `;
-
-                return tableHTML;
-            }
 
             function getRelativeTime(timestamp) {
                 if (!timestamp) {
@@ -241,7 +178,7 @@
                     tableHTML += `
                         <tr>
                           <td>${consumption.username ? `<a href="./user.html?username=${consumption.username}">${consumption.username}</a>` : "Unknown User"}</td>
-                          <td>${consumption.name || "Unknown Item"}</td>
+                          <td>${consumption.name ? `<a href="./item.html?name=${consumption.name}">${consumption.name}</a>` : "Unknown Item"}</td>
                           <td>${relativeTime}</td>
                         </tr>
                     `;
@@ -285,7 +222,7 @@
 
                 // show the appropriate container and set loading state
                 const activeContainer =
-                    type === "users_units"
+                    type === "users-by-units"
                         ? usersUnitsContainer
                         : usersContainer;
                 activeContainer.style.display = "block";
@@ -294,7 +231,7 @@
 
                 try {
                     const data = await fetchLeaderboard(type);
-                    activeContainer.innerHTML = createLeaderboardTable(
+                    activeContainer.innerHTML = createTable(
                         data,
                         type,
                     );
@@ -316,7 +253,7 @@
 
                 try {
                     const itemsData = await fetchLeaderboard("items");
-                    itemsContainer.innerHTML = createLeaderboardTable(
+                    itemsContainer.innerHTML = createTable(
                         itemsData,
                         "items",
                     );
