@@ -18,32 +18,40 @@
 
         <div class="container">
             <div class="items-section">
-                <div id="leaderboard-container">
+                <div class="leaderboard-controls">
+                    <select id="sort-selector">
+                        <option value="date">📅 Date Added</option>
+                        <option value="alpha">🔤 Alphabetical</option>
+                        <option value="units">📊 Units</option>
+                    </select>
+                </div>
+                <div id="items-container">
                     <div class="loading">Loading inventory...</div>
                 </div>
             </div>
         </div>
 
         <script>
+            let itemsData = [];
+            const container = document.getElementById("items-container");
+
             async function fetchItems() {
                 try {
                     const response = await fetch(`${API_BASE_URL}/items`);
-
                     if (!response.ok) {
-                        throw error;
+                        throw new Error("Failed to fetch items");
                     }
-
-                    const data = await response.json();
-                    return data;
+                    return await response.json();
                 } catch (error) {
-                    console.error("Error fetching inventory");
+                    console.error("Error fetching inventory:", error);
                     throw error;
                 }
             }
 
-            function createTable(data) {
-                if (!data || data.length === 0) {
-                    return `<div class="error">Inventory is empty.</div>`;
+            function renderTable() {
+                if (!itemsData || itemsData.length === 0) {
+                    container.innerHTML = `<div class="error">Inventory is empty.</div>`;
+                    return;
                 }
 
                 let tableHTML = `
@@ -58,7 +66,7 @@
                         <tbody>
                 `;
 
-                data.forEach((item, index) => {
+                itemsData.forEach((item) => {
                     const date = new Date(item.added * 1000);
                     const formattedDate = date.toISOString().split("T")[0];
                     tableHTML += `
@@ -74,24 +82,30 @@
                         </tbody>
                     </table>
                 `;
-
-                return tableHTML;
+                container.innerHTML = tableHTML;
             }
 
-            async function loadLeaderboard() {
-                const container = document.getElementById(
-                    "leaderboard-container",
-                );
+            function sortData(criteria) {
+                switch (criteria) {
+                    case 'date':
+                        itemsData.sort((a, b) => b.added - a.added);
+                        break;
+                    case 'alpha':
+                        itemsData.sort((a, b) => a.name.localeCompare(b.name));
+                        break;
+                    case 'units':
+                        itemsData.sort((a, b) => b.units - a.units);
+                        break;
+                }
+                renderTable();
+            }
 
-                container.innerHTML =
-                    '<div class="loading">Loading inventory...</div>';
-
-                // TODO: rename all the 'leaderboard' stuff to items
-
+            async function loadItems() {
+                container.innerHTML = '<div class="loading">Loading inventory...</div>';
                 try {
                     const data = await fetchItems();
-                    const tableHTML = createTable(data);
-                    container.innerHTML = tableHTML;
+                    itemsData = data || [];
+                    sortData('date');
                 } catch (error) {
                     container.innerHTML = `
                         <div class="error">
@@ -101,8 +115,11 @@
                 }
             }
 
-            // Load leaderboard when page loads
-            document.addEventListener("DOMContentLoaded", loadLeaderboard);
+            document.getElementById('sort-selector').addEventListener('change', function () {
+                sortData(this.value);
+            });
+
+            document.addEventListener("DOMContentLoaded", loadItems);
             document.addEventListener("DOMContentLoaded", getUser);
         </script>
     </body>
