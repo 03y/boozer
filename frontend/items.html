@@ -25,25 +25,23 @@
         </div>
 
         <script>
-            async function fetchLeaderboard() {
+            async function fetchItems() {
                 try {
                     const response = await fetch(`${API_BASE_URL}/items`);
 
                     if (!response.ok) {
-                        throw new Error(
-                            `HTTP error! status: ${response.status}`,
-                        );
+                        throw error;
                     }
 
                     const data = await response.json();
                     return data;
                 } catch (error) {
-                    console.error("Error fetching inventory:", error);
+                    console.error("Error fetching inventory");
                     throw error;
                 }
             }
 
-            function createLeaderboardTable(data) {
+            function createTable(data) {
                 if (!data || data.length === 0) {
                     return `<div class="error">Inventory is empty.</div>`;
                 }
@@ -65,7 +63,7 @@
                     const formattedDate = date.toISOString().split("T")[0];
                     tableHTML += `
                         <tr>
-                            <td>${item.name || ""}</td>
+                            <td>${item.name ? `<a href="./item.html?name=${item.name}">${item.name}</a>` : "Unknown Item"}</td>
                             <td>${item.units || 0}</td>
                             <td>${formattedDate}</td>
                         </tr>
@@ -91,14 +89,13 @@
                 // TODO: rename all the 'leaderboard' stuff to items
 
                 try {
-                    const data = await fetchLeaderboard();
-                    const tableHTML = createLeaderboardTable(data);
+                    const data = await fetchItems();
+                    const tableHTML = createTable(data);
                     container.innerHTML = tableHTML;
                 } catch (error) {
                     container.innerHTML = `
                         <div class="error">
-                            <strong>Error loading leaderboard:</strong><br>
-                            ${error.message}<br>
+                            <strong>Error loading items</strong><br>
                         </div>
                     `;
                 }

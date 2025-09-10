@@ -119,31 +119,6 @@
                 }
             }
 
-            function getRankClass(index) {
-                switch (index) {
-                    case 0:
-                        return "first";
-                    case 1:
-                        return "second";
-                    case 2:
-                        return "third";
-                    default:
-                        return "";
-                }
-            }
-
-            function getRankDisplay(index) {
-                switch (index) {
-                    case 0:
-                        return "🥇";
-                    case 1:
-                        return "🥈";
-                    case 2:
-                        return "🥉";
-                    default:
-                        return `#${index + 1}`;
-                }
-            }
 
             function getRelativeTime(timestamp) {
                 if (!timestamp) {
@@ -256,7 +231,7 @@
 
                 try {
                     const data = await fetchLeaderboard(type);
-                    activeContainer.innerHTML = createLeaderboardTable(
+                    activeContainer.innerHTML = createTable(
                         data,
                         type,
                     );
@@ -278,7 +253,7 @@
 
                 try {
                     const itemsData = await fetchLeaderboard("items");
-                    itemsContainer.innerHTML = createLeaderboardTable(
+                    itemsContainer.innerHTML = createTable(
                         itemsData,
                         "items",
                     );
