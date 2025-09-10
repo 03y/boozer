@@ -52,25 +52,6 @@ tr:hover {
     background-color: var(--hover-bg-colour);
 }
 
-tr.selected {
-    background-color: var(--select-bg-colour);
-    color: var(--select-text-colour);
-}
-
-select {
-    padding: 10px;
-    font-size: 16px;
-    border-radius: 4px;
-    background-color: var(--select-bg-colour);
-    border: none;
-    color: var(--select-text-colour);
-    cursor: pointer;
-}
-
-select:hover {
-    background-color: var(--select-hover-bg-colour);
-}
-
 .leaderboard-section {
     margin: 30px 0;
     display: flex;
@@ -134,58 +115,20 @@ select:hover {
     margin-bottom: 20px;
 }
 
-#leaderboard-type-selector {
-    padding: 12px 18px;
-    font-size: 15px;
-    font-weight: 600;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #f4c430 0%, #d4a024 50%, #b8941f 100%);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    color: #2c1810;
+#leaderboard-type-selector,
+#sort-selector {
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 4px;
+    background-color: #333;
+    border: 1px solid #555;
+    color: #fff;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    min-width: 120px;
-    box-shadow:
-        0 4px 12px rgba(212, 160, 36, 0.3),
-        0 2px 4px rgba(0, 0, 0, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
-    appearance: none;
-    padding-right: 35px;
 }
 
-#leaderboard-type-selector:hover {
-    background: linear-gradient(135deg, #f7d858 0%, #e2b13d 50%, #c49d2a 100%);
-    border-color: rgba(255, 255, 255, 0.4);
-    box-shadow:
-        0 6px 20px rgba(212, 160, 36, 0.4),
-        0 4px 8px rgba(0, 0, 0, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4);
-    transform: translateY(-1px);
-}
-
-#leaderboard-type-selector:focus {
-    outline: none;
-    border-color: rgba(255, 255, 255, 0.6);
-    box-shadow:
-        0 6px 20px rgba(212, 160, 36, 0.5),
-        0 4px 8px rgba(0, 0, 0, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4),
-        0 0 0 3px rgba(244, 196, 48, 0.3);
-}
-
-#leaderboard-type-selector:active {
-    transform: translateY(0);
-    box-shadow:
-        0 2px 8px rgba(212, 160, 36, 0.4),
-        0 1px 3px rgba(0, 0, 0, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
-#leaderboard-type-selector option {
-    background-color: #2c1810;
-    color: #f4c430;
-    padding: 8px;
+#leaderboard-type-selector:hover,
+#sort-selector:hover {
+    background-color: #444;
 }
 
 .leaderboard-column {

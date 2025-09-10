@@ -373,3 +373,30 @@ input:checked:disabled {
         order: 3;
     }
 }
+
+/* Sorting options styles */
+.sort-options {
+    margin-bottom: 15px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.sort-options span {
+    font-weight: bold;
+}
+
+.sort-options button {
+    padding: 8px 12px;
+    border: 1px solid var(--tabacco-tan);
+    background-color: var(--pint-foam-cream);
+    color: var(--stout-brown);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.sort-options button:hover {
+    background-color: var(--tabacco-tan);
+    color: var(--pint-foam-cream);
+}
