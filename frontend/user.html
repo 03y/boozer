@@ -8,11 +8,11 @@
         <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
         <script src="scripts/auth.js"></script>
     </head>
-    <body onload="displayProfile()">
+    <body>
         <nav>
             <a href="./index.html">Leaderboard</a>
             <a href="./items.html">Inventory</a>
-            <a id="login-link" href="./profile.html">Profile</a>
+            <a id="login-link" href="./login.html">Login</a>
             <a href="./submit.html">Get boozing!</a>
         </nav>
 
@@ -162,6 +162,9 @@
                     document.getElementById("consumptions").innerHTML = "";
                 }
             }
+
+            document.addEventListener("DOMContentLoaded", displayProfile);
+            document.addEventListener("DOMContentLoaded", getUser);
         </script>
     </body>
 </html>
