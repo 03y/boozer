@@ -19,6 +19,21 @@ async function getUser() {
 }
 
 function updateLoginLink(loginLink, username) {
-  loginLink.innerHTML = "Hi " + username + "!";
-  loginLink.href = "./profile.html";
+    loginLink.innerHTML = "Hi " + username + "!";
+    loginLink.href = "./profile.html";
+}
+
+async function logout() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/logout`, {
+            method: "POST",
+        });
+        if (response.ok) {
+            window.location.href = "index.html";
+        } else {
+            console.error("Logout failed");
+        }
+    } catch (error) {
+        console.error("Error logging out:", error);
+    }
 }
