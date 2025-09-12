@@ -8,7 +8,7 @@
         <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
         <script src="scripts/auth.js"></script>
     </head>
-    <body onload="displayProfile()">
+    <body>
         <nav>
             <a href="./index.html">Leaderboard</a>
             <a href="./items.html">Inventory</a>
@@ -77,6 +77,11 @@
         </div>
 
         <script>
+            const logoutButton = document.getElementById("logout-btn");
+            if (logoutButton) {
+                logoutButton.addEventListener("click", logout);
+            }
+
             async function confirm_delete() {
                 const checkboxes = document.querySelectorAll(
                     'input[name="selected"]:checked',
@@ -251,8 +256,7 @@
                         const data = await response.json();
 
                         if (!data || data.length === 0) {
-                            consumptionsContainer.innerHTML =
-                                '<div class="no-consumptions">No consumptions... get boozing!!!</div>';
+                            consumptionsContainer.innerHTML = "";
                             return;
                         }
 
@@ -307,26 +311,6 @@
                     document.getElementById("consumptions").innerHTML = "";
                 }
 
-                async function logout() {
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/logout`, {
-                            method: "POST",
-                        });
-                        if (response.ok) {
-                            window.location.href = "index.html";
-                        } else {
-                            console.error("Logout failed");
-                        }
-                    } catch (error) {
-                        console.error("Error logging out:", error);
-                    }
-                }
-
-                const logoutButton = document.getElementById("logout-btn");
-                if (logoutButton) {
-                    logoutButton.addEventListener("click", logout);
-                }
-
                 const deleteButton = document.getElementById("del-btn");
                 if (deleteButton) {
                     deleteButton.addEventListener("click", delete_selected);
@@ -350,6 +334,8 @@
                     });
                 }
             }
+
+            document.addEventListener("DOMContentLoaded", displayProfile);
         </script>
     </body>
 </html>
