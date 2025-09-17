@@ -1,6 +1,0 @@
-{"time":"2025-09-17T12:52:21.313822266+02:00","level":"INFO","msg":"starting up","name":"boozer","version":"Alpha"}
-{"time":"2025-09-17T12:52:21.322462903+02:00","level":"INFO","msg":"successfully connected to database"}
-{"time":"2025-09-17T12:52:21.322525353+02:00","level":"INFO","msg":"Lets get boozing! 🍻"}
-{"time":"2025-09-17T12:52:21.322537886+02:00","level":"INFO","msg":"starting server","address":"localhost:6969"}
-{"time":"2025-09-17T12:52:59.020929652+02:00","level":"ERROR","msg":"error getting item list","error":"failed to connect to `user=kmoir database=`: /tmp/.s.PGSQL.5432 (/tmp): dial error: dial unix /tmp/.s.PGSQL.5432: connect: no such file or directory"}
-{"time":"2025-09-17T12:53:11.48936572+02:00","level":"ERROR","msg":"error getting item list","error":"failed to connect to `user=kmoir database=`: /tmp/.s.PGSQL.5432 (/tmp): dial error: dial unix /tmp/.s.PGSQL.5432: connect: no such file or directory"}
