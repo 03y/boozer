@@ -97,3 +97,30 @@ body {
 .hidden {
     display: none;
 }
+
+.radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.radio-group input[type="radio"] {
+    display: none;
+}
+
+.radio-group label {
+    display: inline-block;
+    padding: 10px 20px;
+    border: 1px solid var(--tabacco-tan);
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: var(--pint-foam-cream);
+    color: var(--stout-brown);
+    transition: background-color 0.3s;
+}
+
+.radio-group input[type="radio"]:checked + label {
+    background-color: var(--tartan-green);
+    color: var(--pint-foam-cream);
+    border-color: var(--tartan-green);
+}

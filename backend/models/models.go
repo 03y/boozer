@@ -41,6 +41,14 @@ type NamedConsumption struct {
 	Price          *float32 `json:"price,omitempty"` // pointer as may be null
 }
 
+type ItemReport struct {
+	Report_id int    `json:"report_id"`
+	Item_id   int    `json:"item_id"`
+	User_id   int    `json:"user_id"`
+	Created   int    `json:"created"` // unix timestamp
+	Bad_data  string `json:"bad_data"`
+}
+
 type LeaderboardUser struct {
 	Consumed int    `json:"consumed"`
 	Username string `json:"username"`

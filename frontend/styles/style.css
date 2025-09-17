@@ -105,6 +105,7 @@ a {
     max-width: 200px;
 }
 
+.item-actions,
 .logout {
     margin: 8px auto;
     max-width: 200px;
@@ -121,6 +122,7 @@ a {
     width: 100%;
 }
 
+.report-bad-data-btn,
 .logout-btn {
     background-color: var(--red-button-primary-colour);
     color: white;
@@ -133,6 +135,7 @@ a {
     width: 100%;
 }
 
+.report-bad-data-btn:hover,
 .logout-btn:hover,
 .del-btn:hover {
     background-color: var(--red-button-hover-colour);
@@ -438,4 +441,18 @@ input:checked:disabled {
 .dropdown-item:last-child {
     border-bottom-left-radius: 8px;
     border-bottom-right-radius: 8px;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
 }
