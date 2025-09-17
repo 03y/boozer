@@ -398,6 +398,62 @@ func (a *App) Authenticate(c *gin.Context) {
 	}
 }
 
+func (a *App) AddItemReport(c *gin.Context) {
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		slog.Error("error parsing JWT", "error", err)
+		c.Status(http.StatusBadRequest) // TODO: should this (and other similar instances) be 401 Unauth?
+		return
+	}
+
+	var newItemReport models.ItemReport
+	err = c.BindJSON(&newItemReport)
+	if err != nil {
+		slog.Error("error binding JSON", "error", err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	// check item exists
+	err = a.DB.QueryRow(context.Background(), "SELECT item_id FROM items WHERE name=$1", c.Param("name")).Scan(&newItemReport.Item_id)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			slog.Error("item not found", "error", err)
+		}
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// get user id
+	var idLookup string
+	err = a.DB.QueryRow(context.Background(), "SELECT user_id FROM users WHERE username=$1", claims["username"]).Scan(&idLookup)
+	if err != nil {
+		slog.Error("error looking up user ID", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	newItemReport.User_id, _ = strconv.Atoi(idLookup)
+
+	newItemReport.Created = int(time.Now().Unix())
+
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO item_reports (item_id, user_id, bad_data, created) VALUES ($1, $2, $3, $4)", newItemReport.Item_id, newItemReport.User_id, newItemReport.Bad_data, newItemReport.Created)
+	if err != nil {
+		slog.Error("error adding item report", "error", err)
+		c.Status(http.StatusBadRequest) // it was probably the clients fault
+		return
+	} else {
+		slog.Info("new item report created", "item_id", newItemReport.Item_id, "item_id", newItemReport.User_id, "bad_data", newItemReport.Bad_data)
+	}
+
+	c.Status(http.StatusCreated)
+}
+
 func (a *App) Logout(c *gin.Context) {
 	c.SetCookie("token", "", -1, "/", "", true, true)
 	c.Status(http.StatusOK)
@@ -822,42 +878,36 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	gin.DefaultWriter = writer
 	router := gin.New()
 
-	// adding new items/consumptions
+	// items
 	router.POST("/submit/item", a.AddItem) // TODO: maybe add field for who added it, add auth for this
 	router.POST("/submit/consumption", a.AddConsumption)
-	// TODO: router.PUT("/submit/consumption", a.AddConsumption)
-
-	// updating and deleting items/consumptions
-	router.POST("/remove/consumption", a.RemoveConsumption)
-
-	// getting items
+	// TODO: router.PUT("/submit/consumption", a.AddConsumption) // for updating items
 	router.GET("/items", a.GetItems)
 	router.GET("/items/:name", a.GetItem)
 	router.GET("/items/:name/leaderboard", a.GetItemUserConsumptionCount)
 	router.GET("/items/:name/consumptions", a.GetItemConsumptionCount)
+	router.POST("/items/:name/report", a.AddItemReport)
 
-	// accounts
+	// consumptions
+	router.GET("/consumption/:consumption_id", a.GetConsumption)
+	router.POST("/remove/consumption", a.RemoveConsumption)
+
+	// users
 	router.POST("/signup", a.AddUser)
 	router.POST("/authenticate", a.Authenticate)
 	router.POST("/logout", a.Logout)
 	router.PUT("/change_password", a.ChangePassword)
 
-	// get user data
 	router.GET("/user/:username", a.GetUser)
 	router.GET("/user/me", a.GetUserFromToken)
 	router.GET("/consumption_count", a.GetTotalConsumptionCount)
 	router.GET("/consumption_count/:username", a.GetUserConsumptionCount)
 	router.GET("/consumptions/:username", a.GetUserConsumptions)
 
-	// get consumption
-	router.GET("/consumption/:consumption_id", a.GetConsumption)
-
 	// leaderboards
 	router.GET("/leaderboards/items", a.GetItemsLeaderboard)
 	router.GET("/leaderboards/users", a.GetUserLeaderboard)
 	router.GET("/leaderboards/users-by-units", a.GetUserLeaderboardUnits)
-
-	// feed
 	router.GET("/feed", a.GetFeed)
 
 	return router
