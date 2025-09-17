@@ -31,6 +31,16 @@
         </div>
 
         <div class="container">
+            <div class="item-actions">
+                <button type="submit" class="report-bad-data-btn" id="report-bad-data-btn">
+                    Report bad data
+                </button>
+            </div>
+        </div>
+
+            <div id="message-container"></div>
+
+        <div class="container">
             <div class="leaderboard-section">
                 <div class="leaderboard-column">
                     <div id="users-leaderboard" class="leaderboard-container">
@@ -79,6 +89,23 @@
                 }
             }
 
+            async function reportBadData() {
+                try {
+                    null;
+
+                    // TODO: show modal for report options (name, units, duplicate, multiple/other)
+                    // use similar code to that used when deleting consumptions on the profile.html page
+
+                    // TODO: send the report
+                    // https POST, just need to set the bad_data reason (name, units, duplicate, other)
+
+                    // TODO: set  success message (like on the consumption page: submit.html)
+                } catch (error) {
+                    // TODO: set error message (like on the consumption page: submit.html)
+                    null;
+                }
+            }
+
             async function loadConsumptionCount() {
                 try {
                     const response = await fetch(
@@ -114,6 +141,11 @@
                     '<div class="loading">Loading users leaderboard...</div>';
 
                 usersContainer.innerHTML = createTable(users, "users");
+            }
+
+            const reportBadDataButton = document.getElementById("report-bad-data-btn");
+            if (reportBadDataButton) {
+                reportBadDataButton.addEventListener("click", reportBadData);
             }
 
             document.addEventListener("DOMContentLoaded", displayItem);

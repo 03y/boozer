@@ -136,6 +136,10 @@ tr:hover {
     flex: 1 1 0;
 }
 
+.dateHeader {
+    background-color: red;
+}
+
 @media screen and (max-width: 768px) {
     .leaderboard-column {
         flex: 1 1 100%;
