@@ -55,10 +55,9 @@
         <div id="report-modal" class="modal">
             <div class="modal-content">
                 <span class="close-button">&times;</span>
-                <h2>Report Bad Data</h2>
+                <h2>Select reason:</h2>
                 <form id="report-form">
                     <div class="form-group">
-                        <label>Reason for reporting:</label>
                         <div class="radio-group">
                             <input type="radio" id="report-name" name="reason" value="name" required>
                             <label for="report-name">Name</label>
@@ -71,7 +70,7 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <button type="submit">Submit Report</button>
+                        <button type="submit" class="report-bad-data-btn" id="report-bad-data-btn">Submit Report</button>
                     </div>
                 </form>
             </div>
@@ -141,7 +140,7 @@
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${localStorage.getItem('token')}`
                         },
-                        body: JSON.stringify({ bad_data: reason })
+                        body: JSON.stringify({ reason: reason })
                     });
 
                     if (response.ok) {
@@ -150,14 +149,21 @@
                     } else {
                         const error = await response.json();
                         setMessage(`Error: ${error.error}`, true);
+                        closeModal();
                     }
                 } catch (error) {
                     setMessage('An error occurred while submitting the report.', true);
+                    closeModal();
                 }
             }
 
 
-            function reportBadData() {
+            async function reportBadData() {
+                const user = await getUser();
+                if (!user) {
+                    setMessage('You must be logged in to report item data.', true);
+                    return;
+                }
                 showModal();
             }
 
