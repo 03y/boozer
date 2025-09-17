@@ -24,6 +24,16 @@ CREATE TABLE consumptions(
     price           FLOAT       NULL
 );
 
+CREATE TYPE bad_data_type AS ENUM ('name', 'units', 'duplicate', 'other');
+
+CREATE TABLE item_reports(
+    report_id   SERIAL          PRIMARY KEY,
+    item_id     SERIAL          REFERENCES ITEMS,
+    user_id     SERIAL          REFERENCES USERS,
+    bad_data    bad_data_type   NOT NULL
+    created     INT             NOT NULL
+);
+
 INSERT INTO items (name, units, added) VALUES ('Früh Kölsch',2.4, EXTRACT(epoch FROM now()));
 INSERT INTO items (name, units, added) VALUES ('Rothaus Pils',2.6, EXTRACT(epoch FROM now()));
 INSERT INTO items (name, units, added) VALUES ('Ishii Orehi Pale Ale',2.4, EXTRACT(epoch FROM now()));
