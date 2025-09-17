@@ -4,10 +4,12 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>🍺 Boozer</title>
-        <link rel="stylesheet" type="text/css" href="styles/style.css" />
+        <link rel="stylesheet" type="text/css" href="styles/forms.css" />
         <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
+        <link rel="stylesheet" type="text/css" href="styles/style.css" />
         <script src="scripts/auth.js"></script>
         <script src="scripts/leaderboard.js"></script>
+        <script src="scripts/messaging.js"></script>
     </head>
     <body>
         <nav>
@@ -50,6 +52,31 @@
             </div>
         </div>
 
+        <div id="report-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2>Report Bad Data</h2>
+                <form id="report-form">
+                    <div class="form-group">
+                        <label>Reason for reporting:</label>
+                        <div class="radio-group">
+                            <input type="radio" id="report-name" name="reason" value="name" required>
+                            <label for="report-name">Name</label>
+                            <input type="radio" id="report-units" name="reason" value="units">
+                            <label for="report-units">Units</label>
+                            <input type="radio" id="report-duplicate" name="reason" value="duplicate">
+                            <label for="report-duplicate">Duplicate</label>
+                            <input type="radio" id="report-other" name="reason" value="other">
+                            <label for="report-other">Other</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit">Submit Report</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <script>
             const urlParams = new URLSearchParams(
                 window.location.search,
@@ -89,21 +116,49 @@
                 }
             }
 
-            async function reportBadData() {
-                try {
-                    null;
+            function showModal() {
+                const modal = document.getElementById('report-modal');
+                modal.style.display = 'block';
+            }
 
-                    // TODO: show modal for report options (name, units, duplicate, multiple/other)
-                    // use similar code to that used when deleting consumptions on the profile.html page
+            function closeModal() {
+                const modal = document.getElementById('report-modal');
+                modal.style.display = 'none';
+            }
 
-                    // TODO: send the report
-                    // https POST, just need to set the bad_data reason (name, units, duplicate, other)
-
-                    // TODO: set  success message (like on the consumption page: submit.html)
-                } catch (error) {
-                    // TODO: set error message (like on the consumption page: submit.html)
-                    null;
+            async function handleReportSubmit(event) {
+                event.preventDefault();
+                const reason = document.querySelector('input[name="reason"]:checked').value;
+                if (!reason) {
+                    setMessage('Please select a reason for reporting.', true);
+                    return;
                 }
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/items/${NAME}/report`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
+                        body: JSON.stringify({ bad_data: reason })
+                    });
+
+                    if (response.ok) {
+                        setMessage('Report submitted successfully.');
+                        closeModal();
+                    } else {
+                        const error = await response.json();
+                        setMessage(`Error: ${error.error}`, true);
+                    }
+                } catch (error) {
+                    setMessage('An error occurred while submitting the report.', true);
+                }
+            }
+
+
+            function reportBadData() {
+                showModal();
             }
 
             async function loadConsumptionCount() {
@@ -143,10 +198,14 @@
                 usersContainer.innerHTML = createTable(users, "users");
             }
 
+
             const reportBadDataButton = document.getElementById("report-bad-data-btn");
             if (reportBadDataButton) {
                 reportBadDataButton.addEventListener("click", reportBadData);
             }
+
+            document.getElementById('report-form').addEventListener('submit', handleReportSubmit);
+            document.querySelector('.close-button').addEventListener('click', closeModal);
 
             document.addEventListener("DOMContentLoaded", displayItem);
             document.addEventListener("DOMContentLoaded", loadConsumptionCount);
