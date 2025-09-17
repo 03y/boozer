@@ -24,13 +24,13 @@ CREATE TABLE consumptions(
     price           FLOAT       NULL
 );
 
-CREATE TYPE bad_data_type AS ENUM ('name', 'units', 'duplicate', 'other');
+CREATE TYPE reason_type AS ENUM ('name', 'units', 'duplicate', 'other');
 
 CREATE TABLE item_reports(
     report_id   SERIAL          PRIMARY KEY,
     item_id     SERIAL          REFERENCES ITEMS,
     user_id     SERIAL          REFERENCES USERS,
-    bad_data    bad_data_type   NOT NULL
+    reason      reason_type     NOT NULL
     created     INT             NOT NULL
 );
 
