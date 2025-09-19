@@ -442,13 +442,13 @@ func (a *App) AddItemReport(c *gin.Context) {
 
 	newItemReport.Created = int(time.Now().Unix())
 
-	_, err = a.DB.Exec(context.Background(), "INSERT INTO item_reports (item_id, user_id, bad_data, created) VALUES ($1, $2, $3, $4)", newItemReport.Item_id, newItemReport.User_id, newItemReport.Bad_data, newItemReport.Created)
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO item_reports (item_id, user_id, reason, created) VALUES ($1, $2, $3, $4)", newItemReport.Item_id, newItemReport.User_id, newItemReport.Reason, newItemReport.Created)
 	if err != nil {
 		slog.Error("error adding item report", "error", err)
 		c.Status(http.StatusBadRequest) // it was probably the clients fault
 		return
 	} else {
-		slog.Info("new item report created", "item_id", newItemReport.Item_id, "item_id", newItemReport.User_id, "bad_data", newItemReport.Bad_data)
+		slog.Info("new item report created", "item_id", newItemReport.Item_id, "item_id", newItemReport.User_id, "reason", newItemReport.Reason)
 	}
 
 	c.Status(http.StatusCreated)

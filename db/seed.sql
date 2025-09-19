@@ -30,7 +30,7 @@ CREATE TABLE item_reports(
     report_id   SERIAL          PRIMARY KEY,
     item_id     SERIAL          REFERENCES ITEMS,
     user_id     SERIAL          REFERENCES USERS,
-    reason      reason_type     NOT NULL
+    reason      reason_type     NOT NULL,
     created     INT             NOT NULL
 );
 
