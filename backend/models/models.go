@@ -46,7 +46,7 @@ type ItemReport struct {
 	Item_id   int    `json:"item_id"`
 	User_id   int    `json:"user_id"`
 	Created   int    `json:"created"` // unix timestamp
-	Bad_data  string `json:"bad_data"`
+	Reason    string `json:"reason"`
 }
 
 type LeaderboardUser struct {
