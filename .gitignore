@@ -1,3 +1,4 @@
 backend/boozer
 backend/logs
+frontend/caddy
 *.pem
