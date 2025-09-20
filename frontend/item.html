@@ -23,7 +23,8 @@
             <div class="profile-section">
                 <p><strong>Name:</strong> <span id="name"></span></p>
                 <p>
-                    <strong>Date Added:</strong> <span id="date-added"></span>
+                    <strong>Units:</strong>
+                    <span id="units"></span>
                 </p>
                 <p>
                     <strong>Consumptions:</strong>
@@ -84,7 +85,7 @@
 
             async function displayItem() {
                 try {
-                    const response = await fetch(
+                    let response = await fetch(
                         `${API_BASE_URL}/items/${NAME}`,
                     );
 
@@ -95,23 +96,15 @@
                     if (!item) {
                         document.getElementById("name").innerHTML =
                             "Error loading item.";
-                        document.getElementById("date-added").innerHTML = "";
+                        document.getElementById("units").innerHTML = "";
                         return;
                     }
 
                     document.getElementById("name").innerHTML = item.name;
-                    const date = new Date(item.added * 1000);
-                    const formattedDate = date.toLocaleDateString("en-UK", {
-                        year: "numeric",
-                        month: "numeric",
-                        day: "numeric",
-                    });
-                    document.getElementById("date-added").innerHTML =
-                        formattedDate;
+                    document.getElementById("units").innerHTML = item.units;
                 } catch (error) {
                     document.getElementById("name").innerHTML =
                         "Error loading item.";
-                    document.getElementById("date-added").innerHTML = "";
                 }
             }
 
