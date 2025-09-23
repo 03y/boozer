@@ -2,7 +2,7 @@ localhost {
     root * .
     file_server
 
-    handle_path /api/v1/* {
+    handle_path /api/* {
         rate_limit {
             zone api {
                 key {http.request.remote.ip}

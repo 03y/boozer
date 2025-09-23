@@ -49,7 +49,7 @@ type App struct {
 }
 
 const NAME string = "boozer"
-const VERSION string = "Alpha"
+const VERSION string = "Beta-2"
 
 var ARGON2_PARAMS = &params{
 	memory:      65536,
@@ -202,7 +202,7 @@ func round(value float64, precision int) float64 {
 /* ******************************************************************************** */
 
 func (a *App) GetItems(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT * FROM items ORDER BY added DESC")
+	rows, err := a.DB.Query(context.Background(), "SELECT item_id, name, units, added FROM items ORDER BY added DESC")
 	if err != nil {
 		slog.Error("error getting item list", "error", err)
 		c.Status(http.StatusInternalServerError)
@@ -226,7 +226,7 @@ func (a *App) GetItems(c *gin.Context) {
 
 func (a *App) GetItem(c *gin.Context) {
 	var item models.Item
-	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE name=$1", c.Param("name")).Scan(&item.Item_id, &item.Name, &item.Units, &item.Added)
+	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE name=$1", c.Param("name")).Scan(&item.Item_id, &item.Name, &item.Units, &item.Added, &item.User_id)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			c.Status(http.StatusNotFound)
@@ -279,6 +279,8 @@ func (a *App) GetItemUserConsumptionCount(c *gin.Context) {
 }
 
 func (a *App) AddItem(c *gin.Context) {
+	var errorResponse models.ErrorResponse
+
 	tokenString, err := c.Cookie("token")
 	if err != nil {
 		c.Status(http.StatusUnauthorized)
@@ -292,29 +294,47 @@ func (a *App) AddItem(c *gin.Context) {
 		return
 	}
 
-	var newBeer models.Item
-	err = c.BindJSON(&newBeer)
+	var item models.Item
+	err = c.BindJSON(&item)
 	if err != nil {
 		slog.Error("error binding JSON", "error", err)
 		c.Status(http.StatusBadRequest)
 		return
 	}
 
-	if newBeer.Name == "" || newBeer.Units < 0 || len(newBeer.Name) < 1 || len(newBeer.Name) > 40 {
-		c.Status(http.StatusBadRequest)
+	if len(item.Name) < 2 {
+		errorResponse.Error = "Item name too short"
+		c.JSON(http.StatusBadRequest, errorResponse)
+		return
+	} else if len(item.Name) > 40 {
+		errorResponse.Error = "Item name too long"
+		c.JSON(http.StatusBadRequest, errorResponse)
+		return
+	} else if item.Units < 0 {
+		errorResponse.Error = "Item units must be number"
+		c.JSON(http.StatusBadRequest, errorResponse)
 		return
 	}
 
-	newBeer.Added = int(time.Now().Unix())
-	newBeer.Units = float32(round(float64(newBeer.Units), 1)) // round units to 1 decimal place
+	// get user id from username
+	err = a.DB.QueryRow(context.Background(), "SELECT user_id FROM users WHERE username = $1", claims["username"]).Scan(&item.User_id)
+	if err != nil {
+		slog.Error("error getting user id from username", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
 
-	_, err = a.DB.Exec(context.Background(), "INSERT INTO items (name, units, added) VALUES ($1, $2, $3)", newBeer.Name, newBeer.Units, newBeer.Added)
+	item.Name = strings.TrimSpace(item.Name) // strip any trailing whitespace
+	item.Added = int(time.Now().Unix())
+	item.Units = float32(round(float64(item.Units), 1)) // round units to 1 decimal place
+
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO items (name, user_id, units, added) VALUES ($1, $2, $3, $4)", item.Name, item.User_id, item.Units, item.Added)
 	if err != nil {
 		slog.Error("error adding item", "error", err)
 		c.Status(http.StatusBadRequest) // it was probably the clients fault
 		return
 	} else {
-		slog.Info("new item added", "user_id", claims["username"], "item", newBeer.Name)
+		slog.Info("new item added", "user_id", item.User_id, "item", item.Name)
 	}
 
 	c.Status(http.StatusCreated)
@@ -322,6 +342,7 @@ func (a *App) AddItem(c *gin.Context) {
 
 func (a *App) AddUser(c *gin.Context) {
 	var newUser models.User
+	var errorResponse models.ErrorResponse
 	// legal usernames are a-z A-Z 0-9 and underscore
 	const pattern = `^[a-zA-z0-9_]+$`
 
@@ -332,8 +353,13 @@ func (a *App) AddUser(c *gin.Context) {
 		return
 	}
 
-	if len(newUser.Username) <= 3 || len(newUser.Username) >= 20 {
-		c.Status(http.StatusBadRequest)
+	if len(newUser.Username) <= 3 {
+		errorResponse.Error = "Username too short"
+		c.JSON(http.StatusBadRequest, errorResponse)
+		return
+	} else if len(newUser.Username) >= 20 {
+		errorResponse.Error = "Username too long"
+		c.JSON(http.StatusBadRequest, errorResponse)
 		return
 	}
 
@@ -343,7 +369,8 @@ func (a *App) AddUser(c *gin.Context) {
 		slog.Error("error running regex", "username", newUser.Username)
 		return
 	} else if !matched {
-		c.Status(http.StatusBadRequest)
+		errorResponse.Error = "Usernames must be alphanumeric"
+		c.JSON(http.StatusBadRequest, errorResponse)
 		return
 	}
 
@@ -412,21 +439,26 @@ func (a *App) AddItemReport(c *gin.Context) {
 		return
 	}
 
-	var newItemReport models.ItemReport
-	err = c.BindJSON(&newItemReport)
+	var clientReport models.ItemReportRequest // what we get from the client
+	var newItemReport models.ItemReport       // what we store in the db
+	err = c.BindJSON(&clientReport)
 	if err != nil {
 		slog.Error("error binding JSON", "error", err)
 		c.Status(http.StatusBadRequest)
 		return
 	}
 
+	// copy reason
+	newItemReport.Reason = clientReport.Reason
+
 	// check item exists
-	err = a.DB.QueryRow(context.Background(), "SELECT item_id FROM items WHERE name=$1", c.Param("name")).Scan(&newItemReport.Item_id)
+	err = a.DB.QueryRow(context.Background(), "SELECT item_id FROM items WHERE name=$1", clientReport.Name).Scan(&newItemReport.Item_id)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			slog.Error("item not found", "error", err)
 		}
 		c.Status(http.StatusInternalServerError)
+		slog.Error("error", err)
 		return
 	}
 
@@ -669,10 +701,28 @@ func (a *App) GetTotalConsumptionCount(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
+func (a *App) GetUserItemCount(c *gin.Context) {
+	var data models.ItemCount
+
+	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(1) FROM items i INNER JOIN users u ON i.user_id = u.user_id WHERE u.username=$1", c.Param("username")).Scan(&data.Items)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		slog.Error("error getting user item count", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusOK, data)
+}
+
 func (a *App) GetUserConsumptionCount(c *gin.Context) {
 	var data models.ConsumptionCount
 
-	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(*) FROM consumptions INNER JOIN users ON consumptions.user_id = users.user_id WHERE users.username=$1", c.Param("username")).Scan(&data.Consumptions)
+	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(1) FROM consumptions INNER JOIN users ON consumptions.user_id = users.user_id WHERE users.username=$1", c.Param("username")).Scan(&data.Consumptions)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			c.Status(http.StatusNotFound)
@@ -875,40 +925,85 @@ func (a *App) ChangePassword(c *gin.Context) {
 /* ******************************************************************************** */
 
 func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
+	const API_V1_BASE_URL = "/v1"
+	const API_V2_BASE_URL = "/v2"
 	gin.DefaultWriter = writer
 	router := gin.New()
 
+	/* ********************************** */
+	/* API V1                             */
+	/* ********************************** */
+
 	// items
-	router.POST("/submit/item", a.AddItem) // TODO: maybe add field for who added it, add auth for this
-	router.POST("/submit/consumption", a.AddConsumption)
-	// TODO: router.PUT("/submit/consumption", a.AddConsumption) // for updating items
-	router.GET("/items", a.GetItems)
-	router.GET("/items/:name", a.GetItem)
-	router.GET("/items/:name/leaderboard", a.GetItemUserConsumptionCount)
-	router.GET("/items/:name/consumptions", a.GetItemConsumptionCount)
-	router.POST("/items/:name/report", a.AddItemReport)
+	router.POST(API_V1_BASE_URL+"/submit/item", a.AddItem) // TODO: maybe add field for who added it, add auth for this
+	router.POST(API_V1_BASE_URL+"/submit/consumption", a.AddConsumption)
+	router.GET(API_V1_BASE_URL+"/items", a.GetItems)
+	router.GET(API_V1_BASE_URL+"/items/:name", a.GetItem)
+	router.GET(API_V1_BASE_URL+"/items/:name/leaderboard", a.GetItemUserConsumptionCount)
+	router.GET(API_V1_BASE_URL+"/items/:name/consumptions", a.GetItemConsumptionCount)
+	router.POST(API_V1_BASE_URL+"/items/:name/report", a.AddItemReport)
 
 	// consumptions
-	router.GET("/consumption/:consumption_id", a.GetConsumption)
-	router.POST("/remove/consumption", a.RemoveConsumption)
+	router.GET(API_V1_BASE_URL+"/consumption/:consumption_id", a.GetConsumption)
+	router.POST(API_V1_BASE_URL+"/remove/consumption", a.RemoveConsumption)
 
 	// users
-	router.POST("/signup", a.AddUser)
-	router.POST("/authenticate", a.Authenticate)
-	router.POST("/logout", a.Logout)
-	router.PUT("/change_password", a.ChangePassword)
+	router.POST(API_V1_BASE_URL+"/signup", a.AddUser)
+	router.POST(API_V1_BASE_URL+"/authenticate", a.Authenticate)
+	router.POST(API_V1_BASE_URL+"/logout", a.Logout)
+	router.PUT(API_V1_BASE_URL+"/change_password", a.ChangePassword)
 
-	router.GET("/user/:username", a.GetUser)
-	router.GET("/user/me", a.GetUserFromToken)
-	router.GET("/consumption_count", a.GetTotalConsumptionCount)
-	router.GET("/consumption_count/:username", a.GetUserConsumptionCount)
-	router.GET("/consumptions/:username", a.GetUserConsumptions)
+	router.GET(API_V1_BASE_URL+"/user/:username", a.GetUser)
+	router.GET(API_V1_BASE_URL+"/user/me", a.GetUserFromToken)
+	router.GET(API_V1_BASE_URL+"/consumption_count", a.GetTotalConsumptionCount)
+	router.GET(API_V1_BASE_URL+"/consumption_count/:username", a.GetUserConsumptionCount)
+	router.GET(API_V1_BASE_URL+"/consumptions/:username", a.GetUserConsumptions)
 
 	// leaderboards
-	router.GET("/leaderboards/items", a.GetItemsLeaderboard)
-	router.GET("/leaderboards/users", a.GetUserLeaderboard)
-	router.GET("/leaderboards/users-by-units", a.GetUserLeaderboardUnits)
-	router.GET("/feed", a.GetFeed)
+	router.GET(API_V1_BASE_URL+"/leaderboards/items", a.GetItemsLeaderboard)
+	router.GET(API_V1_BASE_URL+"/leaderboards/users", a.GetUserLeaderboard)
+	router.GET(API_V1_BASE_URL+"/leaderboards/users-by-units", a.GetUserLeaderboardUnits)
+	router.GET(API_V1_BASE_URL+"/feed", a.GetFeed)
+
+	/* ********************************** */
+	/* API V2                             */
+	/* ********************************** */
+
+	// items
+	router.POST(API_V2_BASE_URL+"/items", a.AddItem) // TODO: maybe add field for who added it, add auth for this
+	// TODO: router.PUT("/submit/consumption", a.AddConsumption) // for updating items
+	router.GET(API_V2_BASE_URL+"/items", a.GetItems)
+	router.GET(API_V2_BASE_URL+"/items/:name", a.GetItem)
+	router.GET(API_V2_BASE_URL+"/items/:name/leaderboard", a.GetItemUserConsumptionCount)
+	router.GET(API_V2_BASE_URL+"/items/:name/consumptions", a.GetItemConsumptionCount)
+
+	// reports
+	router.POST(API_V2_BASE_URL+"/reports", a.AddItemReport)
+
+	// consumptions
+	router.POST(API_V2_BASE_URL+"/consumptions", a.AddConsumption)
+	router.GET(API_V2_BASE_URL+"/consumptions/:consumption_id", a.GetConsumption)
+	router.DELETE(API_V2_BASE_URL+"/consumptions", a.RemoveConsumption)
+
+	router.GET(API_V2_BASE_URL+"/consumptions/count", a.GetTotalConsumptionCount)
+
+	// users
+	router.POST(API_V2_BASE_URL+"/signup", a.AddUser)
+	router.POST(API_V2_BASE_URL+"/authenticate", a.Authenticate)
+	router.POST(API_V2_BASE_URL+"/logout", a.Logout)
+	router.PUT(API_V2_BASE_URL+"/change_password", a.ChangePassword)
+
+	router.GET(API_V2_BASE_URL+"/users/:username", a.GetUser)
+	router.GET(API_V2_BASE_URL+"/users/me", a.GetUserFromToken)
+	router.GET(API_V2_BASE_URL+"/users/:username/consumptions/count", a.GetUserConsumptionCount)
+	router.GET(API_V2_BASE_URL+"/users/:username/consumptions", a.GetUserConsumptions)
+	router.GET(API_V2_BASE_URL+"/users/:username/items/count", a.GetUserItemCount)
+
+	// leaderboards
+	router.GET(API_V2_BASE_URL+"/leaderboards/items", a.GetItemsLeaderboard)
+	router.GET(API_V2_BASE_URL+"/leaderboards/users", a.GetUserLeaderboard)
+	router.GET(API_V2_BASE_URL+"/leaderboards/users/units", a.GetUserLeaderboardUnits)
+	router.GET(API_V2_BASE_URL+"/leaderboards/feed", a.GetFeed)
 
 	return router
 }

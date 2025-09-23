@@ -74,15 +74,14 @@
                     });
 
                     if (response.status === 201) {
-                        alert("Signup complete!");
+                        alert("Signup complete!"); // TODO: login automatically
                         window.location.href = "login.html";
-                        // TODO: could login automatically
                     } else {
-                        alert("Signup failed");
+                        const data = await response.json();
+                        alert("Failed to signup: " + (data.error || "Unknown error"));
                     }
                 } catch (error) {
-                    console.error("Signup error:", error);
-                    alert("Failed to Sign up. Please try again.");
+                    alert("Failed to signup");
                 }
             }
         </script>
