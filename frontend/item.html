@@ -134,13 +134,13 @@
                 }
 
                 try {
-                    const response = await fetch(`${API_BASE_URL}/items/${NAME}/report`, {
+                    const response = await fetch(`${API_BASE_URL}/reports`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${localStorage.getItem('token')}`
                         },
-                        body: JSON.stringify({ reason: reason })
+                        body: JSON.stringify({ name: NAME, reason: reason })
                     });
 
                     if (response.ok) {

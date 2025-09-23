@@ -59,7 +59,7 @@
                     </div>
                 </div>
                 <div class="leaderboard-column">
-                    <h2>🍺 Top Beers</h2>
+                    <h2>🍺 Top Items</h2>
                     <div id="items-leaderboard" class="leaderboard-container">
                         <div class="loading">Loading items leaderboard...</div>
                     </div>
@@ -70,7 +70,7 @@
         <script>
             async function fetchFeed() {
                 try {
-                    const response = await fetch(`${API_BASE_URL}/feed`, {
+                    const response = await fetch(`${API_BASE_URL}/leaderboards/feed`, {
                         method: "GET",
                         credentials: "include",
                         headers: {
@@ -297,7 +297,7 @@
                     document.getElementById("consumption-count");
                 try {
                     const response = await fetch(
-                        `${API_BASE_URL}/consumption_count`,
+                        `${API_BASE_URL}/consumptions/count`,
                         {
                             method: "GET",
                             credentials: "include",
@@ -319,7 +319,7 @@
                     }
                 } catch (error) {
                     consumptionCountContainer.innerHTML =
-                        "could not get consumption count";
+                        "";
                 }
             }
 

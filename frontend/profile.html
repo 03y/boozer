@@ -23,6 +23,10 @@
                     <strong>Date Joined:</strong> <span id="date-joined"></span>
                 </p>
                 <p>
+                    <strong>Items added:</strong>
+                    <span id="items-added"></span>
+                </p>
+                <p>
                     <strong>Consumptions:</strong>
                     <span id="consumptions"></span>
                 </p>
@@ -102,15 +106,15 @@
                 try {
                     const user = await getUser();
                     const response = await fetch(
-                        `${API_BASE_URL}/consumptions/${user.username}`,
+                        `${API_BASE_URL}/users/${user.username}/consumptions`,
                     );
                     const consumptions = await response.json();
 
                     for (let i = 0; i < consumptionRows.length; i++) {
                         const consumption = consumptions[consumptionRows[i]];
                         if (consumption && consumption.consumption_id) {
-                            await fetch(`${API_BASE_URL}/remove/consumption`, {
-                                method: "POST",
+                            await fetch(`${API_BASE_URL}/consumptions`, {
+                                method: "DELETE",
                                 body: JSON.stringify({
                                     consumption_id: consumption.consumption_id,
                                 }),
@@ -160,9 +164,9 @@
                     document.getElementById("message-container");
                 try {
                     const response = await fetch(
-                        `${API_BASE_URL}/remove/consumption`,
+                        `${API_BASE_URL}/consumptions`,
                         {
-                            method: "POST",
+                            method: "DELETE",
                             body: JSON.stringify({
                                 consumption_id: consumption_id,
                             }),
@@ -217,7 +221,7 @@
 
                     try {
                         const response = await fetch(
-                            `${API_BASE_URL}/consumption_count/${user.username}`,
+                            `${API_BASE_URL}/users/${user.username}/consumptions/count`,
                         );
 
                         if (!response.ok) {
@@ -235,6 +239,28 @@
                         consumptionsContainer.innerHTML = `<div class="error-message">Error loading consumptions.</div>`;
                     }
 
+                    try {
+                        const response = await fetch(
+                            `${API_BASE_URL}/users/${user.username}/items/count`,
+                        );
+
+                        if (!response.ok) {
+                            throw new Error(
+                                `HTTP error! Status: ${response.status}`,
+                            );
+                        }
+
+                        const data = await response.json();
+                        
+                        if (data.items > 0) {
+                            document.getElementById("items-added").innerHTML = data.items;
+                        } else {
+                            document.getElementById("items-added").innerHTML = "0";
+                        }
+                    } catch (error) {
+                        consumptionsContainer.innerHTML = `<div class="error-message">Error loading item count.</div>`;
+                    }
+
                     const consumptionsContainer = document.getElementById(
                         "consumptions-container",
                     );
@@ -244,7 +270,7 @@
 
                     try {
                         const response = await fetch(
-                            `${API_BASE_URL}/consumptions/${user.username}`,
+                            `${API_BASE_URL}/users/${user.username}/consumptions`,
                         );
 
                         if (!response.ok) {

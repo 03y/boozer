@@ -20,6 +20,7 @@ type ChangePassword struct {
 
 type Item struct {
 	Item_id int     `json:"item_id"`
+	User_id int     `json:"user_id"` // who added the item
 	Name    string  `json:"name"`
 	Units   float32 `json:"units"`
 	Added   int     `json:"added"` // unix timestamp
@@ -41,6 +42,13 @@ type NamedConsumption struct {
 	Price          *float32 `json:"price,omitempty"` // pointer as may be null
 }
 
+// what the client sends to us
+type ItemReportRequest struct {
+	Name   string `json:"name"` // name of item
+	Reason string `json:"reason"`
+}
+
+// what we store in the db
 type ItemReport struct {
 	Report_id int    `json:"report_id"`
 	Item_id   int    `json:"item_id"`
@@ -72,4 +80,12 @@ type FeedConsumption struct {
 
 type ConsumptionCount struct {
 	Consumptions int `json:"consumptions"`
+}
+
+type ItemCount struct {
+	Items int `json:"items"`
+}
+
+type ErrorResponse struct {
+	Error string `json:"error"`
 }

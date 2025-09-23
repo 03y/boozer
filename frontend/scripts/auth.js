@@ -1,8 +1,8 @@
-const API_BASE_URL = "https://localhost/api/v1"; // TODO: update
+const API_BASE_URL = "https://localhost/api/v2"; // TODO: update
 
 async function getUser() {
   try {
-    const response = await fetch(`${API_BASE_URL}/user/me`);
+    const response = await fetch(`${API_BASE_URL}/users/me`);
 
     if (response.ok) {
       data = await response.json();

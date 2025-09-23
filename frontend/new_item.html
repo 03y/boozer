@@ -130,19 +130,16 @@
                 }
 
                 try {
-                    const response = await fetch(
-                        `${API_BASE_URL}/submit/item`,
-                        {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify({
-                                name: itemName,
-                                units: itemUnits,
-                            }),
+                    const response = await fetch(`${API_BASE_URL}/items`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
                         },
-                    );
+                        body: JSON.stringify({
+                            name: itemName,
+                            units: itemUnits,
+                        }),
+                    });
 
                     if (response.status === 201) {
                         messageElement.textContent =
@@ -173,12 +170,12 @@
                         messageElement.classList.add("error");
                     } else {
                         const errorData = await response.json();
-                        messageElement.textContent = `Error: ${errorData.message || response.statusText}`;
+                        console.log(errorData);
+                        messageElement.textContent = `Error: ${errorData.error}`;
                         messageElement.classList.remove("success");
                         messageElement.classList.add("error");
                     }
                 } catch (error) {
-                    console.error("Error submitting item:", error);
                     messageElement.textContent =
                         "An error occurred while submitting item. Perhaps it already exists? check the inventory!";
                     messageElement.classList.remove("success");

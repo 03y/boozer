@@ -23,6 +23,10 @@
                     <strong>Date Joined:</strong> <span id="date-joined"></span>
                 </p>
                 <p>
+                    <strong>Items added:</strong>
+                    <span id="items-added"></span>
+                </p>
+                <p>
                     <strong>Consumptions:</strong>
                     <span id="consumptions"></span>
                 </p>
@@ -45,7 +49,7 @@
                     const USERNAME = urlParams.get("username");
 
                     const response = await fetch(
-                        `${API_BASE_URL}/user/${USERNAME}`,
+                        `${API_BASE_URL}/users/${USERNAME}`,
                     );
 
                     if (response.ok) {
@@ -56,6 +60,7 @@
                         document.getElementById("username").innerHTML =
                             "Error loading user.";
                         document.getElementById("date-joined").innerHTML = "";
+                        document.getElementById("items-added").innerHTML = "";
                         document.getElementById("consumptions").innerHTML = "";
                         return;
                     }
@@ -73,7 +78,29 @@
 
                     try {
                         const response = await fetch(
-                            `${API_BASE_URL}/consumption_count/${user.username}`,
+                            `${API_BASE_URL}/users/${user.username}/items/count`,
+                        );
+
+                        if (!response.ok) {
+                            throw new Error(
+                                `HTTP error! Status: ${response.status}`,
+                            );
+                        }
+
+                        const data = await response.json();
+                        
+                        if (data.items > 0) {
+                            document.getElementById("items-added").innerHTML = data.items;
+                        } else {
+                            document.getElementById("items-added").innerHTML = "0";
+                        }
+                    } catch (error) {
+                        consumptionsContainer.innerHTML = `<div class="error-message">Error loading item count.</div>`;
+                    }
+
+                    try {
+                        const response = await fetch(
+                            `${API_BASE_URL}/users/${user.username}/consumptions/count`,
                         );
 
                         if (!response.ok) {
@@ -87,7 +114,7 @@
                         document.getElementById("consumptions").innerHTML =
                             data.consumptions;
                     } catch (error) {
-                        consumptionsContainer.innerHTML = `<div class="error-message">Error loading consumptions.</div>`;
+                        consumptionsContainer.innerHTML = `<div class="error-message">Error loading consumption count.</div>`;
                     }
 
                     const consumptionsContainer = document.getElementById(
@@ -99,7 +126,7 @@
 
                     try {
                         const response = await fetch(
-                            `${API_BASE_URL}/consumptions/${user.username}`,
+                            `${API_BASE_URL}/users/${user.username}/consumptions`,
                         );
 
                         if (!response.ok) {
@@ -119,7 +146,7 @@
                               <table class="consumption-table">
                                   <thead>
                                       <tr>
-                                          <th>Beer</th>
+                                          <th>Item</th>
                                           <th>Units</th>
                                           <th>Time</th>
                                       </tr>
