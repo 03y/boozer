@@ -34,8 +34,8 @@ function createTable(data, type) {
             <thead>
                 <tr>
                     <th>Rank</th>
-                    ${type === "users" || type === "users-by-units" ? "<th>User</th>" : "<th>Item</th>"}
-                    <th>${type === "users-by-units" ? "Units" : "Drank"}</th>
+                    ${type === "users" || type === "users-units" ? "<th>User</th>" : "<th>Item</th>"}
+                    <th>${type === "users-units" ? "Units" : "Drank"}</th>
                 </tr>
             </thead>
             <tbody>
@@ -48,7 +48,7 @@ function createTable(data, type) {
         tableHTML += `
             <tr>
                 <td class="rank ${rankClass}">${rankDisplay}</td>
-                <td>${type === "users" || type === "users-by-units" ? (object.username ? `<a href="./user.html?username=${object.username}">${object.username}</a>` : "Unknown User") : object.name ? `<a href="./item.html?name=${object.name}">${object.name}</a>` : "Unknown Item"}</td>
+                <td>${type === "users" || type === "users-units" ? (object.username ? `<a href="./user.html?username=${object.username}">${object.username}</a>` : "Unknown User") : object.name ? `<a href="./item.html?name=${object.name}">${object.name}</a>` : "Unknown Item"}</td>
                 <td>${type === "users" ? object.consumed : type === "items" ? object.consumed : object.units}</td>
             </tr>
         `;

@@ -42,7 +42,7 @@
                     <div class="leaderboard-controls">
                         <select id="leaderboard-type-selector">
                             <option value="users">🍻 Drinks</option>
-                            <option value="users-by-units">📊 Units</option>
+                            <option value="users-units">📊 Units</option>
                         </select>
                     </div>
                     <div id="users-leaderboard" class="leaderboard-container">
@@ -222,7 +222,7 @@
 
                 // show the appropriate container and set loading state
                 const activeContainer =
-                    type === "users-by-units"
+                    type === "users-units"
                         ? usersUnitsContainer
                         : usersContainer;
                 activeContainer.style.display = "block";
@@ -230,7 +230,7 @@
                     '<div class="loading">Loading leaderboard...</div>';
 
                 try {
-                    const data = await fetchLeaderboard(type);
+                    const data = await fetchLeaderboard(type === "users-units" ? "users/units" : "users");
                     activeContainer.innerHTML = createTable(
                         data,
                         type,
