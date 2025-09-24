@@ -216,8 +216,13 @@
                         month: "numeric",
                         day: "numeric",
                     });
+
+                    const now = new Date();
+                    const diffTime = Math.abs(now - date);
+                    const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+
                     document.getElementById("date-joined").innerHTML =
-                        formattedDate;
+                        `${formattedDate} (${diffWeeks} weeks ago)`;
 
                     try {
                         const response = await fetch(
@@ -307,7 +312,7 @@
                                 year: "numeric",
                                 hour: "2-digit",
                                 minute: "2-digit",
-                                hourCycle: "h12",
+                                hourCycle: "h24",
                             });
                             tableHTML += `
                                       <tr>
