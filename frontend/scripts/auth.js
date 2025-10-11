@@ -1,8 +1,8 @@
-const API_BASE_URL = "https://localhost/api/v1"; // TODO: update
+const API_BASE_URL = "https://localhost/api/v2"; // TODO: update
 
 async function getUser() {
   try {
-    const response = await fetch(`${API_BASE_URL}/user/me`);
+    const response = await fetch(`${API_BASE_URL}/users/me`);
 
     if (response.ok) {
       data = await response.json();
@@ -19,6 +19,21 @@ async function getUser() {
 }
 
 function updateLoginLink(loginLink, username) {
-  loginLink.innerHTML = "Hi " + username + "!";
-  loginLink.href = "./profile.html";
+    loginLink.innerHTML = "Hi " + username + "!";
+    loginLink.href = "./profile.html";
+}
+
+async function logout() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/logout`, {
+            method: "POST",
+        });
+        if (response.ok) {
+            window.location.href = "index.html";
+        } else {
+            console.error("Logout failed");
+        }
+    } catch (error) {
+        console.error("Error logging out:", error);
+    }
 }

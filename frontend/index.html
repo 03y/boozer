@@ -7,6 +7,7 @@
         <link rel="stylesheet" type="text/css" href="styles/style.css" />
         <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
         <script src="scripts/auth.js"></script>
+        <script src="scripts/leaderboard.js"></script>
     </head>
     <body>
         <nav>
@@ -17,7 +18,10 @@
         </nav>
 
         <div class="container">
-            <img src="./images/cat2.png" />
+            <div class="title-section">
+                <h1>Boozer 🍺</h1>
+                <h2 id="consumption-count"></h2>
+            </div>
         </div>
 
         <div class="container">
@@ -35,12 +39,27 @@
             <div class="leaderboard-section">
                 <div class="leaderboard-column">
                     <h2>👤 Top Boozers</h2>
+                    <div class="leaderboard-controls">
+                        <select id="leaderboard-type-selector">
+                            <option value="users">🍻 Drinks</option>
+                            <option value="users-units">📊 Units</option>
+                        </select>
+                    </div>
                     <div id="users-leaderboard" class="leaderboard-container">
                         <div class="loading">Loading users leaderboard...</div>
                     </div>
+                    <div
+                        id="users-units-leaderboard"
+                        class="leaderboard-container"
+                        style="display: none"
+                    >
+                        <div class="loading">
+                            Loading users units leaderboard...
+                        </div>
+                    </div>
                 </div>
                 <div class="leaderboard-column">
-                    <h2>🍺 Top Beers</h2>
+                    <h2>🍺 Top Items</h2>
                     <div id="items-leaderboard" class="leaderboard-container">
                         <div class="loading">Loading items leaderboard...</div>
                     </div>
@@ -51,7 +70,7 @@
         <script>
             async function fetchFeed() {
                 try {
-                    const response = await fetch(`${API_BASE_URL}/feed`, {
+                    const response = await fetch(`${API_BASE_URL}/leaderboards/feed`, {
                         method: "GET",
                         credentials: "include",
                         headers: {
@@ -76,7 +95,7 @@
             async function fetchLeaderboard(type) {
                 try {
                     const response = await fetch(
-                        `${API_BASE_URL}/leaderboard/${type}`,
+                        `${API_BASE_URL}/leaderboards/${type}`,
                         {
                             method: "GET",
                             credentials: "include",
@@ -100,69 +119,6 @@
                 }
             }
 
-            function getRankClass(index) {
-                switch (index) {
-                    case 0:
-                        return "first";
-                    case 1:
-                        return "second";
-                    case 2:
-                        return "third";
-                    default:
-                        return "";
-                }
-            }
-
-            function getRankDisplay(index) {
-                switch (index) {
-                    case 0:
-                        return "🥇";
-                    case 1:
-                        return "🥈";
-                    case 2:
-                        return "🥉";
-                    default:
-                        return `#${index + 1}`;
-                }
-            }
-
-            function createLeaderboardTable(data, type) {
-                if (!data || data.length === 0) {
-                    return `<div class="error">No ${type} found in leaderboard.</div>`;
-                }
-
-                let tableHTML = `
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                ${type === "users" ? "<th>User</th>" : "<th>Item</th>"}
-                                <th>Consumed</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-
-                data.forEach((item, index) => {
-                    const rankClass = getRankClass(index);
-                    const rankDisplay = getRankDisplay(index);
-
-                    tableHTML += `
-                        <tr>
-                            <td class="rank ${rankClass}">${rankDisplay}</td>
-                            <td>${type === "users" ? item.username || "Unknown User" : item.name || "Unknown Item"}</td>
-                            <td>${item.consumed || 0}</td>
-                        </tr>
-                    `;
-                });
-
-                tableHTML += `
-                        </tbody>
-                    </table>
-                `;
-
-                return tableHTML;
-            }
 
             function getRelativeTime(timestamp) {
                 if (!timestamp) {
@@ -221,9 +177,9 @@
                     const relativeTime = getRelativeTime(consumption.time);
                     tableHTML += `
                         <tr>
-                            <td>${consumption.username || "Unknown User"}</td>
-                            <td>${consumption.name || "Unknown Item"}</td>
-                            <td>${relativeTime}</td>
+                          <td>${consumption.username ? `<a href="./user.html?username=${consumption.username}">${consumption.username}</a>` : "Unknown User"}</td>
+                          <td>${consumption.name ? `<a href="./item.html?name=${consumption.name}">${consumption.name}</a>` : "Unknown Item"}</td>
+                          <td>${relativeTime}</td>
                         </tr>
                     `;
                 });
@@ -254,28 +210,50 @@
                 }
             }
 
-            async function loadLeaderboards() {
+            async function loadUsersLeaderboard(type = "users") {
                 const usersContainer =
                     document.getElementById("users-leaderboard");
+                const usersUnitsContainer = document.getElementById(
+                    "users-units-leaderboard",
+                );
+
+                usersContainer.style.display = "none";
+                usersUnitsContainer.style.display = "none";
+
+                // show the appropriate container and set loading state
+                const activeContainer =
+                    type === "users-units"
+                        ? usersUnitsContainer
+                        : usersContainer;
+                activeContainer.style.display = "block";
+                activeContainer.innerHTML =
+                    '<div class="loading">Loading leaderboard...</div>';
+
+                try {
+                    const data = await fetchLeaderboard(type === "users-units" ? "users/units" : "users");
+                    activeContainer.innerHTML = createTable(
+                        data,
+                        type,
+                    );
+                } catch (error) {
+                    const errorHTML = `
+                        <div class="error">
+                            <strong>Error loading leaderboard</strong><br>
+                        </div>
+                    `;
+                    activeContainer.innerHTML = errorHTML;
+                }
+            }
+
+            async function loadItemsLeaderboard() {
                 const itemsContainer =
                     document.getElementById("items-leaderboard");
-
-                usersContainer.innerHTML =
-                    '<div class="loading">Loading users leaderboard...</div>';
                 itemsContainer.innerHTML =
                     '<div class="loading">Loading items leaderboard...</div>';
 
                 try {
-                    const [usersData, itemsData] = await Promise.all([
-                        fetchLeaderboard("users"),
-                        fetchLeaderboard("items"),
-                    ]);
-
-                    usersContainer.innerHTML = createLeaderboardTable(
-                        usersData,
-                        "users",
-                    );
-                    itemsContainer.innerHTML = createLeaderboardTable(
+                    const itemsData = await fetchLeaderboard("items");
+                    itemsContainer.innerHTML = createTable(
                         itemsData,
                         "items",
                     );
@@ -285,14 +263,96 @@
                             <strong>Error loading leaderboard</strong><br>
                         </div>
                     `;
-                    usersContainer.innerHTML = errorHTML;
                     itemsContainer.innerHTML = errorHTML;
+                }
+            }
+
+            async function loadLeaderboards() {
+                await loadUsersLeaderboard("users");
+                await loadItemsLeaderboard();
+            }
+
+            function setupLeaderboardSelector() {
+                const selector = document.getElementById(
+                    "leaderboard-type-selector",
+                );
+                if (selector) {
+                    selector.addEventListener("change", function () {
+                        const selectedType = this.value;
+                        loadUsersLeaderboard(selectedType);
+                    });
                 }
             }
 
             document.addEventListener("DOMContentLoaded", loadFeed);
             document.addEventListener("DOMContentLoaded", loadLeaderboards);
             document.addEventListener("DOMContentLoaded", getUser);
+            document.addEventListener(
+                "DOMContentLoaded",
+                setupLeaderboardSelector,
+            );
+
+            async function loadConsumptionCount() {
+                const consumptionCountContainer =
+                    document.getElementById("consumption-count");
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/consumptions/count`,
+                        {
+                            method: "GET",
+                            credentials: "include",
+                            headers: {
+                                Accept: "application/json",
+                            },
+                        },
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(
+                            `HTTP error! status: ${response.status}`,
+                        );
+                    }
+
+                    const data = await response.json();
+                    if (data.consumptions > 0) {
+                        consumptionCountContainer.innerHTML = `Tracking ${data.consumptions} consumptions!`;
+                    }
+                } catch (error) {
+                    consumptionCountContainer.innerHTML =
+                        "";
+                }
+            }
+
+            document.addEventListener("DOMContentLoaded", loadConsumptionCount);
         </script>
+
+        <div class="footer">
+            <link
+                rel="stylesheet"
+                type="text/css"
+                href="styles/drinkaware.css"
+            />
+            <div class="footer-left">
+                Contribute on
+                <a href="https://github.com/03y/boozer" target="_blank"
+                    >GitHub!</a
+                >
+            </div>
+            <div class="footer-centre">
+                <div class="button-container">
+                    <div class="drinkaware-button">
+                        <a href="https://drinkaware.co.uk" target="_blank">
+                            <div class="text-container">
+                                <div class="text-top">
+                                    VISIT drinkaware.co.uk
+                                </div>
+                                <div class="text-bottom">FOR THE FACTS</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="footer-right">🏴󠁧󠁢󠁳󠁣󠁴󠁿 Made in Scotland</div>
+            </div>
+        </div>
     </body>
 </html>

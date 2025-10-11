@@ -1,6 +1,4 @@
 # Frontend
-* Two frontends: web and bot.
-
 
 ## Web
 * Vanilla JS, HTML, CSS.
@@ -18,9 +16,3 @@
 
 ### Authentication
 * `HttpOnly` cookie.
-
-## Bot
-* Discord bot.
-* Written in Python.
-* Uses `discord.py`.
-* Not yet implemented.

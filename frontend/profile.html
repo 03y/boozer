@@ -8,7 +8,7 @@
         <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
         <script src="scripts/auth.js"></script>
     </head>
-    <body onload="displayProfile()">
+    <body>
         <nav>
             <a href="./index.html">Leaderboard</a>
             <a href="./items.html">Inventory</a>
@@ -23,6 +23,10 @@
                     <strong>Date Joined:</strong> <span id="date-joined"></span>
                 </p>
                 <p>
+                    <strong>Items added:</strong>
+                    <span id="items-added"></span>
+                </p>
+                <p>
                     <strong>Consumptions:</strong>
                     <span id="consumptions"></span>
                 </p>
@@ -30,6 +34,13 @@
 
             <div class="container">
                 <div class="logout">
+                    <button
+                        type="button"
+                        class="logout-btn"
+                        onclick="location.href='change_password.html'"
+                    >
+                        Change Password
+                    </button>
                     <button type="submit" class="logout-btn" id="logout-btn">
                         Logout
                     </button>
@@ -70,6 +81,11 @@
         </div>
 
         <script>
+            const logoutButton = document.getElementById("logout-btn");
+            if (logoutButton) {
+                logoutButton.addEventListener("click", logout);
+            }
+
             async function confirm_delete() {
                 const checkboxes = document.querySelectorAll(
                     'input[name="selected"]:checked',
@@ -90,15 +106,15 @@
                 try {
                     const user = await getUser();
                     const response = await fetch(
-                        `${API_BASE_URL}/consumptions/${user.user_id}`,
+                        `${API_BASE_URL}/users/${user.username}/consumptions`,
                     );
                     const consumptions = await response.json();
 
                     for (let i = 0; i < consumptionRows.length; i++) {
                         const consumption = consumptions[consumptionRows[i]];
                         if (consumption && consumption.consumption_id) {
-                            await fetch(`${API_BASE_URL}/remove/consumption`, {
-                                method: "POST",
+                            await fetch(`${API_BASE_URL}/consumptions`, {
+                                method: "DELETE",
                                 body: JSON.stringify({
                                     consumption_id: consumption.consumption_id,
                                 }),
@@ -148,9 +164,9 @@
                     document.getElementById("message-container");
                 try {
                     const response = await fetch(
-                        `${API_BASE_URL}/remove/consumption`,
+                        `${API_BASE_URL}/consumptions`,
                         {
-                            method: "POST",
+                            method: "DELETE",
                             body: JSON.stringify({
                                 consumption_id: consumption_id,
                             }),
@@ -200,12 +216,17 @@
                         month: "numeric",
                         day: "numeric",
                     });
+
+                    const now = new Date();
+                    const diffTime = Math.abs(now - date);
+                    const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+
                     document.getElementById("date-joined").innerHTML =
-                        formattedDate;
+                        `${formattedDate} (${diffWeeks} weeks ago)`;
 
                     try {
                         const response = await fetch(
-                            `${API_BASE_URL}/consumption_count/${user.user_id}`,
+                            `${API_BASE_URL}/users/${user.username}/consumptions/count`,
                         );
 
                         if (!response.ok) {
@@ -223,6 +244,28 @@
                         consumptionsContainer.innerHTML = `<div class="error-message">Error loading consumptions.</div>`;
                     }
 
+                    try {
+                        const response = await fetch(
+                            `${API_BASE_URL}/users/${user.username}/items/count`,
+                        );
+
+                        if (!response.ok) {
+                            throw new Error(
+                                `HTTP error! Status: ${response.status}`,
+                            );
+                        }
+
+                        const data = await response.json();
+                        
+                        if (data.items > 0) {
+                            document.getElementById("items-added").innerHTML = data.items;
+                        } else {
+                            document.getElementById("items-added").innerHTML = "0";
+                        }
+                    } catch (error) {
+                        consumptionsContainer.innerHTML = `<div class="error-message">Error loading item count.</div>`;
+                    }
+
                     const consumptionsContainer = document.getElementById(
                         "consumptions-container",
                     );
@@ -232,7 +275,7 @@
 
                     try {
                         const response = await fetch(
-                            `${API_BASE_URL}/consumptions/${user.user_id}`,
+                            `${API_BASE_URL}/users/${user.username}/consumptions`,
                         );
 
                         if (!response.ok) {
@@ -244,8 +287,7 @@
                         const data = await response.json();
 
                         if (!data || data.length === 0) {
-                            consumptionsContainer.innerHTML =
-                                '<div class="no-consumptions">No consumptions... get boozing!!!</div>';
+                            consumptionsContainer.innerHTML = "";
                             return;
                         }
 
@@ -270,12 +312,12 @@
                                 year: "numeric",
                                 hour: "2-digit",
                                 minute: "2-digit",
-                                hourCycle: "h12",
+                                hourCycle: "h24",
                             });
                             tableHTML += `
                                       <tr>
                                         <td><input type="checkbox" name="selected" id="selected"/></td>
-                                          <td>${consumption.name || "Unnamed Item"}</td>
+                                          <td>${consumption.name ? `<a href="./item.html?name=${consumption.name}">${consumption.name}</a>` : "Unknown Item"}</td>
                                           <td>${consumption.units}</td>
                                           <td>${formattedDate}</td>
                                       </tr>
@@ -298,26 +340,6 @@
                         "Error loading profile.";
                     document.getElementById("date-joined").innerHTML = "";
                     document.getElementById("consumptions").innerHTML = "";
-                }
-
-                async function logout() {
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/logout`, {
-                            method: "POST",
-                        });
-                        if (response.ok) {
-                            window.location.href = "index.html";
-                        } else {
-                            console.error("Logout failed");
-                        }
-                    } catch (error) {
-                        console.error("Error logging out:", error);
-                    }
-                }
-
-                const logoutButton = document.getElementById("logout-btn");
-                if (logoutButton) {
-                    logoutButton.addEventListener("click", logout);
                 }
 
                 const deleteButton = document.getElementById("del-btn");
@@ -343,6 +365,8 @@
                     });
                 }
             }
+
+            document.addEventListener("DOMContentLoaded", displayProfile);
         </script>
     </body>
 </html>

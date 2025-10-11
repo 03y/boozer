@@ -28,7 +28,18 @@ td {
     text-align: left;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     font-size: clamp(14px, 3vw, 16px);
+}
+
+th:first-child,
+td:first-child {
+    white-space: nowrap;
+    word-break: normal;
+}
+
+th:not(:first-child),
+td:not(:first-child) {
     word-break: break-word;
+    word-wrap: break-word;
 }
 
 th {
@@ -41,32 +52,13 @@ tr:hover {
     background-color: var(--hover-bg-colour);
 }
 
-tr.selected {
-    background-color: var(--select-bg-colour);
-    color: var(--select-text-colour);
-}
-
-select {
-    padding: 10px;
-    font-size: 16px;
-    border-radius: 4px;
-    background-color: var(--select-bg-colour);
-    border: none;
-    color: var(--select-text-colour);
-    cursor: pointer;
-}
-
-select:hover {
-    background-color: var(--select-hover-bg-colour);
-}
-
 .leaderboard-section {
     margin: 30px 0;
     display: flex;
     gap: 20px;
     justify-content: space-between;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-start;
 }
 
 .items-section {
@@ -123,14 +115,39 @@ select:hover {
     margin-bottom: 20px;
 }
 
+#leaderboard-type-selector,
+#sort-selector {
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 4px;
+    background-color: #333;
+    border: 1px solid #555;
+    color: #fff;
+    cursor: pointer;
+}
+
+#leaderboard-type-selector:hover,
+#sort-selector:hover {
+    background-color: #444;
+}
+
 .leaderboard-column {
     min-width: 300px;
-    width: 100%;
+    flex: 1 1 0;
+}
+
+.dateHeader {
+    background-color: red;
 }
 
 @media screen and (max-width: 768px) {
     .leaderboard-column {
         flex: 1 1 100%;
         min-width: 100%;
+    }
+
+    .leaderboard-section {
+        gap: 15px;
+        flex-direction: column;
     }
 }

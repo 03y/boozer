@@ -1,4 +1,4 @@
 backend/boozer
-frontend/node_modules
+backend/logs
+frontend/caddy
 *.pem
-tools/pwhasher/

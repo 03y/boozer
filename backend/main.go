@@ -13,6 +13,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log/slog"
+	"math"
 	"net/http"
 	"os"
 	"regexp"
@@ -48,7 +49,7 @@ type App struct {
 }
 
 const NAME string = "boozer"
-const VERSION string = "Alpha"
+const VERSION string = "Beta-2"
 
 var ARGON2_PARAMS = &params{
 	memory:      65536,
@@ -191,13 +192,41 @@ func parseJWT(tokenString string, privateKey *ecdsa.PrivateKey) (jwt.MapClaims, 
 	}
 }
 
+func round(value float64, precision int) float64 {
+	multiplier := math.Pow(10, float64(precision))
+	return math.Round(value*multiplier) / multiplier
+}
+
 /* ******************************************************************************** */
 /* API endpoints */
 /* ******************************************************************************** */
 
+func (a *App) GetItems(c *gin.Context) {
+	rows, err := a.DB.Query(context.Background(), "SELECT item_id, name, units, added FROM items ORDER BY added DESC")
+	if err != nil {
+		slog.Error("error getting item list", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	items := make([]models.Item, 0)
+	for rows.Next() {
+		var item models.Item
+		err := rows.Scan(&item.Item_id, &item.Name, &item.Units, &item.Added)
+		if err != nil {
+			slog.Error("error scanning item", "error", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		items = append(items, item)
+	}
+
+	c.JSON(http.StatusOK, items)
+}
+
 func (a *App) GetItem(c *gin.Context) {
-	var beer models.Item
-	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE item_id=$1", c.Param("item_id")).Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
+	var item models.Item
+	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE name=$1", c.Param("name")).Scan(&item.Item_id, &item.Name, &item.Units, &item.Added, &item.User_id)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			c.Status(http.StatusNotFound)
@@ -207,53 +236,105 @@ func (a *App) GetItem(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, beer)
+	c.JSON(http.StatusOK, item)
 }
 
-func (a *App) GetItemList(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT * FROM items ORDER BY added DESC")
+func (a *App) GetItemConsumptionCount(c *gin.Context) {
+	var data models.ConsumptionCount
+	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(1) FROM consumptions c INNER JOIN items i ON c.item_id=i.item_id WHERE i.name=$1", c.Param("name")).Scan(&data.Consumptions)
 	if err != nil {
-		slog.Error("error getting item list", "error", err)
+		if err == pgx.ErrNoRows {
+			c.Status(http.StatusNotFound)
+			return
+		}
 		c.Status(http.StatusInternalServerError)
 		return
 	}
 
-	beers := make([]models.Item, 0)
+	c.JSON(http.StatusOK, data)
+}
+
+// get a list of users who have consumed this item, and how many times
+func (a *App) GetItemUserConsumptionCount(c *gin.Context) {
+	rows, err := a.DB.Query(context.Background(), "SELECT u.username, COUNT(1) FROM consumptions c INNER JOIN users u ON c.user_id=u.user_id INNER JOIN items i ON c.item_id=i.item_id WHERE i.name=$1 GROUP BY u.username ORDER BY count DESC LIMIT 50;", c.Param("name"))
+	if err != nil {
+		slog.Error("error getting user list", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	users := make([]models.LeaderboardUser, 0)
 	for rows.Next() {
-		var beer models.Item
-		err := rows.Scan(&beer.Item_id, &beer.Name, &beer.Units, &beer.Added)
+		var user models.LeaderboardUser
+		err := rows.Scan(&user.Username, &user.Consumed)
 		if err != nil {
-			slog.Error("error scanning item", "error", err)
+			slog.Error("error scanning user", "error", err)
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		beers = append(beers, beer)
+		users = append(users, user)
 	}
 
-	c.JSON(http.StatusOK, beers)
+	c.JSON(http.StatusOK, users)
 }
 
 func (a *App) AddItem(c *gin.Context) {
-	var newBeer models.Item
-	err := c.BindJSON(&newBeer)
+	var errorResponse models.ErrorResponse
+
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		slog.Error("error parsing JWT", "error", err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	var item models.Item
+	err = c.BindJSON(&item)
 	if err != nil {
 		slog.Error("error binding JSON", "error", err)
 		c.Status(http.StatusBadRequest)
 		return
 	}
 
-	if newBeer.Name == "" || newBeer.Units < 0 || len(newBeer.Name) < 1 || len(newBeer.Name) > 40 {
-		c.Status(http.StatusBadRequest)
+	if len(item.Name) < 2 {
+		errorResponse.Error = "Item name too short"
+		c.JSON(http.StatusBadRequest, errorResponse)
+		return
+	} else if len(item.Name) > 40 {
+		errorResponse.Error = "Item name too long"
+		c.JSON(http.StatusBadRequest, errorResponse)
+		return
+	} else if item.Units < 0 {
+		errorResponse.Error = "Item units must be number"
+		c.JSON(http.StatusBadRequest, errorResponse)
 		return
 	}
 
-	newBeer.Added = int(time.Now().Unix())
+	// get user id from username
+	err = a.DB.QueryRow(context.Background(), "SELECT user_id FROM users WHERE username = $1", claims["username"]).Scan(&item.User_id)
+	if err != nil {
+		slog.Error("error getting user id from username", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
 
-	_, err = a.DB.Exec(context.Background(), "INSERT INTO items (name, units, added) VALUES ($1, $2, $3)", newBeer.Name, newBeer.Units, newBeer.Added)
+	item.Name = strings.TrimSpace(item.Name) // strip any trailing whitespace
+	item.Added = int(time.Now().Unix())
+	item.Units = float32(round(float64(item.Units), 1)) // round units to 1 decimal place
+
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO items (name, user_id, units, added) VALUES ($1, $2, $3, $4)", item.Name, item.User_id, item.Units, item.Added)
 	if err != nil {
 		slog.Error("error adding item", "error", err)
 		c.Status(http.StatusBadRequest) // it was probably the clients fault
 		return
+	} else {
+		slog.Info("new item added", "user_id", item.User_id, "item", item.Name)
 	}
 
 	c.Status(http.StatusCreated)
@@ -261,6 +342,7 @@ func (a *App) AddItem(c *gin.Context) {
 
 func (a *App) AddUser(c *gin.Context) {
 	var newUser models.User
+	var errorResponse models.ErrorResponse
 	// legal usernames are a-z A-Z 0-9 and underscore
 	const pattern = `^[a-zA-z0-9_]+$`
 
@@ -271,8 +353,13 @@ func (a *App) AddUser(c *gin.Context) {
 		return
 	}
 
-	if len(newUser.Username) <= 3 || len(newUser.Username) >= 20 {
-		c.Status(http.StatusBadRequest)
+	if len(newUser.Username) <= 3 {
+		errorResponse.Error = "Username too short"
+		c.JSON(http.StatusBadRequest, errorResponse)
+		return
+	} else if len(newUser.Username) >= 20 {
+		errorResponse.Error = "Username too long"
+		c.JSON(http.StatusBadRequest, errorResponse)
 		return
 	}
 
@@ -282,7 +369,8 @@ func (a *App) AddUser(c *gin.Context) {
 		slog.Error("error running regex", "username", newUser.Username)
 		return
 	} else if !matched {
-		c.Status(http.StatusBadRequest)
+		errorResponse.Error = "Usernames must be alphanumeric"
+		c.JSON(http.StatusBadRequest, errorResponse)
 		return
 	}
 
@@ -295,6 +383,8 @@ func (a *App) AddUser(c *gin.Context) {
 		slog.Error("error adding user", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
+	} else {
+		slog.Info("new account created", "username", newUser.Username, "ip", c.Request.RemoteAddr)
 	}
 
 	c.Status(http.StatusCreated)
@@ -312,7 +402,8 @@ func (a *App) Authenticate(c *gin.Context) {
 
 	// get the hash we have in the db
 	var storedHash string
-	err = a.DB.QueryRow(context.Background(), "SELECT password FROM users WHERE username=$1", user.Username).Scan(&storedHash)
+	var userId int
+	err = a.DB.QueryRow(context.Background(), "SELECT user_id, password FROM users WHERE username=$1", user.Username).Scan(&userId, &storedHash)
 
 	// compare
 	match, err := comparePasswordAndHash(user.Password, storedHash)
@@ -324,13 +415,75 @@ func (a *App) Authenticate(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		c.SetCookie("token", token, 3600, "/", "", true, true)
+		c.SetCookie("token", token, 12*3600, "/", "", true, true) // 12 hour cookie
 		c.Status(http.StatusOK)
-		slog.Info("successful auth", "user", user.Username)
+		slog.Info("successful auth", "user_id", userId)
 	} else {
+		c.Status(http.StatusBadRequest)
+		slog.Info("failed auth", "user_id", userId)
+		return
+	}
+}
+
+func (a *App) AddItemReport(c *gin.Context) {
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		slog.Error("error parsing JWT", "error", err)
+		c.Status(http.StatusBadRequest) // TODO: should this (and other similar instances) be 401 Unauth?
+		return
+	}
+
+	var clientReport models.ItemReportRequest // what we get from the client
+	var newItemReport models.ItemReport       // what we store in the db
+	err = c.BindJSON(&clientReport)
+	if err != nil {
+		slog.Error("error binding JSON", "error", err)
 		c.Status(http.StatusBadRequest)
 		return
 	}
+
+	// copy reason
+	newItemReport.Reason = clientReport.Reason
+
+	// check item exists
+	err = a.DB.QueryRow(context.Background(), "SELECT item_id FROM items WHERE name=$1", clientReport.Name).Scan(&newItemReport.Item_id)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			slog.Error("item not found", "error", err)
+		}
+		c.Status(http.StatusInternalServerError)
+		slog.Error("error", err)
+		return
+	}
+
+	// get user id
+	var idLookup string
+	err = a.DB.QueryRow(context.Background(), "SELECT user_id FROM users WHERE username=$1", claims["username"]).Scan(&idLookup)
+	if err != nil {
+		slog.Error("error looking up user ID", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	newItemReport.User_id, _ = strconv.Atoi(idLookup)
+
+	newItemReport.Created = int(time.Now().Unix())
+
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO item_reports (item_id, user_id, reason, created) VALUES ($1, $2, $3, $4)", newItemReport.Item_id, newItemReport.User_id, newItemReport.Reason, newItemReport.Created)
+	if err != nil {
+		slog.Error("error adding item report", "error", err)
+		c.Status(http.StatusBadRequest) // it was probably the clients fault
+		return
+	} else {
+		slog.Info("new item report created", "item_id", newItemReport.Item_id, "item_id", newItemReport.User_id, "reason", newItemReport.Reason)
+	}
+
+	c.Status(http.StatusCreated)
 }
 
 func (a *App) Logout(c *gin.Context) {
@@ -340,7 +493,7 @@ func (a *App) Logout(c *gin.Context) {
 
 func (a *App) GetUser(c *gin.Context) {
 	var user models.UserNoPw
-	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE user_id=$1", c.Param("user_id")).Scan(&user.User_id, &user.Username, &user.Created)
+	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE username=$1", c.Param("username")).Scan(&user.User_id, &user.Username, &user.Created)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			c.Status(http.StatusNotFound)
@@ -384,7 +537,6 @@ func (a *App) GetUserFromToken(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
-
 }
 
 func (a *App) AddConsumption(c *gin.Context) {
@@ -436,11 +588,13 @@ func (a *App) AddConsumption(c *gin.Context) {
 	}
 	newConsumption.User_id, _ = strconv.Atoi(id_lookup)
 
-	_, err = a.DB.Exec(context.Background(), "INSERT INTO consumptions (user_id, item_id, time) VALUES ($1, $2, $3)", newConsumption.User_id, newConsumption.Item_id, newConsumption.Time)
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO consumptions (user_id, item_id, time, price) VALUES ($1, $2, $3, $4)", newConsumption.User_id, newConsumption.Item_id, newConsumption.Time, newConsumption.Price)
 	if err != nil {
 		slog.Error("error adding consumption", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
+	} else {
+		slog.Info("consumption added", "user_id", newConsumption.User_id, "item_id", newConsumption.Item_id, "price", newConsumption.Price)
 	}
 
 	c.Status(http.StatusCreated)
@@ -460,8 +614,8 @@ func (a *App) RemoveConsumption(c *gin.Context) {
 	}
 
 	// get the consumption requested for deletion (although we will only read the id)
-	var newConsumption models.Consumption
-	err = c.BindJSON(&newConsumption)
+	var consumption models.Consumption
+	err = c.BindJSON(&consumption)
 	if err != nil {
 		slog.Error("error binding JSON", "error", err)
 		c.Status(http.StatusBadRequest)
@@ -470,7 +624,7 @@ func (a *App) RemoveConsumption(c *gin.Context) {
 
 	// get username from consumption id, check that is the authenticated user
 	var usernameLookup string
-	err = a.DB.QueryRow(context.Background(), "SELECT users.username FROM consumptions INNER JOIN users ON consumptions.user_id=users.user_id WHERE consumptions.consumption_id=$1", newConsumption.Consumption_id).Scan(&usernameLookup)
+	err = a.DB.QueryRow(context.Background(), "SELECT users.username FROM consumptions INNER JOIN users ON consumptions.user_id=users.user_id WHERE consumptions.consumption_id=$1", consumption.Consumption_id).Scan(&usernameLookup)
 	if err != nil {
 		slog.Error("error looking up username", "error", err)
 		c.Status(http.StatusInternalServerError)
@@ -484,11 +638,13 @@ func (a *App) RemoveConsumption(c *gin.Context) {
 		return
 	}
 
-	_, err = a.DB.Exec(context.Background(), "DELETE FROM consumptions WHERE consumption_id=$1", newConsumption.Consumption_id)
+	_, err = a.DB.Exec(context.Background(), "DELETE FROM consumptions WHERE consumption_id=$1", consumption.Consumption_id)
 	if err != nil {
 		slog.Error("error deleting consumption", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
+	} else {
+		slog.Info("consumption removed", "user", claims["username"], "consumption_id", consumption.Consumption_id)
 	}
 
 	c.Status(http.StatusOK)
@@ -530,14 +686,43 @@ func (a *App) GetConsumption(c *gin.Context) {
 	c.JSON(http.StatusOK, consumption)
 }
 
-func (a *App) GetUserConsumptionCount(c *gin.Context) {
-	type ConsumptionData struct {
-		Consumptions int `json:"consumptions"`
+func (a *App) GetTotalConsumptionCount(c *gin.Context) {
+	var data models.ConsumptionCount
+
+	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(consumption_id) FROM consumptions").Scan(&data.Consumptions)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			slog.Error("couldnt get total consumption count", "error", err)
+		}
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	var data ConsumptionData
+	c.JSON(http.StatusOK, data)
+}
 
-	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(*) FROM consumptions WHERE user_id=$1", c.Param("user_id")).Scan(&data.Consumptions)
+func (a *App) GetUserItemCount(c *gin.Context) {
+	var data models.ItemCount
+
+	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(1) FROM items i INNER JOIN users u ON i.user_id = u.user_id WHERE u.username=$1", c.Param("username")).Scan(&data.Items)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		slog.Error("error getting user item count", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusOK, data)
+}
+
+func (a *App) GetUserConsumptionCount(c *gin.Context) {
+	var data models.ConsumptionCount
+
+	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(1) FROM consumptions INNER JOIN users ON consumptions.user_id = users.user_id WHERE users.username=$1", c.Param("username")).Scan(&data.Consumptions)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			c.Status(http.StatusNotFound)
@@ -553,24 +738,17 @@ func (a *App) GetUserConsumptionCount(c *gin.Context) {
 }
 
 func (a *App) GetUserConsumptions(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT consumptions.consumption_id, items.name, items.units, consumptions.time FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id WHERE user_id=$1 ORDER BY consumptions.time DESC LIMIT 25", c.Param("user_id"))
+	rows, err := a.DB.Query(context.Background(), "SELECT consumptions.consumption_id, items.name, items.units, consumptions.time, consumptions.price FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id INNER JOIN users ON consumptions.user_id = users.user_id WHERE users.username=$1 ORDER BY consumptions.time DESC LIMIT 25", c.Param("username"))
 	if err != nil {
 		slog.Error("error getting user consumptions", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
 
-	type NamedConsumption struct {
-		Consumption_id int     `json:"consumption_id"`
-		Name           string  `json:"name"`
-		Units          float32 `json:"units"`
-		Time           int     `json:"time"` // unix timestamp
-	}
-
-	consumptions := make([]NamedConsumption, 0)
+	consumptions := make([]models.NamedConsumption, 0)
 	for rows.Next() {
-		var consumption NamedConsumption
-		err := rows.Scan(&consumption.Consumption_id, &consumption.Name, &consumption.Units, &consumption.Time)
+		var consumption models.NamedConsumption
+		err := rows.Scan(&consumption.Consumption_id, &consumption.Name, &consumption.Units, &consumption.Time, &consumption.Price)
 		if err != nil {
 			slog.Error("error scanning consumption", "error", err)
 			c.Status(http.StatusInternalServerError)
@@ -599,6 +777,30 @@ func (a *App) GetUserLeaderboard(c *gin.Context) {
 			c.Status(http.StatusNotFound)
 			return
 		}
+		leaderboard = append(leaderboard, user)
+	}
+
+	c.JSON(http.StatusOK, leaderboard)
+}
+
+func (a *App) GetUserLeaderboardUnits(c *gin.Context) {
+	rows, err := a.DB.Query(context.Background(), "SELECT users.username, SUM(items.units) AS total_units FROM consumptions INNER JOIN users ON consumptions.user_id = users.user_id INNER JOIN items ON consumptions.item_id = items.item_id GROUP BY users.username ORDER BY total_units DESC LIMIT 10;")
+	if err != nil {
+		slog.Error("error getting user units leaderboard", "error", err)
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	leaderboard := make([]models.LeaderboardUserUnits, 0)
+	for rows.Next() {
+		var user models.LeaderboardUserUnits
+		err := rows.Scan(&user.Username, &user.Units)
+		if err != nil {
+			slog.Error("error scanning user", "error", err)
+			c.Status(http.StatusNotFound)
+			return
+		}
+		user.Units = float32(round(float64(user.Units), 1))
 		leaderboard = append(leaderboard, user)
 	}
 
@@ -651,44 +853,157 @@ func (a *App) GetFeed(c *gin.Context) {
 	c.JSON(http.StatusOK, feed)
 }
 
+func (a *App) ChangePassword(c *gin.Context) {
+	// get token
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	// get username from token
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	// get passwords from request
+	var passwords models.ChangePassword
+	err = c.BindJSON(&passwords)
+	if err != nil {
+		slog.Error("error binding JSON", "error", err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	// get the hash we have in the db
+	var storedHash string
+	var userId string
+	err = a.DB.QueryRow(context.Background(), "SELECT user_id, password FROM users WHERE username=$1", claims["username"]).Scan(&userId, &storedHash)
+	if err != nil {
+		slog.Error("error getting stored hash", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// compare
+	match, err := comparePasswordAndHash(passwords.OldPassword, storedHash)
+	if err != nil {
+		slog.Error("error comparing password and hash", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	if match {
+		// hash new password
+		hashedPassword, err := plaintextToEncodedHash(passwords.NewPassword)
+		if err != nil {
+			slog.Error("error hashing password", "error", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		// update db
+		_, err = a.DB.Exec(context.Background(), "UPDATE users SET password=$1 WHERE username=$2", hashedPassword, claims["username"])
+		if err != nil {
+			slog.Error("error updating password", "error", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		} else {
+			slog.Info("password changed for", "user_id", userId)
+		}
+
+		c.Status(http.StatusOK)
+	} else {
+		c.Status(http.StatusBadRequest)
+		slog.Info("wrong password submitted while attempting to change password", "user_id", userId)
+		return
+	}
+}
+
 /* ******************************************************************************** */
 
 func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
+	const API_V1_BASE_URL = "/v1"
+	const API_V2_BASE_URL = "/v2"
 	gin.DefaultWriter = writer
-	router := gin.Default()
+	router := gin.New()
 
-	// adding new items/consumptions
-	router.POST("/submit/item", a.AddItem) // TODO: maybe add field for who added it, add auth for this
-	router.POST("/submit/consumption", a.AddConsumption)
-	// TODO: router.PUT("/submit/consumption", a.AddConsumption)
+	/* ********************************** */
+	/* API V1                             */
+	/* ********************************** */
 
-	// updating and deleting items/consumptions
-	router.POST("/remove/consumption", a.RemoveConsumption)
+	// items
+	router.POST(API_V1_BASE_URL+"/submit/item", a.AddItem) // TODO: maybe add field for who added it, add auth for this
+	router.POST(API_V1_BASE_URL+"/submit/consumption", a.AddConsumption)
+	router.GET(API_V1_BASE_URL+"/items", a.GetItems)
+	router.GET(API_V1_BASE_URL+"/items/:name", a.GetItem)
+	router.GET(API_V1_BASE_URL+"/items/:name/leaderboard", a.GetItemUserConsumptionCount)
+	router.GET(API_V1_BASE_URL+"/items/:name/consumptions", a.GetItemConsumptionCount)
+	router.POST(API_V1_BASE_URL+"/items/:name/report", a.AddItemReport)
 
-	// getting items
-	router.GET("/item/:item_id", a.GetItem)
-	router.GET("/items", a.GetItemList)
+	// consumptions
+	router.GET(API_V1_BASE_URL+"/consumption/:consumption_id", a.GetConsumption)
+	router.POST(API_V1_BASE_URL+"/remove/consumption", a.RemoveConsumption)
 
-	// create & authenticate accounts
-	router.POST("/signup", a.AddUser)
-	router.POST("/authenticate", a.Authenticate)
-	router.POST("/logout", a.Logout)
+	// users
+	router.POST(API_V1_BASE_URL+"/signup", a.AddUser)
+	router.POST(API_V1_BASE_URL+"/authenticate", a.Authenticate)
+	router.POST(API_V1_BASE_URL+"/logout", a.Logout)
+	router.PUT(API_V1_BASE_URL+"/change_password", a.ChangePassword)
 
-	// get user
-	router.GET("/user/:user_id", a.GetUser)
-	router.GET("/user/me", a.GetUserFromToken)
-	router.GET("/consumption_count/:user_id", a.GetUserConsumptionCount)
-	router.GET("/consumptions/:user_id", a.GetUserConsumptions)
-
-	// get consumption
-	router.GET("/consumption/:consumption_id", a.GetConsumption)
+	router.GET(API_V1_BASE_URL+"/user/:username", a.GetUser)
+	router.GET(API_V1_BASE_URL+"/user/me", a.GetUserFromToken)
+	router.GET(API_V1_BASE_URL+"/consumption_count", a.GetTotalConsumptionCount)
+	router.GET(API_V1_BASE_URL+"/consumption_count/:username", a.GetUserConsumptionCount)
+	router.GET(API_V1_BASE_URL+"/consumptions/:username", a.GetUserConsumptions)
 
 	// leaderboards
-	router.GET("/leaderboard/items", a.GetItemsLeaderboard)
-	router.GET("/leaderboard/users", a.GetUserLeaderboard)
+	router.GET(API_V1_BASE_URL+"/leaderboards/items", a.GetItemsLeaderboard)
+	router.GET(API_V1_BASE_URL+"/leaderboards/users", a.GetUserLeaderboard)
+	router.GET(API_V1_BASE_URL+"/leaderboards/users-by-units", a.GetUserLeaderboardUnits)
+	router.GET(API_V1_BASE_URL+"/feed", a.GetFeed)
 
-	// feed
-	router.GET("/feed", a.GetFeed)
+	/* ********************************** */
+	/* API V2                             */
+	/* ********************************** */
+
+	// items
+	router.POST(API_V2_BASE_URL+"/items", a.AddItem) // TODO: maybe add field for who added it, add auth for this
+	// TODO: router.PUT("/submit/consumption", a.AddConsumption) // for updating items
+	router.GET(API_V2_BASE_URL+"/items", a.GetItems)
+	router.GET(API_V2_BASE_URL+"/items/:name", a.GetItem)
+	router.GET(API_V2_BASE_URL+"/items/:name/leaderboard", a.GetItemUserConsumptionCount)
+	router.GET(API_V2_BASE_URL+"/items/:name/consumptions", a.GetItemConsumptionCount)
+
+	// reports
+	router.POST(API_V2_BASE_URL+"/reports", a.AddItemReport)
+
+	// consumptions
+	router.POST(API_V2_BASE_URL+"/consumptions", a.AddConsumption)
+	router.GET(API_V2_BASE_URL+"/consumptions/:consumption_id", a.GetConsumption)
+	router.DELETE(API_V2_BASE_URL+"/consumptions", a.RemoveConsumption)
+
+	router.GET(API_V2_BASE_URL+"/consumptions/count", a.GetTotalConsumptionCount)
+
+	// users
+	router.POST(API_V2_BASE_URL+"/signup", a.AddUser)
+	router.POST(API_V2_BASE_URL+"/authenticate", a.Authenticate)
+	router.POST(API_V2_BASE_URL+"/logout", a.Logout)
+	router.PUT(API_V2_BASE_URL+"/change_password", a.ChangePassword)
+
+	router.GET(API_V2_BASE_URL+"/users/:username", a.GetUser)
+	router.GET(API_V2_BASE_URL+"/users/me", a.GetUserFromToken)
+	router.GET(API_V2_BASE_URL+"/users/:username/consumptions/count", a.GetUserConsumptionCount)
+	router.GET(API_V2_BASE_URL+"/users/:username/consumptions", a.GetUserConsumptions)
+	router.GET(API_V2_BASE_URL+"/users/:username/items/count", a.GetUserItemCount)
+
+	// leaderboards
+	router.GET(API_V2_BASE_URL+"/leaderboards/items", a.GetItemsLeaderboard)
+	router.GET(API_V2_BASE_URL+"/leaderboards/users", a.GetUserLeaderboard)
+	router.GET(API_V2_BASE_URL+"/leaderboards/users/units", a.GetUserLeaderboardUnits)
+	router.GET(API_V2_BASE_URL+"/leaderboards/feed", a.GetFeed)
 
 	return router
 }
@@ -701,14 +1016,11 @@ func main() {
 	}
 
 	logFilename := fmt.Sprintf("%s/%s.log", logDir, time.Now().UTC().Format("2006-01-02_15-04"))
-	ginLogFilename := fmt.Sprintf("%s/%s_GIN.log", logDir, time.Now().UTC().Format("2006-01-02_15-04"))
 	logFile, err := os.OpenFile(logFilename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	ginLogFile, err := os.OpenFile(ginLogFilename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		slog.Error("error opening log file", "error", err)
 		os.Exit(1)
 	}
-	defer ginLogFile.Close()
 
 	multiWriter := io.MultiWriter(os.Stdout, logFile)
 	logger := slog.New(slog.NewJSONHandler(multiWriter, nil))
@@ -754,8 +1066,7 @@ func main() {
 
 	app := &App{DB: pool, JWT_KEY: jwtKey}
 
-	ginMultiWriter := io.MultiWriter(os.Stdout, ginLogFile)
-	router := app.setUpRouter(ginMultiWriter)
+	router := app.setUpRouter(io.Discard)
 
 	var listen string = os.Args[1]
 	slog.Info("Lets get boozing! 🍻")

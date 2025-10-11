@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>🍺 Boozer</title>
+        <link rel="stylesheet" type="text/css" href="styles/style.css" />
+        <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
+        <script src="scripts/auth.js"></script>
+    </head>
+    <body>
+        <nav>
+            <a href="./index.html">Leaderboard</a>
+            <a href="./items.html">Inventory</a>
+            <a id="login-link" href="./login.html">Login</a>
+            <a href="./submit.html">Get boozing!</a>
+        </nav>
+
+        <div class="container">
+            <div class="profile-section">
+                <p><strong>Username:</strong> <span id="username"></span></p>
+                <p>
+                    <strong>Date Joined:</strong> <span id="date-joined"></span>
+                </p>
+                <p>
+                    <strong>Items added:</strong>
+                    <span id="items-added"></span>
+                </p>
+                <p>
+                    <strong>Consumptions:</strong>
+                    <span id="consumptions"></span>
+                </p>
+            </div>
+
+            <div class="container">
+                <div class="consumptions-section">
+                    <div id="consumptions-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            async function displayProfile() {
+                try {
+                    // get the user id from url search params
+                    const urlParams = new URLSearchParams(
+                        window.location.search,
+                    );
+                    const USERNAME = urlParams.get("username");
+
+                    const response = await fetch(
+                        `${API_BASE_URL}/users/${USERNAME}`,
+                    );
+
+                    if (response.ok) {
+                        user = await response.json();
+                    }
+
+                    if (!user) {
+                        document.getElementById("username").innerHTML =
+                            "Error loading user.";
+                        document.getElementById("date-joined").innerHTML = "";
+                        document.getElementById("items-added").innerHTML = "";
+                        document.getElementById("consumptions").innerHTML = "";
+                        return;
+                    }
+
+                    document.getElementById("username").innerHTML =
+                        user.username;
+                    const date = new Date(user.created * 1000);
+                    const formattedDate = date.toLocaleDateString("en-UK", {
+                        year: "numeric",
+                        month: "numeric",
+                        day: "numeric",
+                    });
+
+                    const now = new Date();
+                    const diffTime = Math.abs(now - date);
+                    const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+
+                    document.getElementById("date-joined").innerHTML =
+                        `${formattedDate} (${diffWeeks} weeks ago)`;
+
+                    try {
+                        const response = await fetch(
+                            `${API_BASE_URL}/users/${user.username}/items/count`,
+                        );
+
+                        if (!response.ok) {
+                            throw new Error(
+                                `HTTP error! Status: ${response.status}`,
+                            );
+                        }
+
+                        const data = await response.json();
+                        
+                        if (data.items > 0) {
+                            document.getElementById("items-added").innerHTML = data.items;
+                        } else {
+                            document.getElementById("items-added").innerHTML = "0";
+                        }
+                    } catch (error) {
+                        consumptionsContainer.innerHTML = `<div class="error-message">Error loading item count.</div>`;
+                    }
+
+                    try {
+                        const response = await fetch(
+                            `${API_BASE_URL}/users/${user.username}/consumptions/count`,
+                        );
+
+                        if (!response.ok) {
+                            throw new Error(
+                                `HTTP error! Status: ${response.status}`,
+                            );
+                        }
+
+                        const data = await response.json();
+
+                        document.getElementById("consumptions").innerHTML =
+                            data.consumptions;
+                    } catch (error) {
+                        consumptionsContainer.innerHTML = `<div class="error-message">Error loading consumption count.</div>`;
+                    }
+
+                    const consumptionsContainer = document.getElementById(
+                        "consumptions-container",
+                    );
+
+                    // Clear the loading message
+                    consumptionsContainer.innerHTML = "";
+
+                    try {
+                        const response = await fetch(
+                            `${API_BASE_URL}/users/${user.username}/consumptions`,
+                        );
+
+                        if (!response.ok) {
+                            throw new Error(
+                                `HTTP error! Status: ${response.status}`,
+                            );
+                        }
+
+                        const data = await response.json();
+
+                        if (!data || data.length === 0) {
+                            consumptionsContainer.innerHTML = "";
+                            return;
+                        }
+
+                        let tableHTML = `
+                              <table class="consumption-table">
+                                  <thead>
+                                      <tr>
+                                          <th>Item</th>
+                                          <th>Units</th>
+                                          <th>Time</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody>
+                          `;
+
+                        data.forEach((consumption, index) => {
+                            const date = new Date(consumption.time * 1000);
+                            const formattedDate = date.toLocaleString("en-GB", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hourCycle: "h24",
+                            });
+                            tableHTML += `
+                                      <tr>
+                                          <td>${consumption.name ? `<a href="./item.html?name=${consumption.name}">${consumption.name}</a>` : "Unknown Item"}</td>
+                                          <td>${consumption.units}</td>
+                                          <td>${formattedDate}</td>
+                                      </tr>
+                              `;
+                        });
+
+                        tableHTML += `
+                                  </tbody>
+                              </table>
+                          `;
+
+                        consumptionsContainer.innerHTML = tableHTML;
+                    } catch (error) {
+                        consumptionsContainer.innerHTML = `<div class="error-message">Error loading consumptions.</div>`;
+                    }
+                } catch (error) {
+                    document.getElementById("username").innerHTML =
+                        "Error loading profile.";
+                    document.getElementById("date-joined").innerHTML = "";
+                    document.getElementById("consumptions").innerHTML = "";
+                }
+            }
+
+            document.addEventListener("DOMContentLoaded", displayProfile);
+            document.addEventListener("DOMContentLoaded", getUser);
+        </script>
+    </body>
+</html>

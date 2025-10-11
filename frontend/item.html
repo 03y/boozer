@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>🍺 Boozer</title>
+        <link rel="stylesheet" type="text/css" href="styles/forms.css" />
+        <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
+        <link rel="stylesheet" type="text/css" href="styles/style.css" />
+        <script src="scripts/auth.js"></script>
+        <script src="scripts/leaderboard.js"></script>
+        <script src="scripts/messaging.js"></script>
+    </head>
+    <body>
+        <nav>
+            <a href="./index.html">Leaderboard</a>
+            <a href="./items.html">Inventory</a>
+            <a id="login-link" href="./login.html">Login</a>
+            <a href="./submit.html">Get boozing!</a>
+        </nav>
+
+        <div class="container">
+            <div class="profile-section">
+                <p><strong>Name:</strong> <span id="name"></span></p>
+                <p>
+                    <strong>Units:</strong>
+                    <span id="units"></span>
+                </p>
+                <p>
+                    <strong>Consumptions:</strong>
+                    <span id="consumptions"></span>
+                </p>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="item-actions">
+                <button type="submit" class="report-bad-data-btn" id="report-bad-data-btn">
+                    Report bad data
+                </button>
+            </div>
+        </div>
+
+            <div id="message-container"></div>
+
+        <div class="container">
+            <div class="leaderboard-section">
+                <div class="leaderboard-column">
+                    <div id="users-leaderboard" class="leaderboard-container">
+                        <div class="loading">Loading leaderboard...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="report-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2>Select reason:</h2>
+                <form id="report-form">
+                    <div class="form-group">
+                        <div class="radio-group">
+                            <input type="radio" id="report-name" name="reason" value="name" required>
+                            <label for="report-name">Name</label>
+                            <input type="radio" id="report-units" name="reason" value="units">
+                            <label for="report-units">Units</label>
+                            <input type="radio" id="report-duplicate" name="reason" value="duplicate">
+                            <label for="report-duplicate">Duplicate</label>
+                            <input type="radio" id="report-other" name="reason" value="other">
+                            <label for="report-other">Other</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="report-bad-data-btn" id="report-bad-data-btn">Submit Report</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            const urlParams = new URLSearchParams(
+                window.location.search,
+            );
+            const NAME = urlParams.get("name");
+
+            async function displayItem() {
+                try {
+                    let response = await fetch(
+                        `${API_BASE_URL}/items/${NAME}`,
+                    );
+
+                    if (response.ok) {
+                        item = await response.json();
+                    }
+
+                    if (!item) {
+                        document.getElementById("name").innerHTML =
+                            "Error loading item.";
+                        document.getElementById("units").innerHTML = "";
+                        return;
+                    }
+
+                    document.getElementById("name").innerHTML = item.name;
+                    document.getElementById("units").innerHTML = item.units;
+                } catch (error) {
+                    document.getElementById("name").innerHTML =
+                        "Error loading item.";
+                }
+            }
+
+            function showModal() {
+                const modal = document.getElementById('report-modal');
+                modal.style.display = 'block';
+            }
+
+            function closeModal() {
+                const modal = document.getElementById('report-modal');
+                modal.style.display = 'none';
+            }
+
+            async function handleReportSubmit(event) {
+                event.preventDefault();
+                const reason = document.querySelector('input[name="reason"]:checked').value;
+                if (!reason) {
+                    setMessage('Please select a reason for reporting.', true);
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/reports`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
+                        body: JSON.stringify({ name: NAME, reason: reason })
+                    });
+
+                    if (response.ok) {
+                        setMessage('Report submitted successfully.');
+                        closeModal();
+                    } else {
+                        const error = await response.json();
+                        setMessage(`Error: ${error.error}`, true);
+                        closeModal();
+                    }
+                } catch (error) {
+                    setMessage('An error occurred while submitting the report.', true);
+                    closeModal();
+                }
+            }
+
+
+            async function reportBadData() {
+                const user = await getUser();
+                if (!user) {
+                    setMessage('You must be logged in to report item data.', true);
+                    return;
+                }
+                showModal();
+            }
+
+            async function loadConsumptionCount() {
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/items/${NAME}/consumptions`,
+                    );
+
+                    if (response.ok) {
+                        data = await response.json();
+                    }
+
+                    if (data.consumptions > 0) {
+                        document.getElementById("consumptions").innerHTML = data.consumptions;
+                    }
+                } catch (error) {
+                    document.getElementById("name").innerHTML =
+                        "Error loading item.";
+                    document.getElementById("date-added").innerHTML = "";
+                }
+            }
+
+            async function loadLeaderboard() {
+                const response = await fetch(
+                    `${API_BASE_URL}/items/${NAME}/leaderboard`,
+                );
+
+                if (response.ok) {
+                    users = await response.json();
+                }
+
+                const usersContainer =
+                    document.getElementById("users-leaderboard");
+                usersContainer.innerHTML =
+                    '<div class="loading">Loading users leaderboard...</div>';
+
+                usersContainer.innerHTML = createTable(users, "users");
+            }
+
+
+            const reportBadDataButton = document.getElementById("report-bad-data-btn");
+            if (reportBadDataButton) {
+                reportBadDataButton.addEventListener("click", reportBadData);
+            }
+
+            document.getElementById('report-form').addEventListener('submit', handleReportSubmit);
+            document.querySelector('.close-button').addEventListener('click', closeModal);
+
+            document.addEventListener("DOMContentLoaded", displayItem);
+            document.addEventListener("DOMContentLoaded", loadConsumptionCount);
+            document.addEventListener("DOMContentLoaded", loadLeaderboard);
+            document.addEventListener("DOMContentLoaded", getUser);
+        </script>
+    </body>
+</html>

@@ -1,5 +1,4 @@
 :root {
-    --text-color: Arial, sans-serif;
     --label-font-size: clamp(14px, 3vw, 16px);
     --input-font-size: clamp(14px, 3vw, 16px);
     --button-font-size: clamp(14px, 3vw, 16px);
@@ -91,50 +90,37 @@ body {
         padding: 15px;
     }
 }
-
-.dropdown-content {
-    display: none;
-    position: absolute;
-    top: 100%; /* Position below the input */
-    left: 0; /* Align with the left edge of the input */
-    background-color: rgba(40, 40, 40, 0.95); /* Darker background */
-    min-width: 100%;
-    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.4); /* Stronger shadow */
-    z-index: 100; /* Ensure it's on top */
-    max-height: 200px;
-    overflow-y: auto;
-    border-radius: 8px; /* More rounded corners */
-    border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
-}
-
-.dropdown-item {
-    color: #e0e0e0; /* Lighter text color */
-    padding: 10px 15px;
-    text-decoration: none;
-    display: block;
-    cursor: pointer;
-    transition: background-color 0.2s ease; /* Smooth transition */
-}
-
-.dropdown-item:hover {
-    background-color: rgba(70, 70, 70, 0.8); /* Darker hover background */
-    color: #ffffff; /* White text on hover */
-}
-
-.dropdown-item:first-child {
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-}
-
-.dropdown-item:last-child {
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
-}
-
 .form-group {
     position: relative;
 }
 
 .hidden {
     display: none;
+}
+
+.radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.radio-group input[type="radio"] {
+    display: none;
+}
+
+.radio-group label {
+    display: inline-block;
+    padding: 10px 20px;
+    border: 1px solid var(--tabacco-tan);
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: var(--pint-foam-cream);
+    color: var(--stout-brown);
+    transition: background-color 0.3s;
+}
+
+.radio-group input[type="radio"]:checked + label {
+    background-color: var(--tartan-green);
+    color: var(--pint-foam-cream);
+    border-color: var(--tartan-green);
 }
