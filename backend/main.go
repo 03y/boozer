@@ -753,6 +753,7 @@ func (a *App) GetUserUnitsSum(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
+	data.Units = math.Round(data.Units*100) / 100
 
 	c.JSON(http.StatusOK, data)
 }
