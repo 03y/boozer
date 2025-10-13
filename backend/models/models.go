@@ -82,6 +82,10 @@ type ConsumptionCount struct {
 	Consumptions int `json:"consumptions"`
 }
 
+type UnitsCount struct {
+	Units float32 `json:"units"`
+}
+
 type ItemCount struct {
 	Items int `json:"items"`
 }
