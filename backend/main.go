@@ -233,6 +233,7 @@ func (a *App) GetItem(c *gin.Context) {
 			return
 		}
 		c.Status(http.StatusInternalServerError)
+		slog.Error("Error getting item", "error", err)
 		return
 	}
 
@@ -737,6 +738,25 @@ func (a *App) GetUserConsumptionCount(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
+func (a *App) GetUserUnitsSum(c *gin.Context) {
+	var data models.UnitsCount
+	since := time.Now().AddDate(0, 0, -7).Unix()
+
+	err := a.DB.QueryRow(context.Background(), "SELECT COALESCE(SUM(i.units), 0) FROM consumptions c INNER JOIN items i ON c.item_id = i.item_id INNER JOIN users u ON u.user_id = c.user_id WHERE u.username=$1 AND c.time > $2;", c.Param("username"), since).Scan(&data.Units)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		slog.Error("error getting user units count", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusOK, data)
+}
+
 func (a *App) GetUserConsumptions(c *gin.Context) {
 	rows, err := a.DB.Query(context.Background(), "SELECT consumptions.consumption_id, items.name, items.units, consumptions.time, consumptions.price FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id INNER JOIN users ON consumptions.user_id = users.user_id WHERE users.username=$1 ORDER BY consumptions.time DESC LIMIT 25", c.Param("username"))
 	if err != nil {
@@ -998,6 +1018,7 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	router.GET(API_V2_BASE_URL+"/users/:username/consumptions/count", a.GetUserConsumptionCount)
 	router.GET(API_V2_BASE_URL+"/users/:username/consumptions", a.GetUserConsumptions)
 	router.GET(API_V2_BASE_URL+"/users/:username/items/count", a.GetUserItemCount)
+	router.GET(API_V2_BASE_URL+"/users/:username/units", a.GetUserUnitsSum)
 
 	// leaderboards
 	router.GET(API_V2_BASE_URL+"/leaderboards/items", a.GetItemsLeaderboard)
