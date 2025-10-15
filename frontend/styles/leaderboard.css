@@ -1,6 +1,7 @@
 :root {
     --table-bg-colour: rgba(255, 255, 255, 0.1);
     --th-bg-colour: rgba(0, 0, 0, 0.3);
+    --th-bg-colour: rgba(0, 0, 0, 0.3);
     --text-colour: #fff;
     --hover-bg-colour: rgba(255, 255, 255, 0.1);
     --select-bg-colour: #fff;
@@ -30,21 +31,14 @@ td {
     font-size: clamp(14px, 3vw, 16px);
 }
 
-th:first-child,
-td:first-child {
-    white-space: nowrap;
-    word-break: normal;
-}
-
-th:not(:first-child),
-td:not(:first-child) {
-    word-break: break-word;
-    word-wrap: break-word;
-}
-
 th {
     background-color: var(--th-bg-colour);
     font-weight: bold;
+    color: var(--text-colour);
+}
+
+.date-header {
+    background-color: var(--th-bg-colour);
     color: var(--text-colour);
 }
 
@@ -136,8 +130,20 @@ tr:hover {
     flex: 1 1 0;
 }
 
-.dateHeader {
-    background-color: red;
+#users-leaderboard th:first-child,
+#users-leaderboard td:first-child,
+#feed-table th:first-child,
+#feed-table td:first-child {
+    white-space: nowrap;
+    word-break: normal;
+}
+
+#users-leaderboard th:not(:first-child),
+#users-leaderboard td:not(:first-child),
+#feed-table th:not(:first-child),
+#feed-table td:not(:first-child) {
+    word-break: break-word;
+    word-wrap: break-word;
 }
 
 @media screen and (max-width: 768px) {

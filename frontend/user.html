@@ -7,6 +7,7 @@
         <link rel="stylesheet" type="text/css" href="styles/style.css" />
         <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
         <script src="scripts/auth.js"></script>
+        <script src="scripts/leaderboard.js"></script>
     </head>
     <body>
         <nav>
@@ -192,6 +193,7 @@
                                   <tbody>
                           `;
 
+                        let last_date = new Date(0);
                         data.forEach((consumption, index) => {
                             const date = new Date(consumption.time * 1000);
                             const formattedDate = date.toLocaleString("en-GB", {
@@ -202,6 +204,18 @@
                                 minute: "2-digit",
                                 hourCycle: "h24",
                             });
+
+                            if (date.getDay() != last_date.getDay()) {
+                                const formattedDateHead =
+                                    formatDateReadable(date);
+
+                                tableHTML += `
+                                        <tr class="date-header">
+                                            <td colspan="3">${formattedDateHead}</td>
+                                        </tr>
+                                `;
+                            }
+
                             tableHTML += `
                                       <tr>
                                           <td>${consumption.name ? `<a href="./item.html?name=${consumption.name}">${consumption.name}</a>` : "Unknown Item"}</td>
@@ -209,6 +223,8 @@
                                           <td>${formattedDate}</td>
                                       </tr>
                               `;
+
+                            last_date = date;
                         });
 
                         tableHTML += `
