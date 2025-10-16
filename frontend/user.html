@@ -31,11 +31,6 @@
                     <strong>Consumptions:</strong>
                     <span id="consumptions"></span>
                 </p>
-
-                <p>
-                    <strong>Units (7d):</strong>
-                    <span id="recent-units"></span>
-                </p>
             </div>
 
             <div class="container">
@@ -130,30 +125,6 @@
                             data.consumptions;
                     } catch (error) {
                         consumptionsContainer.innerHTML = `<div class="error-message">Error loading consumption count.</div>`;
-                    }
-
-                    try {
-                        const response = await fetch(
-                            `${API_BASE_URL}/users/${user.username}/units`,
-                        );
-
-                        if (!response.ok) {
-                            throw new Error(
-                                `HTTP error! Status: ${response.status}`,
-                            );
-                        }
-
-                        const data = await response.json();
-
-                        if (data.units > 0) {
-                            document.getElementById("recent-units").innerHTML =
-                                data.units;
-                        } else {
-                            document.getElementById("recent-units").innerHTML =
-                                "0";
-                        }
-                    } catch (error) {
-                        consumptionsContainer.innerHTML = `<div class="error-message">Error loading recent units.</div>`;
                     }
 
                     const consumptionsContainer = document.getElementById(
