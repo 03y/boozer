@@ -176,7 +176,7 @@
                                 hourCycle: "h24",
                             });
 
-                            if (date != last_date) {
+                            if (date.toDateString() !== last_date.toDateString()) {
                                 const formattedDateHead =
                                     formatDateReadable(date);
 
