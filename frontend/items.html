@@ -71,7 +71,7 @@
                     const formattedDate = date.toISOString().split("T")[0];
                     tableHTML += `
                         <tr>
-                            <td>${item.name ? `<a href="./item.html?name=${item.name}">${item.name}</a>` : "Unknown Item"}</td>
+                            <td>${item.name ? `<a href="./item.html?name=${encodeURIComponent(item.name)}">${item.name}</a>` : "Unknown Item"}</td>
                             <td>${item.units || 0}</td>
                             <td>${formattedDate}</td>
                         </tr>
