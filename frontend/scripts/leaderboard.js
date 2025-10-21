@@ -48,7 +48,7 @@ function createTable(data, type) {
     tableHTML += `
             <tr>
                 <td class="rank ${rankClass}">${rankDisplay}</td>
-                <td>${type === "users" || type === "users-units" ? (object.username ? `<a href="./user.html?username=${object.username}">${object.username}</a>` : "Unknown User") : object.name ? `<a href="./item.html?name=${object.name}">${object.name}</a>` : "Unknown Item"}</td>
+                <td>${type === "users" || type === "users-units" ? (object.username ? `<a href="./user.html?username=${object.username}">${object.username}</a>` : "Unknown User") : object.name ? `<a href="./item.html?name=${encodeURIComponent(object.name)}">${object.name}</a>` : "Unknown Item"}</td>
                 <td>${type === "users" ? object.consumed : type === "items" ? object.consumed : object.units}</td>
             </tr>
         `;

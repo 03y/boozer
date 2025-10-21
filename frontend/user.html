@@ -189,7 +189,7 @@
 
                             tableHTML += `
                                       <tr>
-                                          <td>${consumption.name ? `<a href="./item.html?name=${consumption.name}">${consumption.name}</a>` : "Unknown Item"}</td>
+                                          <td>${consumption.name ? `<a href="./item.html?name=${encodeURIComponent(consumption.name)}">${consumption.name}</a>` : "Unknown Item"}</td>
                                           <td>${consumption.units}</td>
                                           <td>${formattedDate}</td>
                                       </tr>

@@ -86,7 +86,7 @@
             async function displayItem() {
                 try {
                     let response = await fetch(
-                        `${API_BASE_URL}/items/${NAME}`,
+                        `${API_BASE_URL}/items/${encodeURIComponent(NAME)}`,
                     );
 
                     if (response.ok) {
@@ -163,7 +163,7 @@
             async function loadConsumptionCount() {
                 try {
                     const response = await fetch(
-                        `${API_BASE_URL}/items/${NAME}/consumptions`,
+                        `${API_BASE_URL}/items/${encodeURIComponent(NAME)}/consumptions`,
                     );
 
                     if (response.ok) {
@@ -182,7 +182,7 @@
 
             async function loadLeaderboard() {
                 const response = await fetch(
-                    `${API_BASE_URL}/items/${NAME}/leaderboard`,
+                    `${API_BASE_URL}/items/${encodeURIComponent(NAME)}/leaderboard`,
                 );
 
                 if (response.ok) {
