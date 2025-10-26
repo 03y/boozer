@@ -759,7 +759,21 @@ func (a *App) GetUserUnitsSum(c *gin.Context) {
 }
 
 func (a *App) GetUserConsumptions(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT consumptions.consumption_id, items.name, items.units, consumptions.time, consumptions.price FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id INNER JOIN users ON consumptions.user_id = users.user_id WHERE users.username=$1 ORDER BY consumptions.time DESC LIMIT 25", c.Param("username"))
+	rowsRequested, err := strconv.Atoi(c.Query("rows"))
+	if err != nil {
+		// default to 25 rows if int parsing failed
+		rowsRequested = 25
+	}
+
+	if rowsRequested <= 0 || rowsRequested > 1000 {
+		slog.Info("user consumption count: invalid number of rows requested", "rowsRequested", rowsRequested)
+		var errorResponse models.ErrorResponse
+		errorResponse.Error = "Invalid number of rows requested"
+		c.JSON(http.StatusBadRequest, errorResponse)
+		return
+	}
+
+	rows, err := a.DB.Query(context.Background(), "SELECT consumptions.consumption_id, items.name, items.units, consumptions.time, consumptions.price FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id INNER JOIN users ON consumptions.user_id = users.user_id WHERE users.username=$1 ORDER BY consumptions.time DESC LIMIT $2", c.Param("username"), rowsRequested)
 	if err != nil {
 		slog.Error("error getting user consumptions", "error", err)
 		c.Status(http.StatusInternalServerError)
