@@ -27,7 +27,7 @@
                     <div class="form-group">
                         <label for="password">Password</label>
                         <input type="password" id="password" name="password" />
-                        <div class="smallprint"
+                        <div class="smallprint">
                             <p>
                                 Don't have an account?
                                 <a href="./signup.html"> Create one! ☺️🍺</a>
@@ -43,19 +43,26 @@
                             <a href="./legal.html" target="_blank">Legal</a>
                         </p>
                     </div>
-
+                    <p id="message" class="hidden"></p>
                 </div>
             </div>
         </div>
 
         <script>
             async function login() {
+                const messageElement = document.getElementById("message");
+                messageElement.classList.add("hidden");
+                messageElement.textContent = "";
+
                 try {
                     const username = document.getElementById("username").value;
                     const password = document.getElementById("password").value;
 
                     if (!username || !password) {
-                        alert("Please enter both username and password");
+                        messageElement.textContent = "Please enter both username and password";
+                        messageElement.classList.remove("success");
+                        messageElement.classList.remove("hidden");
+                        messageElement.classList.add("error");
                         return;
                     }
 
@@ -74,13 +81,26 @@
                     );
 
                     if (response.ok) {
-                        window.location.href = "index.html";
+                        messageElement.textContent = "Login successful";
+                        messageElement.classList.remove("error");
+                        messageElement.classList.add("success");
+                        messageElement.classList.remove("hidden");
+
+                        setTimeout(() => {
+                            window.location.href = "index.html";
+                        }, 1000);
                     } else {
-                        alert("Login failed: Invalid credentials");
+                        responseBody = await response.json();
+                        messageElement.textContent = "Failed to login: " + (responseBody.error ? responseBody.error : "");
+                        messageElement.classList.remove("success");
+                        messageElement.classList.add("error");
+                        messageElement.classList.remove("hidden");
                     }
                 } catch (error) {
-                    console.error("Login error:", error);
-                    alert("Failed to login. Please try again.");
+                    messageElement.textContent = "Failed to login.";
+                    messageElement.classList.remove("success");
+                    messageElement.classList.add("error");
+                    messageElement.classList.remove("hidden");
                 }
             }
         </script>
