@@ -392,8 +392,10 @@ func (a *App) AddUser(c *gin.Context) {
 }
 
 func (a *App) Authenticate(c *gin.Context) {
-	// get user data from req
 	var user models.User
+	var errorResponse models.ErrorResponse
+
+	// get user data from req
 	err := c.BindJSON(&user)
 	if err != nil {
 		slog.Error("error binding JSON", "error", err)
@@ -420,9 +422,9 @@ func (a *App) Authenticate(c *gin.Context) {
 		c.Status(http.StatusOK)
 		slog.Info("successful auth", "user_id", userId)
 	} else {
-		c.Status(http.StatusBadRequest)
+		errorResponse.Error = "Incorrect credentials"
+		c.JSON(http.StatusBadRequest, errorResponse)
 		slog.Info("failed auth", "user_id", userId)
-		return
 	}
 }
 
