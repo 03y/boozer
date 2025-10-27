@@ -345,7 +345,7 @@ func (a *App) AddUser(c *gin.Context) {
 	var newUser models.User
 	var errorResponse models.ErrorResponse
 	// legal usernames are a-z A-Z 0-9 and underscore
-	const pattern = `^[a-zA-z0-9_]+$`
+	const pattern = `^[a-zA-Z0-9_]{4,19}$`
 
 	err := c.BindJSON(&newUser)
 	if err != nil {
