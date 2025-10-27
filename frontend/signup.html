@@ -42,15 +42,23 @@
                             <a href="./legal.html" target="_blank">Legal</a>
                         </p>
                     </div>
+                    <p id="message" class="hidden"></p>
                 </div>
             </div>
         </div>
 
         <script>
             async function signup() {
+                const messageElement = document.getElementById("message");
+                messageElement.classList.add("hidden");
+                messageElement.textContent = "";
+
                 try {
                     if (!document.getElementById("over18").checked) {
-                        alert("Under 18s are not permitted to sign up");
+                        messageElement.textContent = "Under 18s are not permitted to sign up";
+                        messageElement.classList.remove("success");
+                        messageElement.classList.add("error");
+                        messageElement.classList.remove("hidden");
                         return;
                     }
 
@@ -58,7 +66,10 @@
                     const password = document.getElementById("password").value;
 
                     if (!username || !password) {
-                        alert("Please enter both username and password");
+                        messageElement.textContent = "Please enter both username and password";
+                        messageElement.classList.remove("success");
+                        messageElement.classList.add("error");
+                        messageElement.classList.remove("hidden");
                         return;
                     }
 
@@ -74,14 +85,54 @@
                     });
 
                     if (response.status === 201) {
-                        alert("Signup complete!"); // TODO: login automatically
-                        window.location.href = "login.html";
+                        messageElement.textContent = "Signup complete!";
+                        messageElement.classList.remove("error");
+                        messageElement.classList.add("success");
+                        messageElement.classList.remove("hidden");
+
+                        // now we login automagically
+                        const response = await fetch(
+                            `${API_BASE_URL}/authenticate`,
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({
+                                    username: username,
+                                    password: password,
+                                }),
+                            },
+                        );
+
+                        if (response.ok) {
+                            messageElement.textContent = "Login successful";
+                            messageElement.classList.remove("error");
+                            messageElement.classList.add("success");
+                            messageElement.classList.remove("hidden");
+
+                            setTimeout(() => {
+                                window.location.href = "index.html";
+                            }, 1000);
+                        } else {
+                            // prob rate limited or API dead
+                            setTimeout(() => {
+                                window.location.href = "login.html";
+                            }, 1000);
+                        }
+
                     } else {
-                        const data = await response.json();
-                        alert("Failed to signup: " + (data.error || "Unknown error"));
+                        responseBody = await response.json();
+                        messageElement.textContent = "Signup failed: " + (responseBody.error ? responseBody.error : "");
+                        messageElement.classList.remove("success");
+                        messageElement.classList.add("error");
+                        messageElement.classList.remove("hidden");
                     }
                 } catch (error) {
-                    alert("Failed to signup");
+                    messageElement.textContent = "Signup failed";
+                    messageElement.classList.remove("success");
+                    messageElement.classList.add("error");
+                    messageElement.classList.remove("hidden");
                 }
             }
         </script>
