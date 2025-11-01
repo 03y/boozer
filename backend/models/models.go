@@ -36,6 +36,7 @@ type Consumption struct {
 
 type NamedConsumption struct {
 	Consumption_id int      `json:"consumption_id"`
+	Item_id        int      `json:"item_id"`
 	Name           string   `json:"name"`
 	Units          float32  `json:"units"`
 	Time           int      `json:"time"`            // unix timestamp
