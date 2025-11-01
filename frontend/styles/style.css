@@ -9,6 +9,8 @@
     --motd-color: #ffd700;
     --red-button-primary-colour: #ff6b6b;
     --red-button-hover-colour: #e65e5e;
+    --green-button-primary-colour: #4caf50;
+    --green-button-hover-colour: #45a049;
 }
 
 body {
@@ -197,7 +199,12 @@ a {
 }
 
 .modal-buttons .confirm-btn {
-    background-color: #d9534f;
+    background-color: var(--green-button-primary-colour);
+    color: white;
+}
+
+.modal-buttons:hover .confirm-btn:hover {
+    background-color: var(--green-button-hover-colour);
     color: white;
 }
 
@@ -455,4 +462,19 @@ input:checked:disabled {
     color: black;
     text-decoration: none;
     cursor: pointer;
+}
+
+.consumption-table tr .edit-btn {
+    visibility: hidden;
+    background-color: var(--tartan-green);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+}
+
+.consumption-table tr:hover .edit-btn {
+    visibility: visible;
 }
