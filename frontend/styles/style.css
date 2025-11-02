@@ -463,18 +463,3 @@ input:checked:disabled {
     text-decoration: none;
     cursor: pointer;
 }
-
-.consumption-table tr .edit-btn {
-    visibility: hidden;
-    background-color: var(--tartan-green);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    width: 30px;
-    height: 30px;
-    cursor: pointer;
-}
-
-.consumption-table tr:hover .edit-btn {
-    visibility: visible;
-}
