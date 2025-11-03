@@ -594,6 +594,18 @@ func (a *App) AddConsumption(c *gin.Context) {
 		return
 	}
 
+	// round price to 2dp
+	if newConsumption.Price != nil {
+		if *newConsumption.Price < 0 {
+			slog.Error("price cannot be negative")
+			errorResponse.Error = "Price cannot be negative"
+			c.JSON(http.StatusBadRequest, errorResponse)
+			return
+		}
+		roundedPrice := float32(round(float64(*newConsumption.Price), 2))
+		newConsumption.Price = &roundedPrice
+	}
+
 	var id_lookup string
 	err = a.DB.QueryRow(context.Background(), "SELECT user_id FROM users WHERE username=$1", claims["username"]).Scan(&id_lookup)
 	if err != nil {
