@@ -543,6 +543,8 @@ func (a *App) GetUserFromToken(c *gin.Context) {
 }
 
 func (a *App) AddConsumption(c *gin.Context) {
+	var errorResponse models.ErrorResponse
+
 	tokenString, err := c.Cookie("token")
 	if err != nil {
 		c.Status(http.StatusUnauthorized)
@@ -571,16 +573,26 @@ func (a *App) AddConsumption(c *gin.Context) {
 		if err == pgx.ErrNoRows {
 			slog.Error("item not found", "error", err)
 		}
-		c.Status(http.StatusInternalServerError)
+		errorResponse.Error = "Cannot find item"
+		c.JSON(http.StatusBadRequest, errorResponse)
 		return
 	}
 
 	// if no rows are returned then it doesnt exist
 	// otherwise we are safe to continue knowing the item id exists
 
-	// write time here, dont allow user to mess with this
-	// TODO: in future maybe allow backdating
-	newConsumption.Time = int(time.Now().Unix())
+	// if time empty, set it to now
+	if newConsumption.Time == 0 {
+		newConsumption.Time = int(time.Now().Unix())
+	}
+
+	// check time is not in the future
+	if newConsumption.Time > int(time.Now().Unix()) {
+		slog.Error("consumption time cannot be in the future")
+		errorResponse.Error = "Consumption time cannot be in the future"
+		c.JSON(http.StatusBadRequest, errorResponse)
+		return
+	}
 
 	var id_lookup string
 	err = a.DB.QueryRow(context.Background(), "SELECT user_id FROM users WHERE username=$1", claims["username"]).Scan(&id_lookup)
