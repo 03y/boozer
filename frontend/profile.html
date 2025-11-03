@@ -189,7 +189,7 @@
                         <thead>
                             <tr>
                                 <th></th>
-                                <th>Beer</th>
+                                <th>Item</th>
                                 <th>Units</th>
                                 <th>Time</th>
                             </tr>
@@ -261,12 +261,14 @@
                         messageContainer.innerHTML =
                             '<div class="success">Consumption updated successfully!</div>';
                         const updatedConsumption = await response.json();
-                        const newConsumptionsdata = consumptionsData.map(consumption => {
+                        consumptionsData = consumptionsData.map(consumption => {
                             if (consumption.consumption_id === updatedConsumption.consumption_id) {
-                                return updatedConsumption;
+                                consumption.time = updatedConsumption.time;
+                                return consumption;
                             }
                             return consumption;
                         });
+                        consumptionsData.sort((a, b) => b.time - a.time);
                         drawTable(consumptionsData);
                     } else {
                         const error = await response.json();
@@ -383,6 +385,7 @@
                             return;
                         }
 
+                        consumptionsData.sort((a, b) => b.time - a.time);
                         drawTable(consumptionsData);
                     } catch (error) {
                         console.error("Error fetching consumptions:", error);
