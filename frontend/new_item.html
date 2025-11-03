@@ -170,7 +170,6 @@
                         messageElement.classList.add("error");
                     } else {
                         const errorData = await response.json();
-                        console.log(errorData);
                         messageElement.textContent = `Error: ${errorData.error}`;
                         messageElement.classList.remove("success");
                         messageElement.classList.add("error");
