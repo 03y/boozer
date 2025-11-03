@@ -169,7 +169,8 @@
 
                 document.getElementById("delete-consumption-btn").onclick =
                     () => {
-                        const deleteModal = document.getElementById("delete-modal");
+                        const deleteModal =
+                            document.getElementById("delete-modal");
                         deleteModal.style.display = "block";
                     };
 
@@ -261,13 +262,18 @@
                         messageContainer.innerHTML =
                             '<div class="success">Consumption updated successfully!</div>';
                         const updatedConsumption = await response.json();
-                        consumptionsData = consumptionsData.map(consumption => {
-                            if (consumption.consumption_id === updatedConsumption.consumption_id) {
-                                consumption.time = updatedConsumption.time;
+                        consumptionsData = consumptionsData.map(
+                            (consumption) => {
+                                if (
+                                    consumption.consumption_id ===
+                                    updatedConsumption.consumption_id
+                                ) {
+                                    consumption.time = updatedConsumption.time;
+                                    return consumption;
+                                }
                                 return consumption;
-                            }
-                            return consumption;
-                        });
+                            },
+                        );
                         consumptionsData.sort((a, b) => b.time - a.time);
                         drawTable(consumptionsData);
                     } else {
