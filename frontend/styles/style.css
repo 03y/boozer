@@ -9,6 +9,8 @@
     --motd-color: #ffd700;
     --red-button-primary-colour: #ff6b6b;
     --red-button-hover-colour: #e65e5e;
+    --green-button-primary-colour: #4caf50;
+    --green-button-hover-colour: #45a049;
 }
 
 body {
@@ -100,26 +102,10 @@ a {
     color: var(--motd-color);
 }
 
-.delete {
-    margin: 16px;
-    max-width: 200px;
-}
-
 .item-actions,
 .logout {
     margin: 8px auto;
     max-width: 200px;
-}
-
-.del-btn {
-    background-color: var(--red-button-primary-colour);
-    color: white;
-    padding: 2px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: var(--button-font-size);
-    width: 100%;
 }
 
 .report-bad-data-btn,
@@ -136,8 +122,7 @@ a {
 }
 
 .report-bad-data-btn:hover,
-.logout-btn:hover,
-.del-btn:hover {
+.logout-btn:hover {
     background-color: var(--red-button-hover-colour);
 }
 
@@ -173,6 +158,10 @@ a {
     background-color: rgba(0, 0, 0, 0.4);
 }
 
+#delete-modal {
+    z-index: 2;
+}
+
 .modal-content {
     background-color: var(--stout-brown);
     margin: 15% auto;
@@ -190,15 +179,29 @@ a {
 
 .modal-buttons button {
     padding: 10px 20px;
-    margin: 0 10px;
+    margin: 5px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
 }
 
 .modal-buttons .confirm-btn {
-    background-color: #d9534f;
+    background-color: var(--green-button-primary-colour);
     color: white;
+}
+
+.modal-buttons:hover .confirm-btn:hover {
+    background-color: var(--green-button-hover-colour);
+    color: white;
+}
+
+.modal-buttons .del-btn {
+    background-color: var(--red-button-primary-colour);
+    color: white;
+}
+
+.modal-buttons .del-btn:hover {
+    background-color: var(--red-button-hover-colour);
 }
 
 .modal-buttons .cancel-btn {
@@ -407,7 +410,7 @@ input:checked:disabled {
 .dropdown-content {
     display: none;
     position: absolute;
-    top: 50%; /* Position below the input */
+    top: 30%; /* Position below the input */
     left: 0; /* Align with the left edge of the input */
     background-color: rgba(40, 40, 40, 0.95); /* Darker background */
     min-width: 100%;

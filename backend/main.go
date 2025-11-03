@@ -543,6 +543,8 @@ func (a *App) GetUserFromToken(c *gin.Context) {
 }
 
 func (a *App) AddConsumption(c *gin.Context) {
+	var errorResponse models.ErrorResponse
+
 	tokenString, err := c.Cookie("token")
 	if err != nil {
 		c.Status(http.StatusUnauthorized)
@@ -571,16 +573,26 @@ func (a *App) AddConsumption(c *gin.Context) {
 		if err == pgx.ErrNoRows {
 			slog.Error("item not found", "error", err)
 		}
-		c.Status(http.StatusInternalServerError)
+		errorResponse.Error = "Cannot find item"
+		c.JSON(http.StatusBadRequest, errorResponse)
 		return
 	}
 
 	// if no rows are returned then it doesnt exist
 	// otherwise we are safe to continue knowing the item id exists
 
-	// write time here, dont allow user to mess with this
-	// TODO: in future maybe allow backdating
-	newConsumption.Time = int(time.Now().Unix())
+	// if time empty, set it to now
+	if newConsumption.Time == 0 {
+		newConsumption.Time = int(time.Now().Unix())
+	}
+
+	// check time is not in the future
+	if newConsumption.Time > int(time.Now().Unix()) {
+		slog.Error("consumption time cannot be in the future")
+		errorResponse.Error = "Consumption time cannot be in the future"
+		c.JSON(http.StatusBadRequest, errorResponse)
+		return
+	}
 
 	var id_lookup string
 	err = a.DB.QueryRow(context.Background(), "SELECT user_id FROM users WHERE username=$1", claims["username"]).Scan(&id_lookup)
@@ -601,6 +613,88 @@ func (a *App) AddConsumption(c *gin.Context) {
 	}
 
 	c.Status(http.StatusCreated)
+}
+
+func (a *App) UpdateConsumption(c *gin.Context) {
+	var errorResponse models.ErrorResponse
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		slog.Error("error parsing JWT", "error", err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	var updatedConsumption models.Consumption
+	err = c.BindJSON(&updatedConsumption)
+	if err != nil {
+		slog.Error("error binding JSON", "error", err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	// get consumption id from url
+	consumptionId, err := strconv.Atoi(c.Param("consumption_id"))
+	if err != nil {
+		slog.Error("error parsing consumption_id from url", "error", err)
+		errorResponse.Error = "Invalid consumption_id"
+		c.JSON(http.StatusBadRequest, errorResponse)
+		return
+	}
+	updatedConsumption.Consumption_id = consumptionId
+
+	// check time is not in the future
+	if updatedConsumption.Time > int(time.Now().Unix()) {
+		slog.Error("consumption time cannot be in the future")
+		errorResponse.Error = "Consumption time cannot be in the future"
+		c.JSON(http.StatusBadRequest, errorResponse)
+		return
+	}
+
+	// get username from consumption id, check that is the authenticated user
+	var usernameLookup string
+	err = a.DB.QueryRow(context.Background(), "SELECT users.username FROM consumptions INNER JOIN users ON consumptions.user_id=users.user_id WHERE consumptions.consumption_id=$1", updatedConsumption.Consumption_id).Scan(&usernameLookup)
+	if err != nil {
+		slog.Error("error looking up username", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// check authenticated user is the user associated with consumption
+	if usernameLookup != claims["username"] {
+		slog.Warn("user tried to update another user's consumption", "offending_user", claims["username"], "user", usernameLookup)
+		errorResponse.Error = "You can only update your own consumptions"
+		c.JSON(http.StatusBadRequest, errorResponse)
+		return
+	}
+
+	// round price to 2dp
+	if updatedConsumption.Price != nil {
+		if *updatedConsumption.Price < 0 {
+			slog.Error("price cannot be negative")
+			errorResponse.Error = "Price cannot be negative"
+			c.JSON(http.StatusBadRequest, errorResponse)
+			return
+		}
+		roundedPrice := float32(round(float64(*updatedConsumption.Price), 2))
+		updatedConsumption.Price = &roundedPrice
+	}
+
+	_, err = a.DB.Exec(context.Background(), "UPDATE consumptions SET time=$1, price=$2 WHERE consumption_id=$3", updatedConsumption.Time, updatedConsumption.Price, updatedConsumption.Consumption_id)
+	if err != nil {
+		slog.Error("error updating consumption", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	} else {
+		slog.Info("consumption updated", "user", claims["username"], "consumption_id", updatedConsumption.Consumption_id)
+	}
+
+	c.JSON(http.StatusOK, updatedConsumption)
 }
 
 func (a *App) RemoveConsumption(c *gin.Context) {
@@ -775,7 +869,7 @@ func (a *App) GetUserConsumptions(c *gin.Context) {
 		return
 	}
 
-	rows, err := a.DB.Query(context.Background(), "SELECT consumptions.consumption_id, items.name, items.units, consumptions.time, consumptions.price FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id INNER JOIN users ON consumptions.user_id = users.user_id WHERE users.username=$1 ORDER BY consumptions.time DESC LIMIT $2", c.Param("username"), rowsRequested)
+	rows, err := a.DB.Query(context.Background(), "SELECT consumptions.consumption_id, items.item_id, items.name, items.units, consumptions.time, consumptions.price FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id INNER JOIN users ON consumptions.user_id = users.user_id WHERE users.username=$1 ORDER BY consumptions.time DESC LIMIT $2", c.Param("username"), rowsRequested)
 	if err != nil {
 		slog.Error("error getting user consumptions", "error", err)
 		c.Status(http.StatusInternalServerError)
@@ -785,7 +879,7 @@ func (a *App) GetUserConsumptions(c *gin.Context) {
 	consumptions := make([]models.NamedConsumption, 0)
 	for rows.Next() {
 		var consumption models.NamedConsumption
-		err := rows.Scan(&consumption.Consumption_id, &consumption.Name, &consumption.Units, &consumption.Time, &consumption.Price)
+		err := rows.Scan(&consumption.Consumption_id, &consumption.Item_id, &consumption.Name, &consumption.Units, &consumption.Time, &consumption.Price)
 		if err != nil {
 			slog.Error("error scanning consumption", "error", err)
 			c.Status(http.StatusInternalServerError)
@@ -1019,6 +1113,7 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 
 	// consumptions
 	router.POST(API_V2_BASE_URL+"/consumptions", a.AddConsumption)
+	router.PUT(API_V2_BASE_URL+"/consumptions/:consumption_id", a.UpdateConsumption)
 	router.GET(API_V2_BASE_URL+"/consumptions/:consumption_id", a.GetConsumption)
 	router.DELETE(API_V2_BASE_URL+"/consumptions", a.RemoveConsumption)
 

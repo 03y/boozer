@@ -40,6 +40,8 @@
                             max="999.99"
                             step="0.01"
                         />
+                        <label for="time">Time:</label>
+                        <input type="datetime-local" id="time" />
                     </div>
                     <div class="mediumprint">
                         <p>
@@ -112,7 +114,9 @@
                 messageElement.textContent = "";
 
                 const itemId = document.getElementById("selectedItemId").value;
-                const price  = document.getElementById("price").value;
+                const price = document.getElementById("price").value;
+                const time = document.getElementById("time").value;
+                const timeUnix = Math.floor(new Date(time).getTime() / 1000);
 
                 if (!itemId) {
                     messageElement.textContent = "Please select an item.";
@@ -133,6 +137,7 @@
                             body: JSON.stringify({
                                 item_id: parseInt(itemId),
                                 price: parseFloat(price),
+                                time: timeUnix,
                             }),
                         },
                     );
@@ -144,6 +149,22 @@
                         messageElement.classList.add("success");
                         document.getElementById("consumptionForm").reset();
                         document.getElementById("selectedItemId").value = "";
+                        const date = new Date();
+                        const year = date.getFullYear();
+                        const month = (date.getMonth() + 1)
+                            .toString()
+                            .padStart(2, "0");
+                        const day = date.getDate().toString().padStart(2, "0");
+                        const hours = date
+                            .getHours()
+                            .toString()
+                            .padStart(2, "0");
+                        const minutes = date
+                            .getMinutes()
+                            .toString()
+                            .padStart(2, "0");
+                        document.getElementById("time").value =
+                            `${year}-${month}-${day}T${hours}:${minutes}`;
                     } else if (response.status === 401) {
                         messageElement.textContent =
                             "Unauthorised. Please log in again.";
@@ -151,7 +172,7 @@
                         messageElement.classList.add("error");
                     } else {
                         const errorData = await response.json();
-                        messageElement.textContent = `Error: ${errorData.message || response.statusText}`;
+                        messageElement.textContent = `Error: ${errorData.error || response.statusText}`;
                         messageElement.classList.remove("success");
                         messageElement.classList.add("error");
                     }
@@ -180,6 +201,15 @@
                     messageElement.classList.add("error");
                     return;
                 }
+
+                const date = new Date();
+                const year = date.getFullYear();
+                const month = (date.getMonth() + 1).toString().padStart(2, "0");
+                const day = date.getDate().toString().padStart(2, "0");
+                const hours = date.getHours().toString().padStart(2, "0");
+                const minutes = date.getMinutes().toString().padStart(2, "0");
+                document.getElementById("time").value =
+                    `${year}-${month}-${day}T${hours}:${minutes}`;
 
                 await fetchItems();
                 renderDropdown();

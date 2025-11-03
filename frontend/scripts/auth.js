@@ -1,7 +1,6 @@
 const API_BASE_URL = "https://localhost/api/v2"; // TODO: update
 
 async function getUser() {
-  try {
     const response = await fetch(`${API_BASE_URL}/users/me`);
 
     if (response.ok) {
@@ -13,9 +12,6 @@ async function getUser() {
     } else {
       throw new Error(response.status);
     }
-  } catch (error) {
-    console.log("There was an error", error);
-  }
 }
 
 function updateLoginLink(loginLink, username) {

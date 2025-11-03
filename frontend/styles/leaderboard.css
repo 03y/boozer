@@ -146,6 +146,20 @@ tr:hover {
     word-wrap: break-word;
 }
 
+.consumption-table tr .edit-btn {
+    background-color: var(--table-bg-colour);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+}
+
+.consumption-table tr .edit-btn:hover {
+    background-color: var(--hover-bg-colour);
+}
+
 @media screen and (max-width: 768px) {
     .leaderboard-column {
         flex: 1 1 100%;
