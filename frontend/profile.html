@@ -56,19 +56,9 @@
             </div>
         </div>
 
-        <div class="container">
-            <div class="delete">
-                <button type="submit" class="del-btn" id="del-btn">
-                    Delete Selected Consumptions
-                </button>
-            </div>
-        </div>
-
         <div id="delete-modal" class="modal">
             <div class="modal-content">
-                <p>
-                    Are you sure you want to delete the selected consumptions?
-                </p>
+                <p>Are you sure you want to delete this consumption?</p>
                 <div class="modal-buttons">
                     <button id="confirm-delete-btn" class="confirm-btn">
                         Delete
@@ -95,6 +85,9 @@
                     <button id="update-consumption-btn" class="confirm-btn">
                         Update
                     </button>
+                    <button id="delete-consumption-btn" class="del-btn">
+                        Delete
+                    </button>
                     <button id="cancel-edit-btn" class="cancel-btn">
                         Close
                     </button>
@@ -106,79 +99,6 @@
             const logoutButton = document.getElementById("logout-btn");
             if (logoutButton) {
                 logoutButton.addEventListener("click", logout);
-            }
-
-            async function confirm_delete() {
-                const checkboxes = document.querySelectorAll(
-                    'input[name="selected"]:checked',
-                );
-                const messageContainer =
-                    document.getElementById("message-container");
-
-                const consumptionRows = Array.from(checkboxes).map(
-                    (checkbox) => {
-                        const row = checkbox.closest("tr");
-                        const rowIndex = Array.from(
-                            row.parentNode.children,
-                        ).indexOf(row);
-                        return rowIndex;
-                    },
-                );
-
-                try {
-                    const user = await getUser();
-                    const response = await fetch(
-                        `${API_BASE_URL}/users/${user.username}/consumptions`,
-                    );
-                    const consumptions = await response.json();
-
-                    for (let i = 0; i < consumptionRows.length; i++) {
-                        const consumption = consumptions[consumptionRows[i]];
-                        if (consumption && consumption.consumption_id) {
-                            await fetch(`${API_BASE_URL}/consumptions`, {
-                                method: "DELETE",
-                                body: JSON.stringify({
-                                    consumption_id: consumption.consumption_id,
-                                }),
-                            });
-                        }
-                    }
-
-                    messageContainer.innerHTML =
-                        '<div class="success">Selected consumptions removed successfully!</div>';
-                    setTimeout(() => {
-                        messageContainer.innerHTML = "";
-                    }, 3000);
-                    displayProfile();
-                } catch (error) {
-                    messageContainer.innerHTML =
-                        '<div class="error">Error removing consumptions.</div>';
-                    setTimeout(() => {
-                        messageContainer.innerHTML = "";
-                    }, 3000);
-                } finally {
-                    const modal = document.getElementById("delete-modal");
-                    modal.style.display = "none";
-                }
-            }
-
-            async function delete_selected() {
-                const checkboxes = document.querySelectorAll(
-                    'input[name="selected"]:checked',
-                );
-                const messageContainer =
-                    document.getElementById("message-container");
-
-                if (checkboxes.length === 0) {
-                    messageContainer.innerHTML =
-                        '<div class="error">No consumptions selected.</div>';
-                    setTimeout(() => {
-                        messageContainer.innerHTML = "";
-                    }, 3000);
-                    return;
-                }
-                const modal = document.getElementById("delete-modal");
-                modal.style.display = "block";
             }
 
             async function remove_consumption(consumption_id) {
@@ -214,6 +134,11 @@
                     setTimeout(() => {
                         messageContainer.innerHTML = "";
                     }, 3000);
+                } finally {
+                    const editModal = document.getElementById("edit-modal");
+                    editModal.style.display = "none";
+                    const deleteModal = document.getElementById("delete-modal");
+                    deleteModal.style.display = "none";
                 }
             }
 
@@ -241,6 +166,16 @@
                     () => {
                         updateConsumption(consumption);
                     };
+
+                document.getElementById("delete-consumption-btn").onclick =
+                    () => {
+                        const deleteModal = document.getElementById("delete-modal");
+                        deleteModal.style.display = "block";
+                    };
+
+                document.getElementById("confirm-delete-btn").onclick = () => {
+                    remove_consumption(consumption.consumption_id);
+                };
             }
 
             let consumptionsData = [];
@@ -257,7 +192,6 @@
                                 <th>Beer</th>
                                 <th>Units</th>
                                 <th>Time</th>
-                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -275,7 +209,7 @@
                     });
                     tableHTML += `
                         <tr data-consumption-id="${consumption.consumption_id}">
-                            <td><input type="checkbox" name="selected" id="selected"/> <button class="edit-btn">✏️</button></td>
+                            <td><button class="edit-btn">✏️</button></td>
                             <td>${consumption.name ? `<a href="./item.html?name=${encodeURIComponent(consumption.name)}">${consumption.name}</a>` : "Unknown Item"}</td>
                             <td>${consumption.units}</td>
                             <td>${formattedDate}</td>
@@ -326,21 +260,13 @@
                     if (response.ok) {
                         messageContainer.innerHTML =
                             '<div class="success">Consumption updated successfully!</div>';
-                        const updatedConsumption = await (
-                            await fetch(
-                                `${API_BASE_URL}/consumptions/${consumption.consumption_id}`,
-                            )
-                        ).json();
-                        const index = consumptionsData.findIndex(
-                            (c) =>
-                                c.consumption_id ===
-                                updatedConsumption.consumption_id,
-                        );
-                        const oldConsumption = consumptionsData[index];
-                        consumptionsData[index] = {
-                            ...oldConsumption,
-                            time: updatedConsumption.time,
-                        };
+                        const updatedConsumption = await response.json();
+                        const newConsumptionsdata = consumptionsData.map(consumption => {
+                            if (consumption.consumption_id === updatedConsumption.consumption_id) {
+                                return updatedConsumption;
+                            }
+                            return consumption;
+                        });
                         drawTable(consumptionsData);
                     } else {
                         const error = await response.json();
@@ -468,20 +394,6 @@
                         "Error loading profile.";
                     document.getElementById("date-joined").innerHTML = "";
                     document.getElementById("consumptions").innerHTML = "";
-                }
-
-                const deleteButton = document.getElementById("del-btn");
-                if (deleteButton) {
-                    deleteButton.addEventListener("click", delete_selected);
-                }
-
-                const confirmDeleteButton =
-                    document.getElementById("confirm-delete-btn");
-                if (confirmDeleteButton) {
-                    confirmDeleteButton.addEventListener(
-                        "click",
-                        confirm_delete,
-                    );
                 }
 
                 const cancelDeleteButton =
