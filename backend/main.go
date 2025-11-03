@@ -682,7 +682,7 @@ func (a *App) UpdateConsumption(c *gin.Context) {
 		slog.Info("consumption updated", "user", claims["username"], "consumption_id", updatedConsumption.Consumption_id)
 	}
 
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, updatedConsumption)
 }
 
 func (a *App) RemoveConsumption(c *gin.Context) {
