@@ -202,7 +202,7 @@ func round(value float64, precision int) float64 {
 /* ******************************************************************************** */
 
 func (a *App) GetItems(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT item_id, name, units, added FROM items ORDER BY added DESC")
+	rows, err := a.DB.Query(context.Background(), "SELECT item_id, user_id, name, units, added FROM items ORDER BY added DESC")
 	if err != nil {
 		slog.Error("error getting item list", "error", err)
 		c.Status(http.StatusInternalServerError)
@@ -212,7 +212,7 @@ func (a *App) GetItems(c *gin.Context) {
 	items := make([]models.Item, 0)
 	for rows.Next() {
 		var item models.Item
-		err := rows.Scan(&item.Item_id, &item.Name, &item.Units, &item.Added)
+		err := rows.Scan(&item.Item_id, &item.User_id, &item.Name, &item.Units, &item.Added)
 		if err != nil {
 			slog.Error("error scanning item", "error", err)
 			c.Status(http.StatusInternalServerError)
@@ -226,7 +226,7 @@ func (a *App) GetItems(c *gin.Context) {
 
 func (a *App) GetItem(c *gin.Context) {
 	var item models.Item
-	err := a.DB.QueryRow(context.Background(), "SELECT * FROM items WHERE name=$1", c.Param("name")).Scan(&item.Item_id, &item.Name, &item.Units, &item.Added, &item.User_id)
+	err := a.DB.QueryRow(context.Background(), "SELECT item_id, user_id, name, units, added FROM items WHERE name=$1", c.Param("name")).Scan(&item.Item_id, &item.User_id, &item.Name, &item.Units, &item.Added)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			c.Status(http.StatusNotFound)
