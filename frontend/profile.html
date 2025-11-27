@@ -147,7 +147,7 @@
                     consumption.name;
                 document.getElementById("edit-item-price").textContent =
                     consumption.price
-                        ? (consumption.price / 100).toFixed(2)
+                        ? (consumption.price).toFixed(2)
                         : "-.--";
 
                 const date = new Date(consumption.time * 1000);
