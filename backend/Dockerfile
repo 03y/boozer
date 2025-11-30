@@ -9,8 +9,20 @@ COPY go.sum ./
 COPY . .
 
 # compile go
-RUN go mod tidy
-RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags="-w -s" -o /boozer/boozer-backend .
+#RUN go mod tidy
+#RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags="-w -s" -o /boozer/boozer-backend .
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    /bin/sh -c 'go env -w GOPROXY=https://proxy.golang.org,direct && go mod download'
+
+# Copy the rest of the sources
+COPY . .
+
+# Build using the same caches so incremental builds reuse state
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -ldflags="-s -w" -o /boozer/boozer-backend
 
 # create private key
 RUN apk add --no-cache openssl

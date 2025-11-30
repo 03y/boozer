@@ -1,8 +1,11 @@
+version: "3.8"
+
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: 03y/boozer-backend:local
     container_name: boozer-backend
     ports:
       - "6969:6969"
@@ -12,11 +15,12 @@ services:
       - db
     networks:
       - boozer_net
+    # For development you may want to mount source to avoid rebuilding:
+    # volumes:
+    #   - ./backend:/app
 
   db:
-    build:
-      context: ./db
-      dockerfile: Dockerfile
+    image: postgres:15-alpine
     container_name: boozer_db
     restart: always
     environment:
@@ -26,9 +30,14 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - boozer_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
   boozer_net:
@@ -36,3 +45,4 @@ networks:
 
 volumes:
   postgres_data:
+    driver: local
