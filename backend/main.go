@@ -903,6 +903,45 @@ func (a *App) GetUserConsumptions(c *gin.Context) {
 	c.JSON(http.StatusOK, consumptions)
 }
 
+func (a *App) GetUserRecap(c *gin.Context) {
+	var errorResponse models.ErrorResponse
+
+	// auth first
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		slog.Error("error parsing JWT", "error", err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	if c.Param("username") != "" {
+		// check recap we are getting is ours
+		if claims["username"] == c.Param("username") {
+			var recap models.UserRecap
+			err = a.DB.QueryRow(context.Background(), "SELECT recap_2025 FROM users WHERE username=$1", claims["username"]).Scan(&recap)
+			if err != nil {
+				slog.Info("failed to get recap", "user", claims["username"], "error", err)
+				errorResponse.Error = "recap not available"
+				c.JSON(http.StatusOK, errorResponse)
+				return
+			}
+
+			c.JSON(http.StatusOK, recap)
+		} else {
+			errorResponse.Error = "recap not available"
+			c.JSON(http.StatusUnauthorized, errorResponse)
+			return
+		}
+	} else {
+		c.Status(http.StatusBadRequest)
+	}
+}
+
 func (a *App) GetUserLeaderboard(c *gin.Context) {
 	rows, err := a.DB.Query(context.Background(), "SELECT users.username, COUNT(consumptions.item_id) AS drank FROM consumptions INNER JOIN users ON consumptions.user_id = users.user_id GROUP BY users.username ORDER BY drank DESC LIMIT 10;")
 	if err != nil {
@@ -1143,6 +1182,7 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	router.GET(API_V2_BASE_URL+"/users/:username/consumptions", a.GetUserConsumptions)
 	router.GET(API_V2_BASE_URL+"/users/:username/items/count", a.GetUserItemCount)
 	router.GET(API_V2_BASE_URL+"/users/:username/units", a.GetUserUnitsSum)
+	router.GET(API_V2_BASE_URL+"/users/:username/recap", a.GetUserRecap) // recap for a user
 
 	// leaderboards
 	router.GET(API_V2_BASE_URL+"/leaderboards/items", a.GetItemsLeaderboard)

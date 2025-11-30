@@ -94,3 +94,36 @@ type ItemCount struct {
 type ErrorResponse struct {
 	Error string `json:"error"`
 }
+
+type ConsumptionStats struct {
+	Consumption_Count int `json:"consumption_count"`
+	Percentile        int `json:"percentile"`
+	Variety           int `json:"variety"`
+}
+
+type TopCategoryEntry struct {
+	Category     string `json:"category"`
+	Consumptions int    `json:"consumptions"`
+}
+
+type TopItemEntry struct {
+	Item         string `json:"name"`
+	Consumptions int    `json:"consumptions"`
+}
+
+type DaysStats struct {
+	Monday    int `json:"Monday"`
+	Tuesday   int `json:"Tuesday"`
+	Wednesday int `json:"Wednesday"`
+	Thursday  int `json:"Thursday"`
+	Friday    int `json:"Friday"`
+	Saturday  int `json:"Saturday"`
+	Sunday    int `json:"Sunday"`
+}
+
+type UserRecap struct {
+	Consumptions  ConsumptionStats   `json:"consumptions"`
+	Days          DaysStats          `json:"days"`
+	TopItems      []TopItemEntry     `json:"items"`
+	TopCategories []TopCategoryEntry `json:"categories"`
+}
