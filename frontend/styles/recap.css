@@ -1,0 +1,103 @@
+@font-face {
+  font-family: "Sufler";
+  src: url("../fonts/Sufler.ttf") format("truetype"),
+       url("../fonts/Sufler.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+.story-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2rem;
+}
+
+.recap-wrapper {
+    width: 480px;
+}
+
+.story-view {
+    position: relative;
+    width: 100%; /* Takes width of recap-wrapper */
+    height: 640px;
+}
+
+.story-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    max-width: 100%;
+    border: none;
+    opacity: 0.33;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.story-progress-bars {
+    display: flex;
+    gap: 4px;
+    padding: 0; /* Removed padding */
+    box-sizing: border-box;
+    margin-bottom: 8px; /* Space between bar and image */
+}
+
+.progress-bar {
+    flex-grow: 1;
+    height: 4px;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.progress-bar-fill {
+    height: 100%;
+    width: 0;
+    background-color: #333;
+    transition: width 7s linear;
+}
+
+.story-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: white;
+    font-size: 3rem;
+    cursor: pointer;
+}
+
+.story-nav.back {
+    left: 10px;
+}
+
+.story-nav.next {
+    right: 10px;
+}
+
+.story-text {
+    position: absolute;
+    top: 0%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2.5rem;
+    text-align: center;
+    font-style: bold;
+    font-family: "Sufler", sans-serif;
+}
+
+.story-subtext {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2rem;
+    text-align: center;
+    font-style: bold;
+    font-family: "Sufler", sans-serif;
+}
+
+#main {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translateX(-50%);
+}
