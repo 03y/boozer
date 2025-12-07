@@ -94,7 +94,7 @@
                         subtext: ""
                     },
                     {
-                        image: "images/black.jpg",
+                        image: "",
                         text:
                             "This year you had " +
                             JSON.stringify(
@@ -107,26 +107,25 @@
                             "%!",
                     },
                     {
-                        image: "images/black.jpg",
+                        image: "",
                         text: "Your top items were...",
                         subtext: "item_chart" // bar chart top items
                     },
                     {
-                        image: "images/black.jpg",
+                        image: "",
                         text: "Your top categories were...",
                         subtext: "category_chart" // bar chart top categories
                     },
                     {
-                        image: "images/black.jpg",
+                        image: "",
                         text:
                             "Your best day of the week was " +
                             getTopDay(recap.days),
-                        subtext: "day_chart"
-                        // bar chart top days
+                        subtext: "day_chart" // bar chart top days
                     },
                     {
                         // summary card
-                        image: "images/mockup_3.jpg",
+                        image: "",
                         text: user.username + "'s Boozer recap",
                         subtext: JSON.stringify(recap),
                     },
@@ -134,24 +133,24 @@
                     // global recap
                     {
                         // total consumptions
-                        image: "images/consumptions.jpg",
+                        image: "",
                         text: "global consumptions",
                         subtext: ""
                     },
                     {
                         // items added to db
-                        image: "images/black.jpg",
+                        image: "",
                         text: "N items added to database",
                         subtext: "Thank you!"
                     },
                     {
                         // histogram
-                        image: "images/black.jpg",
+                        image: "",
                         text: "{histogram}",
                         subtext: ""
                     },
                     {
-                        image: "images/black.jpg",
+                        image: "",
                         text: "Thanks for using Boozer!",
                         subtext: ""
                     },
@@ -206,30 +205,45 @@
                                 labels = recap.categories.map(category => category.category);
                                 values = recap.categories.map(category => category.consumptions);
                             } else if (stories[index].subtext === "day_chart") {
-                                labels = Object.keys(recap.days);
+                                title = "Total consumptions over each day"
+                                labels = Object.keys(recap.days).map(day => day.slice(0, 3)); // first 3 chars of each day
                                 values = Object.values(recap.days);
                             }
 
+                            const colours = ['#7ECBDB', '#FFCD38', '#D52B38', '#3256A2', '#E14D25'];
+                            const seriesData = values.map((v, i) => ({
+                                value: v,
+                                itemStyle: {
+                                    color: colours[i % colours.length] // mod so we wrap around colour arr
+                                }
+                            }));
+
                             var option = {
+                                xAxis: {
+                                    type: 'value',
+                                    axisLabel: { show: false},
+                                    axisLine: { show: false },
+                                    axisTick: { show: false },
+                                    splitLine: { show: false }
+                                },
                                 yAxis: {
                                     type: 'category',
-                                    data: labels
-                                },
-                                xAxis: {
-                                    type: 'value'
+                                    data: labels,
+                                    axisLine: { show: false },
+                                    axisTick: { show: false },
+                                    splitLine: { show: false },
+                                    axisLabel: {
+                                        rotate: 90
+                                    }
                                 },
                                 series: [
                                     {
-                                        data: values,
+                                        data: seriesData,
                                         type: 'bar',
                                         label: {
                                             show: true,
                                             position: 'insideRight',
-                                            formatter: function (params) {
-                                                const name = labels[params.dataIndex];
-                                                const value = values[params.dataIndex];
-                                                return `${value}`;
-                                            }
+                                            formatter: params => params.value > 0 ? params.value : ''
                                         }
                                     }
                                 ]
