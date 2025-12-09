@@ -46,6 +46,7 @@
 
         <script>
             var chart = echarts.init(document.getElementById("main"));
+            var user;
             var recap;
 
             function getTopDay(days) {
@@ -57,15 +58,15 @@
             }
 
             async function displayRecap() {
-                const user = await getUser();
-
-                if (!user) {
-                    document.getElementById("story-container").innerHTML =
-                        "Recap not available";
-                    return;
-                }
-
                 try {
+                    user = await getUser();
+
+                    if (user === 401) {
+                        document.getElementById("story-container").innerHTML =
+                            "You must&nbsp;<a href=\"../login.html\">login</a>&nbsp;to view your recap";
+                        return;
+                    }
+
                     const response = await fetch(
                         `${API_BASE_URL}/users/${user.username}/recap`,
                     );
@@ -79,8 +80,7 @@
                     recap = await response.json();
                 } catch (error) {
                     document.getElementById("story-container").innerHTML =
-                        "Recap not available";
-                    console.error(error);
+                            "Recap not available";
                     return;
                 }
 
