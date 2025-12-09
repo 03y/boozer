@@ -10,7 +10,7 @@ async function getUser() {
 
       return data;
     } else {
-      throw new Error(response.status);
+        return response.status;
     }
 }
 
