@@ -14,12 +14,18 @@
 }
 
 .recap-wrapper {
-    width: 480px;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .recap-wrapper {
+        width: 480px;
+    }
 }
 
 .story-view {
     position: relative;
-    width: 100%; /* Takes width of recap-wrapper */
+    width: 100%;
     height: 640px;
 }
 
@@ -36,7 +42,7 @@
 .story-progress-bars {
     display: flex;
     gap: 4px;
-    padding: 0; /* Removed padding */
+    padding: 0;
     box-sizing: border-box;
     margin-bottom: 8px; /* Space between bar and image */
 }
@@ -78,10 +84,11 @@
     top: 0%;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 2.5rem;
+    font-size: 2rem;
     text-align: center;
     font-style: bold;
     font-family: "Sufler", sans-serif;
+    width = 80%;
 }
 
 .story-subtext {
@@ -91,7 +98,6 @@
     transform: translateX(-50%);
     font-size: 2rem;
     text-align: center;
-    font-style: bold;
     font-family: "Sufler", sans-serif;
 }
 
