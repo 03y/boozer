@@ -89,43 +89,46 @@
                 const stories = [
                     {
                         // welcome
-                        image: "images/weclom.jpg",
-                        text: "",
-                        subtext: ""
+                        image: "images/Card Template-01.svg",
+                        text: "WELCOME TO YOUR<br><br><span class=\"highlight-red\" id=\"story-text-big\">RECAP</span>",
+                        subtext: "This is your summary <span class=\"highlight-red\" id=\"story-text-small\">2025</span> with <span class=\"highlight-red\" id=\"story-text-small\">Boozer</span>."
                     },
                     {
-                        image: "",
+                        image: "images/Card Template-02.svg",
                         text:
-                            "This year you had " +
+                        "This year, you had<br><span class=\"highlight-yellow\" id=\"story-text-big\">" +
                             JSON.stringify(
                                 recap.consumptions.consumption_count,
                             ) +
-                            " consumptions",
+                        "<br></span>consumptions",
                         subtext:
-                            "This puts you in the top " +
+                        "That puts you in the top <span class=\"highlight-yellow\" id=\"story-text-small\">" +
                         JSON.stringify(recap.consumptions.percentile) +
-                            "%!",
+                        "</span>%!",
                     },
                     {
-                        image: "",
-                        text: "Your top items were...",
-                        subtext: "item_chart" // bar chart top items
+                        image: "images/Card Template-03.svg",
+                        text: "You had<br><span class=\"highlight-red\" id=\"story-text-big\">" +
+                        JSON.stringify(recap.consumptions.variety) +
+                        "</span><br>different items",
+                        subtext: "Over <span class=\"highlight-red\" id=\"story-text-small\">x</span> categories!"
+                        // TODO: implement number of categories
                     },
                     {
-                        image: "",
+                        image: "images/Card Template-07.svg",
                         text: "Your top categories were...",
                         subtext: "category_chart" // bar chart top categories
                     },
                     {
-                        image: "",
+                        image: "images/Card Template-11.svg",
                         text:
-                            "Your best day of the week was " +
-                            getTopDay(recap.days),
+                        "Your best day of the week was <span class=\"highlight-yellow\" id=\"story-text-big\">" +
+                        getTopDay(recap.days) + "</span>",
                         subtext: "day_chart" // bar chart top days
                     },
                     {
                         // summary card
-                        image: "",
+                        image: "images/Card Template-06.svg",
                         text: user.username + "'s Boozer recap",
                         subtext: JSON.stringify(recap),
                     },
@@ -133,24 +136,24 @@
                     // global recap
                     {
                         // total consumptions
-                        image: "",
-                        text: "global consumptions",
+                        image: "images/Card Template-07.svg",
+                        text: "NOW FOR THE GLOBAL<br><span class=\"highlight-yellow\" id=\"story-text-big\">RECAP</span>",
                         subtext: ""
                     },
                     {
                         // items added to db
-                        image: "",
+                        image: "images/Card Template-08.svg",
                         text: "N items added to database",
                         subtext: "Thank you!"
                     },
                     {
                         // histogram
-                        image: "",
+                        image: "images/Card Template-09.svg",
                         text: "{histogram}",
                         subtext: ""
                     },
                     {
-                        image: "",
+                        image: "images/Card Template-10.svg",
                         text: "Thanks for using Boozer!",
                         subtext: ""
                     },
@@ -190,11 +193,11 @@
 
                     const updateContent = () => {
                         currentStoryIndex = index;
-                        storyImage.src = stories[index].image;
-                        storyText.textContent = stories[index].text;
+                        storyImage.src = stories[index].image; // TODO: think about embedding these .svgs inline, the fonts dont work otherwise
+                        storyText.innerHTML = stories[index].text;
 
                         if (stories[index].subtext.includes("chart")) {
-                            storySubtext.textContent = "";
+                            storySubtext.innerHTML = "";
                             document.getElementById('main').style.display = 'block';
                             var labels, values;
 
@@ -252,7 +255,7 @@
                             chart.setOption(option);
                         } else {
                             document.getElementById('main').style.display = 'none';
-                            storySubtext.textContent = stories[index].subtext;
+                            storySubtext.innerHTML = stories[index].subtext;
                         }
 
 
@@ -282,7 +285,7 @@
                             currentFill.style.width = "100%";
                         }, 50);
 
-                        storyTimer = setTimeout(playNextStory, 10050); // story + 50ms buffer TODO: change duration
+                        //storyTimer = setTimeout(playNextStory, 10050); // story + 50ms buffer TODO: change duration
                     };
 
                     if (isInitialLoad) {

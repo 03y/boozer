@@ -1,7 +1,36 @@
+:root {
+    --primary-red: #d52e39;
+    --primary-yellow: #ffcf38;
+    --primary-green: #6bb86a;
+    --secondary-lightblue: #7fccdc;
+    --secondary-blue: #3456a3;
+    --secondary-orange: #e04c25;
+}
+
 @font-face {
-  font-family: "Sufler";
-  src: url("../fonts/Sufler.ttf") format("truetype"),
-       url("../fonts/Sufler.otf") format("opentype");
+  font-family: "sufler";
+  src:
+    url("../fonts/vfc-sufler.woff2") format("woff2"),
+    url("../fonts/vfc-sufler.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+}
+
+
+@font-face {
+  font-family: "sufler-press";
+  src:
+    url("../fonts/vfc-sufler-press.woff2") format("woff2"),
+    url("../fonts/vfc-sufler-press.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "gilgan";
+  src:
+    url("../fonts/gilgan.woff2") format("woff2"),
+    url("../fonts/gilgan.woff") format("woff");
   font-weight: normal;
   font-style: normal;
 }
@@ -81,24 +110,49 @@
 
 .story-text {
     position: absolute;
-    top: 0%;
+    top: 10%;
     left: 50%;
     transform: translateX(-50%);
     font-size: 2rem;
     text-align: center;
     font-style: bold;
-    font-family: "Sufler", sans-serif;
+    font-family: "sufler-press", sans-serif;
     width = 80%;
+    color: black;
 }
 
 .story-subtext {
     position: absolute;
-    top: 40%;
+    top: 50%;
     left: 50%;
     transform: translateX(-50%);
     font-size: 2rem;
     text-align: center;
-    font-family: "Sufler", sans-serif;
+    font-family: "sufler-press", sans-serif;
+    color: black;
+}
+
+#story-text-big {
+    font-family: "sufler", sans-serif;
+    font-size: 5rem;
+    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+}
+
+#story-text-small {
+    font-family: "sufler", sans-serif;
+    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+}
+
+.highlight-red {
+    color: var(--primary-red);
+}
+
+.highlight-yellow {
+    color: var(--primary-yellow);
+}
+
+.highlight-blue {
+    color: var(--primary-blue);
 }
 
 #main {
@@ -107,3 +161,4 @@
     left: 50%;
     transform: translateX(-50%);
 }
+
