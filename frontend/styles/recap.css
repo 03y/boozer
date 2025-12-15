@@ -61,7 +61,7 @@
 .story-image {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: scale-down;
     max-width: 100%;
     border: none;
     opacity: 0.33;
@@ -110,10 +110,10 @@
 
 .story-text {
     position: absolute;
-    top: 10%;
+    top: 15%;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 2rem;
+    font-size: 1.5rem;
     text-align: center;
     font-style: bold;
     font-family: "sufler-press", sans-serif;
@@ -126,7 +126,7 @@
     top: 50%;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 2rem;
+    font-size: 1rem;
     text-align: center;
     font-family: "sufler-press", sans-serif;
     color: black;
@@ -134,7 +134,7 @@
 
 #story-text-big {
     font-family: "sufler", sans-serif;
-    font-size: 5rem;
+    font-size: 4rem;
     text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
 }
 

@@ -32,7 +32,7 @@
                         <img src="" class="story-image" id="story-image" />
                         <p class="story-text" id="story-text"></p>
                         <p class="story-subtext" id="story-subtext"></p>
-                        <div id="main" style="width: 25em; height: 25em; display: none;"></div>
+                        <div id="main" style="width: 20em; height: 25em; display: none;"></div>
                         <button class="story-nav back" id="story-back">
                             &lt;
                         </button>
@@ -231,7 +231,6 @@
                                 values = Object.values(recap.days);
                                 chartType = "bar";
                                 chartColours = [primaryYellow, primaryBlue, secondaryLightblue, secondaryBlue, secondaryOrange];
-                                subtex
                             }
 
                             /* TODO: use colours from css file */
@@ -272,6 +271,9 @@
                                             show: true,
                                             position: 'insideRight',
                                             formatter: params => params.value > 0 ? params.value : '',
+                                            textStyle: {
+                                                fontFamily: 'sufler'
+                                            }
                                         }
                                     }
                                 ]
@@ -310,7 +312,7 @@
                             currentFill.style.width = "100%";
                         }, 50);
 
-                        //storyTimer = setTimeout(playNextStory, 10050); // story + 50ms buffer TODO: change duration
+                        storyTimer = setTimeout(playNextStory, 10050); // story + 50ms buffer TODO: change duration
                     };
 
                     if (isInitialLoad) {
