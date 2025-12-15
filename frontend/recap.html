@@ -48,6 +48,12 @@
             var chart = echarts.init(document.getElementById("main"));
             var user;
             var recap;
+            const primaryRed = "#d52e39";
+            const primaryYellow = "#ffcf38";
+            const primaryBlue = "#6bb86a";
+            const secondaryLightblue = "#7fccdc";
+            const secondaryBlue = "#3456a3";
+            const secondaryOrange = "#e04c25";
 
             function getTopDay(days) {
                 return Object.entries(days).reduce(
@@ -84,6 +90,12 @@
                     return;
                 }
 
+                if (recap.error) {
+                    document.getElementById("story-container").innerHTML =
+                            "Recap not available";
+                    return;
+                }
+
                 // TODO: get global recap
 
                 const stories = [
@@ -111,7 +123,9 @@
                         text: "You had<br><span class=\"highlight-red\" id=\"story-text-big\">" +
                         JSON.stringify(recap.consumptions.variety) +
                         "</span><br>different items",
-                        subtext: "Over <span class=\"highlight-red\" id=\"story-text-small\">x</span> categories!"
+                        subtext: "Over <span class=\"highlight-red\" id=\"story-text-small\">" +
+                        recap.categories.length
+                        + "</span> categories!"
                         // TODO: implement number of categories
                     },
                     {
@@ -122,7 +136,7 @@
                     {
                         image: "images/Card Template-11.svg",
                         text:
-                        "Your best day of the week was <span class=\"highlight-yellow\" id=\"story-text-big\">" +
+                        "Your best day of the week was <span class=\"highlight-yellow\" id=\"story-text-big\" style=\"font-size: 3rem;\">" +
                         getTopDay(recap.days) + "</span>",
                         subtext: "day_chart" // bar chart top days
                     },
@@ -199,25 +213,32 @@
                         if (stories[index].subtext.includes("chart")) {
                             storySubtext.innerHTML = "";
                             document.getElementById('main').style.display = 'block';
-                            var labels, values;
+                            var labels, values, chartType, chartColours;
 
                             if (stories[index].subtext === "item_chart") {
                                 labels = recap.items.map(item => item.name);
                                 values = recap.items.map(item => item.consumptions);
+                                chartColours = [primaryYellow, primaryBlue, secondaryLightblue, secondaryBlue, secondaryOrange];
+                                chartType = "bar";
                             } else if (stories[index].subtext === "category_chart") {
                                 labels = recap.categories.map(category => category.category);
                                 values = recap.categories.map(category => category.consumptions);
+                                chartColours = [primaryYellow, primaryBlue, secondaryLightblue, secondaryBlue, secondaryOrange];
+                                chartType = "pie";
                             } else if (stories[index].subtext === "day_chart") {
                                 title = "Total consumptions over each day"
                                 labels = Object.keys(recap.days).map(day => day.slice(0, 3)); // first 3 chars of each day
                                 values = Object.values(recap.days);
+                                chartType = "bar";
+                                chartColours = [primaryYellow, primaryBlue, secondaryLightblue, secondaryBlue, secondaryOrange];
+                                subtex
                             }
 
-                            const colours = ['#7ECBDB', '#FFCD38', '#D52B38', '#3256A2', '#E14D25'];
+                            /* TODO: use colours from css file */
                             const seriesData = values.map((v, i) => ({
                                 value: v,
                                 itemStyle: {
-                                    color: colours[i % colours.length] // mod so we wrap around colour arr
+                                    color: chartColours[i % chartColours.length] // mod so we wrap around colour arr
                                 }
                             }));
 
@@ -236,17 +257,21 @@
                                     axisTick: { show: false },
                                     splitLine: { show: false },
                                     axisLabel: {
-                                        rotate: 90
+                                        rotate: 90,
+                                        textStyle: {
+                                            color: 'black',
+                                            fontFamily: 'sufler'
+                                        }
                                     }
                                 },
                                 series: [
                                     {
                                         data: seriesData,
-                                        type: 'bar',
+                                        type: chartType,
                                         label: {
                                             show: true,
                                             position: 'insideRight',
-                                            formatter: params => params.value > 0 ? params.value : ''
+                                            formatter: params => params.value > 0 ? params.value : '',
                                         }
                                     }
                                 ]
