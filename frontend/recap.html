@@ -233,7 +233,7 @@
                                 chartColours = [primaryYellow, primaryBlue, secondaryLightblue, secondaryBlue, secondaryOrange];
                             }
 
-                            /* TODO: use colours from css file */
+                            /* TODO: use colours from css file? */
                             const seriesData = values.map((v, i) => ({
                                 value: v,
                                 itemStyle: {
@@ -278,6 +278,42 @@
                                     }
                                 ]
                             };
+
+                            if (chartType === 'pie') {
+                                const seriesData = recap.categories.map((v, i) => ({
+                                    value: v.consumptions,
+                                    name: v.category,
+                                    itemStyle: {
+                                        color: chartColours[i % chartColours.length] // mod so we wrap around colour arr
+                                    }
+                                }));
+
+                                option = {
+                                    tooltip: {
+                                        trigger: 'item'
+                                    },
+                                    legend: {
+                                        type: 'scroll',
+                                        bottom: 30,
+                                        data: data.legendData,
+                                        textStyle: {
+                                            fontFamily: 'sufler'
+                                        }
+                                    },
+                                    series: [
+                                        {
+                                            data: seriesData,
+                                            type: chartType,
+                                            label: {
+                                                show: true,
+                                                textStyle: {
+                                                    fontFamily: 'sufler'
+                                                }
+                                            }
+                                        }
+                                    ]
+                                };
+                            }
 
                             chart.setOption(option);
                         } else {
