@@ -31,7 +31,7 @@
                     <div class="story-view">
                         <img src="" class="story-image" id="story-image" />
                         <p class="story-text" id="story-text"></p>
-                        <p class="story-subtext" id="story-subtext"></p>
+                        <div class="story-subtext" id="story-subtext"></div>
                         <div id="main" style="width: 20em; height: 25em; display: none;"></div>
                         <button class="story-nav back" id="story-back">
                             &lt;
@@ -61,6 +61,20 @@
                         count > top.count ? { day, count } : top,
                     { day: null, count: -1 },
                 ).day;
+            }
+
+            function getTopItemsHtml(items) {
+              return items
+                .slice(0, 5)
+                .map(item => item.name)
+                .join('<br>');
+            }
+
+            function getTopCategoriesHtml(categories) {
+              return categories
+                .slice(0, 5)
+                .map(category => category.category)
+                .join('<br>');
             }
 
             async function displayRecap() {
@@ -143,8 +157,8 @@
                     {
                         // summary card
                         image: "images/Card Template-06.svg",
-                        text: user.username + "'s Boozer recap",
-                        subtext: JSON.stringify(recap),
+                        text: "<div id=\"summary\"><div id=\"row\"><div id=\"col\"><span class=\"highlight-red\">TOP ITEMS</span><br>" + getTopItemsHtml(recap.items) + "</div> <div id=\"col\"><span class=\"highlight-red\">TOP CATEGORIES</span><br>" + getTopCategoriesHtml(recap.categories) + "</div></div><div id=\"row\"><div id=\"col\"><span class=\"highlight-red\">TOP DAY</span><br>" + getTopDay(recap.days) + "</div><div id=\"col\"><span class=\"highlight-red\">CONSUMPTIONS</span><br>" + recap.consumptions.consumption_count + "</div></div></div>",
+                        subtext: ""
                     },
 
                     // global recap
@@ -218,8 +232,8 @@
                             if (stories[index].subtext === "item_chart") {
                                 labels = recap.items.map(item => item.name);
                                 values = recap.items.map(item => item.consumptions);
-                                chartColours = [primaryYellow, primaryBlue, secondaryLightblue, secondaryBlue, secondaryOrange];
                                 chartType = "bar";
+                                chartColours = [primaryRed, primaryBlue, secondaryLightblue, secondaryBlue, secondaryOrange];
                             } else if (stories[index].subtext === "category_chart") {
                                 labels = recap.categories.map(category => category.category);
                                 values = recap.categories.map(category => category.consumptions);
@@ -259,8 +273,10 @@
                                         rotate: 90,
                                         textStyle: {
                                             color: 'black',
-                                            fontFamily: 'sufler'
-                                        }
+                                            fontFamily: 'sufler',
+                                        },
+                                    interval: 0,
+                                    ellipsis: '...'
                                     }
                                 },
                                 series: [
