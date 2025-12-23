@@ -133,3 +133,19 @@ type UserRecap struct {
 	TopCategories []TopCategoryEntry `json:"categories"`
 	WeeklyCounts  []WeeklyCount      `json:"weekly_counts"`
 }
+
+type ItemsStats struct {
+	Count    int            `json:"count"`
+	TopItems []TopItemEntry `json:"top_items"`
+}
+
+type UsersStats struct {
+	Count int `json:"count"`
+}
+
+type GlobalRecap struct {
+	Items        ItemsStats    `json:"items"`
+	Users        UsersStats    `json:"users"`
+	Consumptions UsersStats    `json:"consumptions"`
+	WeeklyCounts []WeeklyCount `json:"weekly_counts"`
+}

@@ -942,6 +942,21 @@ func (a *App) GetUserRecap(c *gin.Context) {
 	}
 }
 
+func (a *App) GetGlobalRecap(c *gin.Context) {
+	var errorResponse models.ErrorResponse
+
+	var recap models.GlobalRecap
+	err := a.DB.QueryRow(context.Background(), "SELECT recap FROM global_recaps WHERE year=$1", c.Param("year")).Scan(&recap)
+	if err != nil {
+		slog.Info("failed to get global recap", "error", err)
+		errorResponse.Error = "global recap not available"
+		c.JSON(http.StatusOK, errorResponse)
+		return
+	}
+
+	c.JSON(http.StatusOK, recap)
+}
+
 func (a *App) GetUserLeaderboard(c *gin.Context) {
 	rows, err := a.DB.Query(context.Background(), "SELECT users.username, COUNT(consumptions.item_id) AS drank FROM consumptions INNER JOIN users ON consumptions.user_id = users.user_id GROUP BY users.username ORDER BY drank DESC LIMIT 10;")
 	if err != nil {
@@ -1183,6 +1198,8 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	router.GET(API_V2_BASE_URL+"/users/:username/items/count", a.GetUserItemCount)
 	router.GET(API_V2_BASE_URL+"/users/:username/units", a.GetUserUnitsSum)
 	router.GET(API_V2_BASE_URL+"/users/:username/recap", a.GetUserRecap) // recap for a user
+
+	router.GET(API_V2_BASE_URL+"/recaps/:year", a.GetGlobalRecap) // global recap
 
 	// leaderboards
 	router.GET(API_V2_BASE_URL+"/leaderboards/items", a.GetItemsLeaderboard)
