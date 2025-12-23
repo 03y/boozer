@@ -121,9 +121,15 @@ type DaysStats struct {
 	Sunday    int `json:"Sunday"`
 }
 
+type WeeklyCount struct {
+	WeekStart    string `json:"week_start"`
+	Consumptions int    `json:"consumptions"`
+}
+
 type UserRecap struct {
 	Consumptions  ConsumptionStats   `json:"consumptions"`
 	Days          DaysStats          `json:"days"`
 	TopItems      []TopItemEntry     `json:"top_items"`
 	TopCategories []TopCategoryEntry `json:"categories"`
+	WeeklyCounts  []WeeklyCount      `json:"weekly_counts"`
 }
