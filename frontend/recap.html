@@ -255,47 +255,10 @@
                                 }
                             }));
 
-                            var option = {
-                                xAxis: {
-                                    type: 'value',
-                                    axisLabel: { show: false},
-                                    axisLine: { show: false },
-                                    axisTick: { show: false },
-                                    splitLine: { show: false }
-                                },
-                                yAxis: {
-                                    type: 'category',
-                                    data: labels,
-                                    axisLine: { show: false },
-                                    axisTick: { show: false },
-                                    splitLine: { show: false },
-                                    axisLabel: {
-                                        rotate: 90,
-                                        textStyle: {
-                                            color: 'black',
-                                            fontFamily: 'sufler',
-                                        },
-                                    interval: 0,
-                                    ellipsis: '...'
-                                    }
-                                },
-                                series: [
-                                    {
-                                        data: seriesData,
-                                        type: chartType,
-                                        label: {
-                                            show: true,
-                                            position: 'insideRight',
-                                            formatter: params => params.value > 0 ? params.value : '',
-                                            textStyle: {
-                                                fontFamily: 'sufler'
-                                            }
-                                        }
-                                    }
-                                ]
-                            };
+
 
                             if (chartType === 'pie') {
+                                // get category so we can label each slice
                                 const seriesData = recap.categories.map((v, i) => ({
                                     value: v.consumptions,
                                     name: v.category,
@@ -304,7 +267,7 @@
                                     }
                                 }));
 
-                                option = {
+                                var option = {
                                     tooltip: {
                                         trigger: 'item'
                                     },
@@ -321,7 +284,47 @@
                                             data: seriesData,
                                             type: chartType,
                                             label: {
+                                                show: false,
+                                                textStyle: {
+                                                    fontFamily: 'sufler'
+                                                }
+                                            }
+                                        }
+                                    ]
+                                };
+                            } else {
+                                var option = {
+                                    xAxis: {
+                                        type: 'value',
+                                        axisLabel: { show: false},
+                                        axisLine: { show: false },
+                                        axisTick: { show: false },
+                                        splitLine: { show: false }
+                                    },
+                                    yAxis: {
+                                        type: 'category',
+                                        data: labels,
+                                        axisLine: { show: false },
+                                        axisTick: { show: false },
+                                        splitLine: { show: false },
+                                        axisLabel: {
+                                            rotate: 90,
+                                            textStyle: {
+                                                color: 'black',
+                                                fontFamily: 'sufler',
+                                            },
+                                        interval: 0,
+                                        ellipsis: '...'
+                                        }
+                                    },
+                                    series: [
+                                        {
+                                            data: seriesData,
+                                            type: chartType,
+                                            label: {
                                                 show: true,
+                                                position: 'insideRight',
+                                                formatter: params => params.value > 0 ? params.value : '',
                                                 textStyle: {
                                                     fontFamily: 'sufler'
                                                 }
