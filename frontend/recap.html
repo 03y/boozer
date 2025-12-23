@@ -157,7 +157,7 @@
                     {
                         // summary card
                         image: "images/Card Template-06.svg",
-                        text: "<div id=\"summary\"><div id=\"row\"><div id=\"col\"><span class=\"highlight-red\">TOP ITEMS</span><br>" + getTopItemsHtml(recap.items) + "</div> <div id=\"col\"><span class=\"highlight-red\">TOP CATEGORIES</span><br>" + getTopCategoriesHtml(recap.categories) + "</div></div><div id=\"row\"><div id=\"col\"><span class=\"highlight-red\">TOP DAY</span><br>" + getTopDay(recap.days) + "</div><div id=\"col\"><span class=\"highlight-red\">CONSUMPTIONS</span><br>" + recap.consumptions.consumption_count + "</div></div></div>",
+                        text: "<div id=\"summary\"><div id=\"row\"><div id=\"col\"><span class=\"highlight-red\">TOP ITEMS</span><br>" + getTopItemsHtml(recap.top_items) + "</div> <div id=\"col\"><span class=\"highlight-red\">TOP CATEGORIES</span><br>" + getTopCategoriesHtml(recap.categories) + "</div></div><div id=\"row\"><div id=\"col\"><span class=\"highlight-red\">TOP DAY</span><br>" + getTopDay(recap.days) + "</div><div id=\"col\"><span class=\"highlight-red\">CONSUMPTIONS</span><br>" + recap.consumptions.consumption_count + "</div></div></div>",
                         subtext: ""
                     },
 
@@ -230,8 +230,8 @@
                             var labels, values, chartType, chartColours;
 
                             if (stories[index].subtext === "item_chart") {
-                                labels = recap.items.map(item => item.name);
-                                values = recap.items.map(item => item.consumptions);
+                                labels = recap.top_items.map(item => item.name);
+                                values = recap.top_items.map(item => item.consumptions);
                                 chartType = "bar";
                                 chartColours = [primaryRed, primaryBlue, secondaryLightblue, secondaryBlue, secondaryOrange];
                             } else if (stories[index].subtext === "category_chart") {

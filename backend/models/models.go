@@ -124,6 +124,6 @@ type DaysStats struct {
 type UserRecap struct {
 	Consumptions  ConsumptionStats   `json:"consumptions"`
 	Days          DaysStats          `json:"days"`
-	TopItems      []TopItemEntry     `json:"items"`
+	TopItems      []TopItemEntry     `json:"top_items"`
 	TopCategories []TopCategoryEntry `json:"categories"`
 }
