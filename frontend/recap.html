@@ -87,7 +87,7 @@
                         return;
                     }
 
-                    const response = await fetch(
+                    var response = await fetch(
                         `${API_BASE_URL}/users/${user.username}/recap`,
                     );
 
@@ -98,6 +98,12 @@
                     }
 
                     recap = await response.json();
+
+                    response = await fetch(
+                        `${API_BASE_URL}/recaps/2025`,
+                    );
+
+                    global_recap = await response.json();
                 } catch (error) {
                     document.getElementById("story-container").innerHTML =
                             "Recap not available";
@@ -110,9 +116,8 @@
                     return;
                 }
 
-                // TODO: get global recap
-
                 const stories = [
+                    /*
                     {
                         // welcome
                         image: "images/Card Template-01.svg",
@@ -160,30 +165,36 @@
                         text: "<div id=\"summary\"><div id=\"row\"><div id=\"col\"><span class=\"highlight-red\">TOP ITEMS</span><br>" + getTopItemsHtml(recap.top_items) + "</div> <div id=\"col\"><span class=\"highlight-red\">TOP CATEGORIES</span><br>" + getTopCategoriesHtml(recap.categories) + "</div></div><div id=\"row\"><div id=\"col\"><span class=\"highlight-red\">TOP DAY</span><br>" + getTopDay(recap.days) + "</div><div id=\"col\"><span class=\"highlight-red\">CONSUMPTIONS</span><br>" + recap.consumptions.consumption_count + "</div></div></div>",
                         subtext: ""
                     },
+                    */
 
                     // global recap
                     {
                         // total consumptions
-                        image: "images/Card Template-07.svg",
-                        text: "NOW FOR THE GLOBAL<br><span class=\"highlight-yellow\" id=\"story-text-big\">RECAP</span>",
-                        subtext: ""
+                        image: "images/Card Template-08.svg",
+                        text: "HERE IS THE GLOBAL<br><span class=\"highlight-yellow\" id=\"story-text-big\">RECAP</span>",
+                        subtext: "A summary for all <span class=\"highlight-yellow\">" + global_recap.users.count + "</span> boozers in <span class=\"highlight-yellow\">2025</span>"
                     },
                     {
                         // items added to db
-                        image: "images/Card Template-08.svg",
-                        text: "N items added to database",
-                        subtext: "Thank you!"
+                        image: "images/Card Template-09.svg",
+                        text: "THERE WERE<br><span class=\"highlight-blue\" id=\"story-text-big\">" + global_recap.consumptions.count + "</span><br>CONSUMPTIONS",
+                        subtext: "Since <span class=\"highlight-blue\">" + global_recap.weekly_counts[0].week_start + "</span>"
                     },
                     {
                         // histogram
-                        image: "images/Card Template-09.svg",
-                        text: "{histogram}",
-                        subtext: ""
+                        image: "images/Card Template-10.svg",
+                        text: "THERE WERE<br><span class=\"highlight-red\" id=\"story-text-big\">" + global_recap.items.count + "</span><br>NEW ITEMS",
+                        subtext: "Thank you!"
                     },
                     {
-                        image: "images/Card Template-10.svg",
-                        text: "Thanks for using Boozer!",
-                        subtext: ""
+                        image: "images/Card Template-11.svg",
+                        text: "HERE'S HOW THE YEAR WENT...",
+                        subtext: "chart_gloal_histogram"
+                    },
+                    {
+                        image: "images/Card Template-12.svg",
+                        text: "<span class=\"highlight-red\" id=\"story-text-big\">THANK<br>YOU</span>",
+                        subtext: "FOR USING BOOZER."
                     },
                 ];
 
