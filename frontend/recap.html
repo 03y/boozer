@@ -117,7 +117,6 @@
                 }
 
                 const stories = [
-                    /*
                     {
                         // welcome
                         image: "images/Card Template-01.svg",
@@ -165,7 +164,6 @@
                         text: "<div id=\"summary\"><div id=\"row\"><div id=\"col\"><span class=\"highlight-red\">TOP ITEMS</span><br>" + getTopItemsHtml(recap.top_items) + "</div> <div id=\"col\"><span class=\"highlight-red\">TOP CATEGORIES</span><br>" + getTopCategoriesHtml(recap.categories) + "</div></div><div id=\"row\"><div id=\"col\"><span class=\"highlight-red\">TOP DAY</span><br>" + getTopDay(recap.days) + "</div><div id=\"col\"><span class=\"highlight-red\">CONSUMPTIONS</span><br>" + recap.consumptions.consumption_count + "</div></div></div>",
                         subtext: ""
                     },
-                    */
 
                     // global recap
                     {
@@ -189,7 +187,7 @@
                     {
                         image: "images/Card Template-11.svg",
                         text: "HERE'S HOW THE YEAR WENT...",
-                        subtext: "chart_gloal_histogram"
+                        subtext: "global_histogram_chart"
                     },
                     {
                         image: "images/Card Template-12.svg",
@@ -251,11 +249,17 @@
                                 chartColours = [primaryYellow, primaryBlue, secondaryLightblue, secondaryBlue, secondaryOrange];
                                 chartType = "pie";
                             } else if (stories[index].subtext === "day_chart") {
-                                title = "Total consumptions over each day"
+                                title = "Total consumptions over each day";
                                 labels = Object.keys(recap.days).map(day => day.slice(0, 3)); // first 3 chars of each day
                                 values = Object.values(recap.days);
                                 chartType = "bar";
                                 chartColours = [primaryYellow, primaryBlue, secondaryLightblue, secondaryBlue, secondaryOrange];
+                            } else if (stories[index].subtext === "global_histogram_chart") {
+                                title = "Consumptions histogram";
+                                labels = global_recap.weekly_counts.map(week => week.week_start);
+                                values = global_recap.weekly_counts.map(week => week.consumptions);
+                                chartColours = [primaryBlue];
+                                chartType = "line";
                             }
 
                             /* TODO: use colours from css file? */
@@ -266,9 +270,38 @@
                                 }
                             }));
 
-
-
-                            if (chartType === 'pie') {
+                            if (stories[index].subtext === "global_histogram_chart") {
+                                // TODO: show date on hover
+                                var option = {
+                                    xAxis: {
+                                        type: 'category',
+                                        data: labels,
+                                        axisLabel: {
+                                            rotate: 90,
+                                            textStyle: {
+                                                color: 'black',
+                                                fontFamily: 'sufler',
+                                            }
+                                        },
+                                        axisLine: { show: false },
+                                        axisTick: { show: false },
+                                        splitLine: { show: false },
+                                    },
+                                    yAxis: {
+                                        type: 'value',
+                                        axisLine: { show: false },
+                                        axisTick: { show: false },
+                                        splitLine: { show: false },
+                                        axisLabel: { show: false },
+                                    },
+                                    series: [
+                                        {
+                                            data: seriesData,
+                                            type: chartType,
+                                        }
+                                    ]
+                                };
+                            } else if (chartType === 'pie') {
                                 // get category so we can label each slice
                                 const seriesData = recap.categories.map((v, i) => ({
                                     value: v.consumptions,
