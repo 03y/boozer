@@ -35,3 +35,9 @@ CREATE TABLE item_reports(
     reason      reason_type     NOT NULL,
     created     INT             NOT NULL
 );
+
+CREATE TABLE global_recaps(
+    year        INT         PRIMARY KEY,
+    recap       JSONB       NOT NULL
+);
+
