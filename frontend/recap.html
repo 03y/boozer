@@ -109,7 +109,7 @@
                     return;
                 }
 
-                if (recap.error) {
+                if (recap.error || global_recap.error) {
                     document.getElementById("story-container").innerHTML =
                             "Recap not available";
                     return;
