@@ -159,8 +159,8 @@
                     {
                         // summary card
                         image: "images/Card Template-06.svg",
-                        text: "<div id=\"summary\"><div id=\"row\"><div id=\"col\"><span class=\"highlight-red\">TOP ITEMS</span><br>" + getTopItemsHtml(recap.top_items) + "</div> <div id=\"col\"><span class=\"highlight-red\">TOP CATEGORIES</span><br>" + getTopCategoriesHtml(recap.categories) + "</div></div><div id=\"row\"><div id=\"col\"><span class=\"highlight-red\">TOP DAY</span><br>" + getTopDay(recap.days) + "</div><div id=\"col\"><span class=\"highlight-red\">CONSUMPTIONS</span><br>" + recap.consumptions.consumption_count + "</div></div></div>",
-                        subtext: ""
+                        text: "YOUR TOP ITEMS",
+                        subtext: "item_chart"
                     },
                     // global recap
                     {
@@ -238,8 +238,8 @@
                             if (stories[index].subtext === "item_chart") {
                                 labels = recap.top_items.map(item => item.name);
                                 values = recap.top_items.map(item => item.consumptions);
-                                chartType = "bar";
                                 chartColours = [primaryRed, primaryBlue, secondaryLightblue, secondaryBlue, secondaryOrange];
+                                chartType = "bar";
                             } else if (stories[index].subtext === "category_chart") {
                                 labels = recap.categories.map(category => category.category);
                                 values = recap.categories.map(category => category.consumptions);
@@ -344,6 +344,40 @@
                                         }
                                     ]
                                 };
+                            } else if (stories[index].subtext === "item_chart") {
+                                var option = {
+                                    xAxis: {
+                                        type: 'value',
+                                        axisLabel: { show: false },
+                                        axisLine: { show: false },
+                                        axisTick: { show: false },
+                                        splitLine: { show: false }
+                                    },
+                                    yAxis: {
+                                        type: 'category',
+                                        data: labels,
+                                        axisLine: { show: false },
+                                        axisTick: { show: false },
+                                        splitLine: { show: false },
+                                        axisLabel: {
+                                            show: false
+                                        }
+                                    },
+                                    series: [
+                                        {
+                                            data: seriesData,
+                                            type: chartType,
+                                            label: {
+                                                show: true,
+                                                position: 'insideLeft',
+                                                formatter: (params) => `${params.name}: ${params.value}`,
+                                                textStyle: {
+                                                    fontFamily: 'sufler'
+                                                }
+                                            }
+                                        }
+                                    ]
+                                };
                             } else {
                                 var option = {
                                     xAxis: {
@@ -391,7 +425,6 @@
                             document.getElementById('main').style.display = 'none';
                             storySubtext.innerHTML = stories[index].subtext;
                         }
-
 
                         const allProgressFills =
                             progressBarsContainer.querySelectorAll(
