@@ -26,7 +26,6 @@
                         class="story-progress-bars"
                         id="progress-bars-container"
                     >
-                    <!-- progress bars generated in js -->
                     </div>
                     <div class="story-view">
                         <img src="" class="story-image" id="story-image" />
@@ -144,7 +143,6 @@
                         subtext: "Over <span class=\"highlight-red\" id=\"story-text-small\">" +
                         recap.categories.length
                         + "</span> categories!"
-                        // TODO: implement number of categories
                     },
                     {
                         image: "images/Card Template-07.svg",
@@ -154,7 +152,7 @@
                     {
                         image: "images/Card Template-11.svg",
                         text:
-                        "Your best day of the week was <span class=\"highlight-yellow\" id=\"story-text-big\" style=\"font-size: 3rem;\">" +
+                        "Your best day of the week was<br><span class=\"highlight-yellow\" id=\"story-text-big\">" +
                         getTopDay(recap.days) + "</span>",
                         subtext: "day_chart" // bar chart top days
                     },
@@ -164,12 +162,11 @@
                         text: "<div id=\"summary\"><div id=\"row\"><div id=\"col\"><span class=\"highlight-red\">TOP ITEMS</span><br>" + getTopItemsHtml(recap.top_items) + "</div> <div id=\"col\"><span class=\"highlight-red\">TOP CATEGORIES</span><br>" + getTopCategoriesHtml(recap.categories) + "</div></div><div id=\"row\"><div id=\"col\"><span class=\"highlight-red\">TOP DAY</span><br>" + getTopDay(recap.days) + "</div><div id=\"col\"><span class=\"highlight-red\">CONSUMPTIONS</span><br>" + recap.consumptions.consumption_count + "</div></div></div>",
                         subtext: ""
                     },
-
                     // global recap
                     {
                         // total consumptions
                         image: "images/Card Template-08.svg",
-                        text: "HERE IS THE GLOBAL<br><span class=\"highlight-yellow\" id=\"story-text-big\">RECAP</span>",
+                        text: "NOW FOR THE GLOBAL<br><span class=\"highlight-yellow\" id=\"story-text-big\">RECAP</span>",
                         subtext: "A summary for all <span class=\"highlight-yellow\">" + global_recap.users.count + "</span> boozers in <span class=\"highlight-yellow\">2025</span>"
                     },
                     {
@@ -181,19 +178,19 @@
                     {
                         // histogram
                         image: "images/Card Template-10.svg",
-                        text: "THERE WERE<br><span class=\"highlight-red\" id=\"story-text-big\">" + global_recap.items.count + "</span><br>NEW ITEMS",
+                        text: "WE ADDED<br><span class=\"highlight-red\" id=\"story-text-big\">" + global_recap.items.count + "</span><br>NEW ITEMS",
                         subtext: "Thank you!"
                     },
                     {
                         image: "images/Card Template-11.svg",
-                        text: "HERE'S HOW THE YEAR WENT...",
+                        text: "OUR PROGRESS",
                         subtext: "global_histogram_chart"
                     },
                     {
                         image: "images/Card Template-12.svg",
                         text: "<span class=\"highlight-red\" id=\"story-text-big\">THANK<br>YOU</span>",
                         subtext: "FOR USING BOOZER."
-                    },
+                    }
                 ];
 
                 let currentStoryIndex = 0;
@@ -249,17 +246,17 @@
                                 chartColours = [primaryYellow, primaryBlue, secondaryLightblue, secondaryBlue, secondaryOrange];
                                 chartType = "pie";
                             } else if (stories[index].subtext === "day_chart") {
-                                title = "Total consumptions over each day";
+                                chartTitle = "Total consumptions over each day";
                                 labels = Object.keys(recap.days).map(day => day.slice(0, 3)); // first 3 chars of each day
                                 values = Object.values(recap.days);
                                 chartType = "bar";
                                 chartColours = [primaryYellow, primaryBlue, secondaryLightblue, secondaryBlue, secondaryOrange];
                             } else if (stories[index].subtext === "global_histogram_chart") {
-                                title = "Consumptions histogram";
+                                chartTitle = "Consumptions per week";
                                 labels = global_recap.weekly_counts.map(week => week.week_start);
                                 values = global_recap.weekly_counts.map(week => week.consumptions);
                                 chartColours = [primaryBlue];
-                                chartType = "line";
+                                chartType = "bar";
                             }
 
                             /* TODO: use colours from css file? */
@@ -271,18 +268,19 @@
                             }));
 
                             if (stories[index].subtext === "global_histogram_chart") {
-                                // TODO: show date on hover
                                 var option = {
+                                    title: {
+                                        text: chartTitle,
+                                        left: 'center',
+                                        textStyle: {
+                                            color: 'black',
+                                            fontFamily: 'sufler',
+                                        }
+                                    },
                                     xAxis: {
                                         type: 'category',
                                         data: labels,
-                                        axisLabel: {
-                                            rotate: 90,
-                                            textStyle: {
-                                                color: 'black',
-                                                fontFamily: 'sufler',
-                                            }
-                                        },
+                                        axisLabel: { show: false },
                                         axisLine: { show: false },
                                         axisTick: { show: false },
                                         splitLine: { show: false },
@@ -292,12 +290,22 @@
                                         axisLine: { show: false },
                                         axisTick: { show: false },
                                         splitLine: { show: false },
-                                        axisLabel: { show: false },
+                                        axisLabel: {
+                                            margin: -1,
+                                            textStyle: {
+                                                color: 'black',
+                                                fontFamily: 'sufler',
+                                            }
+                                        },
+                                    },
+                                    tooltip: {
+                                        trigger: 'item'
                                     },
                                     series: [
                                         {
                                             data: seriesData,
                                             type: chartType,
+                                            label: { show: false }
                                         }
                                     ]
                                 };
@@ -357,8 +365,8 @@
                                                 color: 'black',
                                                 fontFamily: 'sufler',
                                             },
-                                        interval: 0,
-                                        ellipsis: '...'
+                                            interval: 0,
+                                            ellipsis: '...'
                                         }
                                     },
                                     series: [
