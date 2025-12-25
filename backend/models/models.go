@@ -94,3 +94,58 @@ type ItemCount struct {
 type ErrorResponse struct {
 	Error string `json:"error"`
 }
+
+type ConsumptionStats struct {
+	Consumption_Count int `json:"consumption_count"`
+	Percentile        int `json:"percentile"`
+	Variety           int `json:"variety"`
+}
+
+type TopCategoryEntry struct {
+	Category     string `json:"category"`
+	Consumptions int    `json:"consumptions"`
+}
+
+type TopItemEntry struct {
+	Item         string `json:"name"`
+	Consumptions int    `json:"consumptions"`
+}
+
+type DaysStats struct {
+	Monday    int `json:"Monday"`
+	Tuesday   int `json:"Tuesday"`
+	Wednesday int `json:"Wednesday"`
+	Thursday  int `json:"Thursday"`
+	Friday    int `json:"Friday"`
+	Saturday  int `json:"Saturday"`
+	Sunday    int `json:"Sunday"`
+}
+
+type WeeklyCount struct {
+	WeekStart    string `json:"week_start"`
+	Consumptions int    `json:"consumptions"`
+}
+
+type UserRecap struct {
+	Consumptions  ConsumptionStats   `json:"consumptions"`
+	Days          DaysStats          `json:"days"`
+	TopItems      []TopItemEntry     `json:"top_items"`
+	TopCategories []TopCategoryEntry `json:"categories"`
+	WeeklyCounts  []WeeklyCount      `json:"weekly_counts"`
+}
+
+type ItemsStats struct {
+	Count    int            `json:"count"`
+	TopItems []TopItemEntry `json:"top_items"`
+}
+
+type UsersStats struct {
+	Count int `json:"count"`
+}
+
+type GlobalRecap struct {
+	Items        ItemsStats    `json:"items"`
+	Users        UsersStats    `json:"users"`
+	Consumptions UsersStats    `json:"consumptions"`
+	WeeklyCounts []WeeklyCount `json:"weekly_counts"`
+}

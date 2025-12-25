@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>🍺 Boozer</title>
+        <link rel="stylesheet" type="text/css" href="styles/style.css" />
+        <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
+        <link rel="stylesheet" type="text/css" href="styles/recap.css" />
+        <script src="scripts/auth.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+        </style>
+    </head>
+    <body>
+        <nav>
+            <a href="./index.html">Leaderboard</a>
+            <a href="./items.html">Inventory</a>
+            <a id="login-link" href="./profile.html">Profile</a>
+            <a href="./submit.html">Get boozing!</a>
+        </nav>
+
+        <main>
+            <div class="story-container" id="story-container">
+                <div class="recap-wrapper">
+                    <div
+                        class="story-progress-bars"
+                        id="progress-bars-container"
+                    >
+                    </div>
+                    <div class="story-view">
+                        <img src="" class="story-image" id="story-image" />
+                        <p class="story-text" id="story-text"></p>
+                        <div class="story-subtext" id="story-subtext"></div>
+                        <div id="main" style="width: 20em; height: 25em; display: none;"></div>
+                        <button class="story-nav back" id="story-back">
+                            &lt;
+                        </button>
+                        <button class="story-nav next" id="story-next">
+                            &gt;
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <script>
+            var chart = echarts.init(document.getElementById("main"));
+            var user;
+            var recap;
+            const primaryRed = "#d52e39";
+            const primaryYellow = "#ffcf38";
+            const primaryBlue = "#6bb86a";
+            const secondaryLightblue = "#7fccdc";
+            const secondaryBlue = "#3456a3";
+            const secondaryOrange = "#e04c25";
+
+            function getTopDay(days) {
+                return Object.entries(days).reduce(
+                    (top, [day, count]) =>
+                        count > top.count ? { day, count } : top,
+                    { day: null, count: -1 },
+                ).day;
+            }
+
+            function getTopItemsHtml(items) {
+              return items
+                .slice(0, 5)
+                .map(item => item.name)
+                .join('<br>');
+            }
+
+            function getTopCategoriesHtml(categories) {
+              return categories
+                .slice(0, 5)
+                .map(category => category.category)
+                .join('<br>');
+            }
+
+            async function displayRecap() {
+                try {
+                    user = await getUser();
+
+                    if (user === 401) {
+                        document.getElementById("story-container").innerHTML =
+                            "You must&nbsp;<a href=\"../login.html\">login</a>&nbsp;to view your recap";
+                        return;
+                    }
+
+                    var response = await fetch(
+                        `${API_BASE_URL}/users/${user.username}/recap`,
+                    );
+
+                    if (!response.ok) {
+                        document.getElementById("story-container").innerHTML =
+                            "Recap not available";
+                        return;
+                    }
+
+                    recap = await response.json();
+
+                    response = await fetch(
+                        `${API_BASE_URL}/recaps/2025`,
+                    );
+
+                    global_recap = await response.json();
+                } catch (error) {
+                    document.getElementById("story-container").innerHTML =
+                            "Recap not available";
+                    return;
+                }
+
+                if (recap.error || global_recap.error) {
+                    document.getElementById("story-container").innerHTML =
+                            "Recap not available";
+                    return;
+                }
+
+                const stories = [
+                    {
+                        // welcome
+                        image: "images/Card Template-01.svg",
+                        text: "WELCOME TO YOUR<br><br><span class=\"highlight-red\" id=\"story-text-big\">RECAP</span>",
+                        subtext: "This is your summary <span class=\"highlight-red\" id=\"story-text-small\">2025</span> with <span class=\"highlight-red\" id=\"story-text-small\">Boozer</span>."
+                    },
+                    {
+                        image: "images/Card Template-02.svg",
+                        text:
+                        "This year, you had<br><span class=\"highlight-yellow\" id=\"story-text-big\">" +
+                            JSON.stringify(
+                                recap.consumptions.consumption_count,
+                            ) +
+                        "<br></span>consumptions",
+                        subtext:
+                        "That puts you in the top <span class=\"highlight-yellow\" id=\"story-text-small\">" +
+                        JSON.stringify(recap.consumptions.percentile) +
+                        "</span>%!",
+                    },
+                    {
+                        image: "images/Card Template-03.svg",
+                        text: "You had<br><span class=\"highlight-red\" id=\"story-text-big\">" +
+                        JSON.stringify(recap.consumptions.variety) +
+                        "</span><br>different items",
+                        subtext: "Over <span class=\"highlight-red\" id=\"story-text-small\">" +
+                        recap.categories.length
+                        + "</span> categories!"
+                    },
+                    {
+                        image: "images/Card Template-07.svg",
+                        text: "Your top categories were...",
+                        subtext: "category_chart" // bar chart top categories
+                    },
+                    {
+                        image: "images/Card Template-11.svg",
+                        text:
+                        "Your best day of the week was<br><span class=\"highlight-yellow\" id=\"story-text-big\">" +
+                        getTopDay(recap.days) + "</span>",
+                        subtext: "day_chart" // bar chart top days
+                    },
+                    {
+                        // summary card
+                        image: "images/Card Template-06.svg",
+                        text: "YOUR TOP ITEMS",
+                        subtext: "item_chart"
+                    },
+                    // global recap
+                    {
+                        // total consumptions
+                        image: "images/Card Template-08.svg",
+                        text: "NOW FOR THE GLOBAL<br><span class=\"highlight-yellow\" id=\"story-text-big\">RECAP</span>",
+                        subtext: "A summary for all <span class=\"highlight-yellow\">" + global_recap.users.count + "</span> boozers in <span class=\"highlight-yellow\">2025</span>"
+                    },
+                    {
+                        // items added to db
+                        image: "images/Card Template-09.svg",
+                        text: "THERE WERE<br><span class=\"highlight-blue\" id=\"story-text-big\">" + global_recap.consumptions.count + "</span><br>CONSUMPTIONS",
+                        subtext: "Since <span class=\"highlight-blue\">" + global_recap.weekly_counts[0].week_start + "</span>"
+                    },
+                    {
+                        // histogram
+                        image: "images/Card Template-10.svg",
+                        text: "WE ADDED<br><span class=\"highlight-red\" id=\"story-text-big\">" + global_recap.items.count + "</span><br>NEW ITEMS",
+                        subtext: "Thank you!"
+                    },
+                    {
+                        image: "images/Card Template-11.svg",
+                        text: "OUR PROGRESS",
+                        subtext: "global_histogram_chart"
+                    },
+                    {
+                        image: "images/Card Template-12.svg",
+                        text: "<span class=\"highlight-red\" id=\"story-text-big\">THANK<br>YOU</span>",
+                        subtext: "FOR USING BOOZER."
+                    }
+                ];
+
+                let currentStoryIndex = 0;
+                let storyTimer;
+                let isInitialLoad = true;
+
+                const progressBarsContainer = document.getElementById(
+                    "progress-bars-container",
+                );
+                const storyImage = document.getElementById("story-image");
+                const storyText = document.getElementById("story-text");
+                const storySubtext = document.getElementById("story-subtext");
+                const backButton = document.getElementById("story-back");
+                const nextButton = document.getElementById("story-next");
+
+                const initStories = () => {
+                    progressBarsContainer.innerHTML = "";
+                    stories.forEach(() => {
+                        const progressBar = document.createElement("div");
+                        progressBar.className = "progress-bar";
+                        const progressBarFill = document.createElement("div");
+                        progressBarFill.className = "progress-bar-fill";
+                        progressBar.appendChild(progressBarFill);
+                        progressBarsContainer.appendChild(progressBar);
+                    });
+                    showStory(0);
+                };
+
+                const showStory = (index) => {
+                    if (index < 0 || index >= stories.length) return;
+                    clearTimeout(storyTimer);
+
+                    const fadeDuration = 500; // Must match CSS transition duration
+
+                    const updateContent = () => {
+                        currentStoryIndex = index;
+                        storyImage.src = stories[index].image; // TODO: think about embedding these .svgs inline, the fonts dont work otherwise
+                        storyText.innerHTML = stories[index].text;
+
+                        if (stories[index].subtext.includes("chart")) {
+                            storySubtext.innerHTML = "";
+                            document.getElementById('main').style.display = 'block';
+                            var labels, values, chartType, chartColours;
+
+                            if (stories[index].subtext === "item_chart") {
+                                labels = recap.top_items.map(item => item.name);
+                                values = recap.top_items.map(item => item.consumptions);
+                                chartColours = [primaryRed, primaryBlue, secondaryLightblue, secondaryBlue, secondaryOrange];
+                                chartType = "bar";
+                            } else if (stories[index].subtext === "category_chart") {
+                                labels = recap.categories.map(category => category.category);
+                                values = recap.categories.map(category => category.consumptions);
+                                chartColours = [primaryYellow, primaryBlue, secondaryLightblue, secondaryBlue, secondaryOrange];
+                                chartType = "pie";
+                            } else if (stories[index].subtext === "day_chart") {
+                                chartTitle = "Total consumptions over each day";
+                                labels = Object.keys(recap.days).map(day => day.slice(0, 3)); // first 3 chars of each day
+                                values = Object.values(recap.days);
+                                chartType = "bar";
+                                chartColours = [primaryYellow, primaryBlue, secondaryLightblue, secondaryBlue, secondaryOrange];
+                            } else if (stories[index].subtext === "global_histogram_chart") {
+                                chartTitle = "Consumptions per week";
+                                labels = global_recap.weekly_counts.map(week => week.week_start);
+                                values = global_recap.weekly_counts.map(week => week.consumptions);
+                                chartColours = [primaryBlue];
+                                chartType = "bar";
+                            }
+
+                            /* TODO: use colours from css file? */
+                            const seriesData = values.map((v, i) => ({
+                                value: v,
+                                itemStyle: {
+                                    color: chartColours[i % chartColours.length] // mod so we wrap around colour arr
+                                }
+                            }));
+
+                            if (stories[index].subtext === "global_histogram_chart") {
+                                var option = {
+                                    title: {
+                                        text: chartTitle,
+                                        left: 'center',
+                                        textStyle: {
+                                            color: 'black',
+                                            fontFamily: 'sufler',
+                                        }
+                                    },
+                                    xAxis: {
+                                        type: 'category',
+                                        data: labels,
+                                        axisLabel: { show: false },
+                                        axisLine: { show: false },
+                                        axisTick: { show: false },
+                                        splitLine: { show: false },
+                                    },
+                                    yAxis: {
+                                        type: 'value',
+                                        axisLine: { show: false },
+                                        axisTick: { show: false },
+                                        splitLine: { show: false },
+                                        axisLabel: {
+                                            margin: -1,
+                                            textStyle: {
+                                                color: 'black',
+                                                fontFamily: 'sufler',
+                                            }
+                                        },
+                                    },
+                                    tooltip: {
+                                        trigger: 'item'
+                                    },
+                                    series: [
+                                        {
+                                            data: seriesData,
+                                            type: chartType,
+                                            label: { show: false }
+                                        }
+                                    ]
+                                };
+                            } else if (chartType === 'pie') {
+                                // get category so we can label each slice
+                                const seriesData = recap.categories.map((v, i) => ({
+                                    value: v.consumptions,
+                                    name: v.category,
+                                    itemStyle: {
+                                        color: chartColours[i % chartColours.length] // mod so we wrap around colour arr
+                                    }
+                                }));
+
+                                var option = {
+                                    tooltip: {
+                                        trigger: 'item'
+                                    },
+                                    legend: {
+                                        type: 'scroll',
+                                        bottom: 30,
+                                        data: data.legendData,
+                                        textStyle: {
+                                            fontFamily: 'sufler'
+                                        }
+                                    },
+                                    series: [
+                                        {
+                                            data: seriesData,
+                                            type: chartType,
+                                            label: {
+                                                show: false,
+                                                textStyle: {
+                                                    fontFamily: 'sufler'
+                                                }
+                                            }
+                                        }
+                                    ]
+                                };
+                            } else if (stories[index].subtext === "item_chart") {
+                                var option = {
+                                    xAxis: {
+                                        type: 'value',
+                                        axisLabel: { show: false },
+                                        axisLine: { show: false },
+                                        axisTick: { show: false },
+                                        splitLine: { show: false }
+                                    },
+                                    yAxis: {
+                                        type: 'category',
+                                        data: labels,
+                                        axisLine: { show: false },
+                                        axisTick: { show: false },
+                                        splitLine: { show: false },
+                                        axisLabel: {
+                                            show: false
+                                        }
+                                    },
+                                    series: [
+                                        {
+                                            data: seriesData,
+                                            type: chartType,
+                                            label: {
+                                                show: true,
+                                                position: 'insideLeft',
+                                                formatter: (params) => `${params.name}: ${params.value}`,
+                                                textStyle: {
+                                                    fontFamily: 'sufler'
+                                                }
+                                            }
+                                        }
+                                    ]
+                                };
+                            } else {
+                                var option = {
+                                    xAxis: {
+                                        type: 'value',
+                                        axisLabel: { show: false},
+                                        axisLine: { show: false },
+                                        axisTick: { show: false },
+                                        splitLine: { show: false }
+                                    },
+                                    yAxis: {
+                                        type: 'category',
+                                        data: labels,
+                                        axisLine: { show: false },
+                                        axisTick: { show: false },
+                                        splitLine: { show: false },
+                                        axisLabel: {
+                                            rotate: 90,
+                                            textStyle: {
+                                                color: 'black',
+                                                fontFamily: 'sufler',
+                                            },
+                                            interval: 0,
+                                            ellipsis: '...'
+                                        }
+                                    },
+                                    series: [
+                                        {
+                                            data: seriesData,
+                                            type: chartType,
+                                            label: {
+                                                show: true,
+                                                position: 'insideRight',
+                                                formatter: params => params.value > 0 ? params.value : '',
+                                                textStyle: {
+                                                    fontFamily: 'sufler'
+                                                }
+                                            }
+                                        }
+                                    ]
+                                };
+                            }
+
+                            chart.setOption(option);
+                        } else {
+                            document.getElementById('main').style.display = 'none';
+                            storySubtext.innerHTML = stories[index].subtext;
+                        }
+
+                        const allProgressFills =
+                            progressBarsContainer.querySelectorAll(
+                                ".progress-bar-fill",
+                            );
+
+                        allProgressFills.forEach((fill, i) => {
+                            fill.style.transition = "none";
+                            if (i < index) {
+                                fill.style.width = "100%";
+                            } else {
+                                fill.style.width = "0";
+                            }
+                        });
+
+                        // Force a DOM reflow to ensure the opacity transition triggers correctly
+                        void storyImage.offsetHeight;
+
+                        storyImage.style.opacity = 1; // Fade in
+
+                        // We use a timeout to allow the browser to apply the initial width before starting the transition.
+                        setTimeout(() => {
+                            const currentFill = allProgressFills[index];
+                            currentFill.style.transition = "width 10s linear"; // TODO: change duration
+                            currentFill.style.width = "100%";
+                        }, 50);
+
+                        storyTimer = setTimeout(playNextStory, 10050); // story + 50ms buffer TODO: change duration
+                    };
+
+                    if (isInitialLoad) {
+                        isInitialLoad = false;
+                        updateContent();
+                    } else {
+                        storyImage.style.opacity = 0.33;
+                        setTimeout(updateContent, fadeDuration);
+                    }
+                };
+
+                const playNextStory = () => {
+                    if (currentStoryIndex < stories.length - 1) {
+                        showStory(currentStoryIndex + 1);
+                    }
+                };
+
+                const playPreviousStory = () => {
+                    if (currentStoryIndex > 0) {
+                        showStory(currentStoryIndex - 1);
+                    }
+                };
+
+                backButton.addEventListener("click", playPreviousStory);
+                nextButton.addEventListener("click", playNextStory);
+
+                initStories();
+            }
+
+            document.addEventListener("DOMContentLoaded", displayRecap());
+        </script>
+    </body>
+</html>

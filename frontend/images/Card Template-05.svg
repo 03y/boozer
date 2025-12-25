@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1080 1440">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #1d1d1b;
+        font-family: VFCSuflerPress, 'VFC Sufler Press';
+        font-size: 30px;
+      }
+
+      .cls-2 {
+        fill: #08090a;
+        stroke: #1d1d1b;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-3 {
+        letter-spacing: -.06em;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1" data-name="Layer 1">
+    <rect class="cls-2" x="1.81" width="1078.19" height="1440"/>
+    <image width="3649" height="5138" transform="translate(83.88 77.75) scale(.25)" xlink:href="../../Backgrounds/4x/Asset 6mm.png"/>
+  </g>
+  <g id="Layer_6" data-name="Layer 6">
+    <text class="cls-1" transform="translate(762.62 1315.58)"><tspan x="0" y="0">Booze</tspan><tspan class="cls-3" x="101.22" y="0">r</tspan><tspan x="115.25" y="0">.cc/</tspan></text>
+  </g>
+</svg>

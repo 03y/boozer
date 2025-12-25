@@ -294,7 +294,6 @@
                     const user = await getUser();
 
                     if (!user) {
-                        console.error("User data is null or undefined.");
                         document.getElementById("username").innerHTML =
                             "Error loading user.";
                         document.getElementById("date-joined").innerHTML = "";
@@ -327,7 +326,7 @@
 
                         if (!response.ok) {
                             throw new Error(
-                                `HTTP error! Status: ${response.status}`,
+                                `Error getting consumption count`,
                             );
                         }
 

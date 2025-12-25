@@ -6,7 +6,8 @@ CREATE TABLE users(
     user_id     SERIAL          PRIMARY KEY,
     username    VARCHAR(20)     NOT NULL    UNIQUE,
     password    VARCHAR         NOT NULL,
-    created     INT             NOT NULL
+    created     INT             NOT NULL,
+    recap_2025  JSONB
 );
 
 CREATE TABLE items(
@@ -34,3 +35,9 @@ CREATE TABLE item_reports(
     reason      reason_type     NOT NULL,
     created     INT             NOT NULL
 );
+
+CREATE TABLE global_recaps(
+    year        INT         PRIMARY KEY,
+    recap       JSONB       NOT NULL
+);
+
