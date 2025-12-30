@@ -161,9 +161,13 @@
             }
 
             async function loadConsumptionCount() {
+                const currentYear = new Date().getFullYear();
+                const beginningOfYear = new Date(currentYear, 0, 1, 0, 0, 0);
+                const timestamp = Math.floor(beginningOfYear.getTime() / 1000);
+
                 try {
                     const response = await fetch(
-                        `${API_BASE_URL}/items/${encodeURIComponent(NAME)}/consumptions`,
+                        `${API_BASE_URL}/items/${encodeURIComponent(NAME)}/consumptions?time=${timestamp}`,
                     );
 
                     if (response.ok) {
@@ -181,8 +185,12 @@
             }
 
             async function loadLeaderboard() {
+                const currentYear = new Date().getFullYear();
+                const beginningOfYear = new Date(currentYear, 0, 1, 0, 0, 0);
+                const timestamp = Math.floor(beginningOfYear.getTime() / 1000);
+
                 const response = await fetch(
-                    `${API_BASE_URL}/items/${encodeURIComponent(NAME)}/leaderboard`,
+                    `${API_BASE_URL}/items/${encodeURIComponent(NAME)}/leaderboard?time=${timestamp}`,
                 );
 
                 if (response.ok) {
