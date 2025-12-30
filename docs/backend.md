@@ -59,9 +59,9 @@ See [README.md](README.md).
 | GET    | `/api/v2/users/:username/consumptions/count`  | `username` (string) in URL                                           | get the consumption count for a user                                                    |                                |
 | GET    | `/api/v2/users/:username/consumptions?rows=n` | `username` (string) in URL, add `?rows=n` to request n rows (1-1000) | get the consumptions for a user (1-1000 rows, 25 by default)                            |                                |
 | GET    | `/api/v2/users/:username/items/count`         | `username` (string) in URL                                           | get the number of items a user has added to the database                                |
-| GET    | `/api/v2/leaderboards/items`                  |                                                                      | get the top 50 items ordered by consumptions                                            |                                |
-| GET    | `/api/v2/leaderboards/users`                  |                                                                      | get the top 10 users ordered by consumption count                                       |                                |
-| GET    | `/api/v2/leaderboards/users/units`            |                                                                      | get the top 10 users ordered by consumption units                                       |                                |
+| GET    | `/api/v2/leaderboards/items?time=n`           | (optional) `?time=n` where n is unix timestamp for date cutoff       | get the top 50 items ordered by consumptions                                            |                                |
+| GET    | `/api/v2/leaderboards/users?time=n`           | (optional) `?time=n` where n is unix timestamp for date cutoff       | get the top 10 users ordered by consumption count                                       |                                |
+| GET    | `/api/v2/leaderboards/users/units?time=n`     | (optional) `?time=n` where n is unix timestamp for date cutoff       | get the top 10 users ordered by consumption units                                       |                                |
 | GET    | `/api/v2/leaderboards/feed`                   |                                                                      | get the most recent 10 consumptions                                                     |                                |
 
 ### V1
