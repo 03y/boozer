@@ -242,7 +242,12 @@ func (a *App) GetItem(c *gin.Context) {
 
 func (a *App) GetItemConsumptionCount(c *gin.Context) {
 	var data models.ConsumptionCount
-	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(1) FROM consumptions c INNER JOIN items i ON c.item_id=i.item_id WHERE i.name=$1", c.Param("name")).Scan(&data.Consumptions)
+	time := "0"
+	if c.Query("time") != "" {
+		time = c.Query("time")
+	}
+
+	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(1) FROM consumptions c INNER JOIN items i ON c.item_id=i.item_id WHERE i.name=$1 AND time > $2", c.Param("name"), time).Scan(&data.Consumptions)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			c.Status(http.StatusNotFound)
@@ -257,7 +262,12 @@ func (a *App) GetItemConsumptionCount(c *gin.Context) {
 
 // get a list of users who have consumed this item, and how many times
 func (a *App) GetItemUserConsumptionCount(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT u.username, COUNT(1) FROM consumptions c INNER JOIN users u ON c.user_id=u.user_id INNER JOIN items i ON c.item_id=i.item_id WHERE i.name=$1 GROUP BY u.username ORDER BY count DESC LIMIT 50;", c.Param("name"))
+	time := "0"
+	if c.Query("time") != "" {
+		time = c.Query("time")
+	}
+
+	rows, err := a.DB.Query(context.Background(), "SELECT u.username, COUNT(1) FROM consumptions c INNER JOIN users u ON c.user_id=u.user_id INNER JOIN items i ON c.item_id=i.item_id WHERE i.name=$1 AND time > $2 GROUP BY u.username ORDER BY count DESC LIMIT 50;", c.Param("name"), time)
 	if err != nil {
 		slog.Error("error getting user list", "error", err)
 		c.Status(http.StatusInternalServerError)
@@ -1186,8 +1196,8 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	// TODO: router.PUT("/submit/consumption", a.AddConsumption) // for updating items
 	router.GET(API_V2_BASE_URL+"/items", a.GetItems)
 	router.GET(API_V2_BASE_URL+"/items/:name", a.GetItem)
-	router.GET(API_V2_BASE_URL+"/items/:name/leaderboard", a.GetItemUserConsumptionCount) // TODO: needs update for annual reset
-	router.GET(API_V2_BASE_URL+"/items/:name/consumptions", a.GetItemConsumptionCount)    // TODO: needs update for annual reset
+	router.GET(API_V2_BASE_URL+"/items/:name/leaderboard", a.GetItemUserConsumptionCount)
+	router.GET(API_V2_BASE_URL+"/items/:name/consumptions", a.GetItemConsumptionCount)
 
 	// reports
 	router.POST(API_V2_BASE_URL+"/reports", a.AddItemReport)
