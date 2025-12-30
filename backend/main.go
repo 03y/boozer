@@ -958,7 +958,12 @@ func (a *App) GetGlobalRecap(c *gin.Context) {
 }
 
 func (a *App) GetUserLeaderboard(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT users.username, COUNT(consumptions.item_id) AS drank FROM consumptions INNER JOIN users ON consumptions.user_id = users.user_id GROUP BY users.username ORDER BY drank DESC LIMIT 10;")
+	time := "0"
+	if c.Query("time") != "" {
+		time = c.Query("time")
+	}
+
+	rows, err := a.DB.Query(context.Background(), "SELECT u.username, COUNT(c.item_id) AS drank FROM consumptions c INNER JOIN users u ON c.user_id = u.user_id WHERE c.time > $1 GROUP BY u.username ORDER BY drank DESC LIMIT 10;", time)
 	if err != nil {
 		slog.Error("error getting user leaderboard", "error", err)
 		c.Status(http.StatusNotFound)
@@ -981,7 +986,12 @@ func (a *App) GetUserLeaderboard(c *gin.Context) {
 }
 
 func (a *App) GetUserLeaderboardUnits(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT users.username, SUM(items.units) AS total_units FROM consumptions INNER JOIN users ON consumptions.user_id = users.user_id INNER JOIN items ON consumptions.item_id = items.item_id GROUP BY users.username ORDER BY total_units DESC LIMIT 10;")
+	time := "0"
+	if c.Query("time") != "" {
+		time = c.Query("time")
+	}
+
+	rows, err := a.DB.Query(context.Background(), "SELECT u.username, SUM(i.units) AS total_units FROM consumptions c INNER JOIN users u ON c.user_id = u.user_id INNER JOIN items i ON c.item_id = i.item_id WHERE c.time > $1 GROUP BY u.username ORDER BY total_units DESC LIMIT 10;", time)
 	if err != nil {
 		slog.Error("error getting user units leaderboard", "error", err)
 		c.Status(http.StatusNotFound)
@@ -1005,7 +1015,12 @@ func (a *App) GetUserLeaderboardUnits(c *gin.Context) {
 }
 
 func (a *App) GetItemsLeaderboard(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT items.item_id, items.name, items.units, items.added, COUNT(items.item_id) AS drank FROM consumptions INNER JOIN items ON consumptions.item_id = items.item_id GROUP BY items.item_id, items.name, items.units, items.added ORDER BY drank DESC LIMIT 50;")
+	time := "0"
+	if c.Query("time") != "" {
+		time = c.Query("time")
+	}
+
+	rows, err := a.DB.Query(context.Background(), "SELECT i.item_id, i.name, i.units, i.added, COUNT(i.item_id) AS drank FROM consumptions c INNER JOIN items i ON c.item_id = i.item_id WHERE time > $1 GROUP BY i.item_id, i.name, i.units, i.added ORDER BY drank DESC LIMIT 50;", time)
 	if err != nil {
 		slog.Error("error getting items leaderboard", "error", err)
 		c.Status(http.StatusNotFound)
@@ -1171,8 +1186,8 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	// TODO: router.PUT("/submit/consumption", a.AddConsumption) // for updating items
 	router.GET(API_V2_BASE_URL+"/items", a.GetItems)
 	router.GET(API_V2_BASE_URL+"/items/:name", a.GetItem)
-	router.GET(API_V2_BASE_URL+"/items/:name/leaderboard", a.GetItemUserConsumptionCount)
-	router.GET(API_V2_BASE_URL+"/items/:name/consumptions", a.GetItemConsumptionCount)
+	router.GET(API_V2_BASE_URL+"/items/:name/leaderboard", a.GetItemUserConsumptionCount) // TODO: needs update for annual reset
+	router.GET(API_V2_BASE_URL+"/items/:name/consumptions", a.GetItemConsumptionCount)    // TODO: needs update for annual reset
 
 	// reports
 	router.POST(API_V2_BASE_URL+"/reports", a.AddItemReport)
@@ -1197,9 +1212,9 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	router.GET(API_V2_BASE_URL+"/users/:username/consumptions", a.GetUserConsumptions)
 	router.GET(API_V2_BASE_URL+"/users/:username/items/count", a.GetUserItemCount)
 	router.GET(API_V2_BASE_URL+"/users/:username/units", a.GetUserUnitsSum)
-	router.GET(API_V2_BASE_URL+"/users/:username/recap", a.GetUserRecap) // recap for a user
+	router.GET(API_V2_BASE_URL+"/users/:username/recap", a.GetUserRecap) // TODO: update to specify year
 
-	router.GET(API_V2_BASE_URL+"/recaps/:year", a.GetGlobalRecap) // global recap
+	router.GET(API_V2_BASE_URL+"/recaps/:year", a.GetGlobalRecap)
 
 	// leaderboards
 	router.GET(API_V2_BASE_URL+"/leaderboards/items", a.GetItemsLeaderboard)
