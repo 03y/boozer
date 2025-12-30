@@ -94,9 +94,13 @@
             }
 
             async function fetchLeaderboard(type) {
+                const currentYear = new Date().getFullYear();
+                const beginningOfYear = new Date(currentYear, 0, 1, 0, 0, 0);
+                const timestamp = Math.floor(beginningOfYear.getTime() / 1000);
+
                 try {
                     const response = await fetch(
-                        `${API_BASE_URL}/leaderboards/${type}`,
+                        `${API_BASE_URL}/leaderboards/${type}?time=${timestamp}`,
                         {
                             method: "GET",
                             credentials: "include",
