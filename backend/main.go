@@ -1076,21 +1076,139 @@ func (a *App) GetFeed(c *gin.Context) {
 }
 
 func (a *App) AddPrivateLeaderboard(c *gin.Context) {
-	return nil
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		slog.Warn("invalid JWT", "error", err)
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	var newLeaderboard models.PrivateLeaderboard
+
+	// get user id from username
+	err = a.DB.QueryRow(context.Background(), "SELECT user_id FROM users WHERE username = $1", claims["username"]).Scan(&newLeaderboard.UserId)
+	if err != nil {
+		slog.Error("error getting user id from username", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// generate invite code
+	inviteCode, err := generateRandomBytes(8)
+	if err != nil {
+		slog.Error("error generating random bytes", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	newLeaderboard.Invite = base64.RawURLEncoding.EncodeToString(inviteCode)
+
+	newLeaderboard.Created = int(time.Now().Unix())
+
+	err = a.DB.QueryRow(context.Background(), "INSERT INTO private_leaderboards (user_id, invite, created) VALUES ($1, $2, $3) RETURNING leaderboard_id", newLeaderboard.UserId, newLeaderboard.Invite, newLeaderboard.Created).Scan(&newLeaderboard.Leaderboard_Id)
+	if err != nil {
+		slog.Error("error adding private leaderboard", "error", err)
+		c.Status(http.StatusBadRequest) // it was probably the clients fault
+		return
+	}
+
+	// add owner to leaderboard_members
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO leaderboard_members (leaderboard_id, user_id, joined_at) VALUES ($1, $2, $3)", newLeaderboard.Leaderboard_Id, newLeaderboard.UserId, newLeaderboard.Created)
+	if err != nil {
+		slog.Error("error adding owner to leaderboard_members", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info("new private leaderboard created", "user_id", newLeaderboard.UserId, "leaderboard_id", newLeaderboard.Leaderboard_Id)
+
+	c.JSON(http.StatusCreated, newLeaderboard)
 }
 
 func (a *App) RemovePrivateLeaderboard(c *gin.Context) {
-	return nil
+	var errorResponse models.ErrorResponse
+
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		slog.Warn("invalid JWT", "error", err)
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	leaderboardId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		slog.Error("error parsing leaderboard_id from url", "error", err)
+		errorResponse.Error = "Invalid leaderboard_id"
+		c.JSON(http.StatusBadRequest, errorResponse)
+		return
+	}
+
+	// get user id from username
+	var userId int
+	err = a.DB.QueryRow(context.Background(), "SELECT user_id FROM users WHERE username = $1", claims["username"]).Scan(&userId)
+	if err != nil {
+		slog.Error("error getting user id from username", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// check user is owner of leaderboard
+	var ownerId int
+	err = a.DB.QueryRow(context.Background(), "SELECT user_id FROM private_leaderboards WHERE leaderboard_id = $1", leaderboardId).Scan(&ownerId)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			errorResponse.Error = "Leaderboard not found"
+			c.JSON(http.StatusNotFound, errorResponse)
+			return
+		}
+		slog.Error("error getting leaderboard owner", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	if userId != ownerId {
+		errorResponse.Error = "You are not the owner of this leaderboard"
+		c.JSON(http.StatusForbidden, errorResponse)
+		return
+	}
+
+	// delete members
+	_, err = a.DB.Exec(context.Background(), "DELETE FROM leaderboard_members WHERE leaderboard_id = $1", leaderboardId)
+	if err != nil {
+		slog.Error("error deleting leaderboard members", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// delete leaderboard
+	_, err = a.DB.Exec(context.Background(), "DELETE FROM private_leaderboards WHERE leaderboard_id = $1", leaderboardId)
+	if err != nil {
+		slog.Error("error deleting private leaderboard", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info("private leaderboard removed", "user_id", userId, "leaderboard_id", leaderboardId)
+
+	c.Status(http.StatusOK)
 }
 
 func (a *App) GetPrivateLeaderboard(c *gin.Context) {
-	var leaderboard PrivateLeaderboard
+	var leaderboard models.PrivateLeaderboard
+	var members []models.LeaderboardUser
 
-	// i'm thinking we should have two queries here:
-	// 1. leaderboard (owner)
-	// 2. members
-
-	err := a.DB.QueryRow(context.Background(), "SELECT p.leaderboard_id, p.user_id AS owner, u.username FROM private_leaderboards INNER JOIN leaderboard_members m ON p.leaderboard_id = m.leaderboard_id INNER JOIN users u ON u.user_id = m.user_id WHERE invite=$1", c.Param("code")).Scan(&leaderboard.Leaderboard_id, &leaderboard.User_id)
+	err := a.DB.QueryRow(context.Background(), "SELECT leaderboard_id, user_id, invite, created FROM private_leaderboards WHERE invite=$1", c.Param("code")).Scan(&leaderboard.Leaderboard_Id, &leaderboard.UserId, &leaderboard.Invite, &leaderboard.Created)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			c.Status(http.StatusNotFound)
@@ -1101,7 +1219,28 @@ func (a *App) GetPrivateLeaderboard(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	rows, err := a.DB.Query(context.Background(), "SELECT u.username, COUNT(c.item_id) AS drank FROM consumptions c INNER JOIN users u ON c.user_id = u.user_id INNER JOIN leaderboard_members lm ON u.user_id = lm.user_id WHERE lm.leaderboard_id = $1 GROUP BY u.username ORDER BY drank DESC", leaderboard.Leaderboard_Id)
+	if err != nil {
+		slog.Error("error getting user leaderboard", "error", err)
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	for rows.Next() {
+		var user models.LeaderboardUser
+		err := rows.Scan(&user.Username, &user.Consumed)
+		if err != nil {
+			slog.Error("error scanning user", "error", err)
+			c.Status(http.StatusNotFound)
+			return
+		}
+		members = append(members, user)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"leaderboard": leaderboard,
+		"members":     members,
+	})
 }
 
 func (a *App) ChangePassword(c *gin.Context) {
@@ -1264,7 +1403,7 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	// private leaderboards
 	router.GET(API_V2_BASE_URL+"/leaderboards/private/:code", a.GetPrivateLeaderboard)
 	router.POST(API_V2_BASE_URL+"/leaderboards/private/", a.AddPrivateLeaderboard)
-	router.DELETE(API_V2_BASE_URL+"/leaderboards/private/", a.RemovePrivateLeaderboard)
+	router.DELETE(API_V2_BASE_URL+"/leaderboards/private/:id", a.RemovePrivateLeaderboard)
 
 	return router
 }
