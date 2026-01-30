@@ -300,8 +300,8 @@ func (a *App) AddItem(c *gin.Context) {
 
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
-		slog.Error("error parsing JWT", "error", err)
-		c.Status(http.StatusBadRequest)
+		slog.Warn("invalid JWT", "error", err)
+		c.Status(http.StatusUnauthorized)
 		return
 	}
 
@@ -447,8 +447,8 @@ func (a *App) AddItemReport(c *gin.Context) {
 
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
-		slog.Error("error parsing JWT", "error", err)
-		c.Status(http.StatusBadRequest) // TODO: should this (and other similar instances) be 401 Unauth?
+		slog.Warn("invalid JWT", "error", err)
+		c.Status(http.StatusUnauthorized) // TODO: should this (and other similar instances) be 401 Unauth?
 		return
 	}
 
@@ -563,8 +563,8 @@ func (a *App) AddConsumption(c *gin.Context) {
 
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
-		slog.Error("error parsing JWT", "error", err)
-		c.Status(http.StatusBadRequest)
+		slog.Warn("invalid JWT", "error", err)
+		c.Status(http.StatusUnauthorized)
 		return
 	}
 
@@ -647,8 +647,8 @@ func (a *App) UpdateConsumption(c *gin.Context) {
 
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
-		slog.Error("error parsing JWT", "error", err)
-		c.Status(http.StatusBadRequest)
+		slog.Warn("invalid JWT", "error", err)
+		c.Status(http.StatusUnauthorized)
 		return
 	}
 
@@ -727,8 +727,8 @@ func (a *App) RemoveConsumption(c *gin.Context) {
 	}
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
-		slog.Error("error parsing JWT", "error", err)
-		c.Status(http.StatusBadRequest)
+		slog.Warn("invalid JWT", "error", err)
+		c.Status(http.StatusUnauthorized)
 		return
 	}
 
@@ -778,8 +778,8 @@ func (a *App) GetConsumption(c *gin.Context) {
 	}
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
-		slog.Error("error parsing JWT", "error", err)
-		c.Status(http.StatusBadRequest)
+		slog.Warn("invalid JWT", "error", err)
+		c.Status(http.StatusUnauthorized)
 		return
 	}
 
@@ -924,8 +924,8 @@ func (a *App) GetUserRecap(c *gin.Context) {
 	}
 	claims, err := parseJWT(tokenString, a.JWT_KEY)
 	if err != nil {
-		slog.Error("error parsing JWT", "error", err)
-		c.Status(http.StatusBadRequest)
+		slog.Warn("invalid JWT", "error", err)
+		c.Status(http.StatusUnauthorized)
 		return
 	}
 
