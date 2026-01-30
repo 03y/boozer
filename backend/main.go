@@ -1075,6 +1075,35 @@ func (a *App) GetFeed(c *gin.Context) {
 	c.JSON(http.StatusOK, feed)
 }
 
+func (a *App) AddPrivateLeaderboard(c *gin.Context) {
+	return nil
+}
+
+func (a *App) RemovePrivateLeaderboard(c *gin.Context) {
+	return nil
+}
+
+func (a *App) GetPrivateLeaderboard(c *gin.Context) {
+	var leaderboard PrivateLeaderboard
+
+	// i'm thinking we should have two queries here:
+	// 1. leaderboard (owner)
+	// 2. members
+
+	err := a.DB.QueryRow(context.Background(), "SELECT p.leaderboard_id, p.user_id AS owner, u.username FROM private_leaderboards INNER JOIN leaderboard_members m ON p.leaderboard_id = m.leaderboard_id INNER JOIN users u ON u.user_id = m.user_id WHERE invite=$1", c.Param("code")).Scan(&leaderboard.Leaderboard_id, &leaderboard.User_id)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
 func (a *App) ChangePassword(c *gin.Context) {
 	// get token
 	tokenString, err := c.Cookie("token")
@@ -1231,6 +1260,11 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	router.GET(API_V2_BASE_URL+"/leaderboards/users", a.GetUserLeaderboard)
 	router.GET(API_V2_BASE_URL+"/leaderboards/users/units", a.GetUserLeaderboardUnits)
 	router.GET(API_V2_BASE_URL+"/leaderboards/feed", a.GetFeed)
+
+	// private leaderboards
+	router.GET(API_V2_BASE_URL+"/leaderboards/private/:code", a.GetPrivateLeaderboard)
+	router.POST(API_V2_BASE_URL+"/leaderboards/private/", a.AddPrivateLeaderboard)
+	router.DELETE(API_V2_BASE_URL+"/leaderboards/private/", a.RemovePrivateLeaderboard)
 
 	return router
 }

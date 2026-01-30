@@ -149,3 +149,17 @@ type GlobalRecap struct {
 	Consumptions UsersStats    `json:"consumptions"`
 	WeeklyCounts []WeeklyCount `json:"weekly_counts"`
 }
+
+type PrivateLeaderboard struct {
+	Leaderboard_Id int    `json:"leaderboard_id"`
+	UserId         int    `json:"user_id"`
+	Invite         string `json:"invite"`
+	Created        int    `json:"created"`
+}
+
+type LeaderboardMember struct {
+	Membership_id  int `json:"membership_id"`
+	Leaderboard_id int `json:"leaderboard_id"`
+	UserId         int `json:"user_id"`
+	Joined         int `json:"joined"`
+}

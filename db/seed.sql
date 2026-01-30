@@ -41,3 +41,17 @@ CREATE TABLE global_recaps(
     recap       JSONB       NOT NULL
 );
 
+CREATE TABLE private_leaderboards(
+    leaderboard_id  SERIAL          PRIMARY KEY,
+    user_id         SERIAL          REFERENCES USERS,
+    invite          VARCHAR(20)     NOT NULL,
+    created         INT             NOT NULL
+);
+
+CREATE TABLE leaderboard_members(
+    membership_id   SERIAL      PRIMARY KEY,
+    leaderboard_id  SERIAL      REFERENCES PRIVATE_LEADERBOARDS,
+    user_id         SERIAL      REFERENCES USERS,
+    joined_at       INT         NOT NULL
+);
+
