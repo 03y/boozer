@@ -163,3 +163,7 @@ type LeaderboardMember struct {
 	UserId         int `json:"user_id"`
 	Joined         int `json:"joined"`
 }
+
+type JoinPrivateLeaderboardRequest struct {
+	InviteCode string `json:"invite_code"`
+}
