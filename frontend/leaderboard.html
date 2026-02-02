@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>🍺 Boozer</title>
+        <link rel="stylesheet" type="text/css" href="styles/style.css" />
+        <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
+        <script src="scripts/auth.js"></script>
+        <script src="scripts/leaderboard.js"></script>
+    </head>
+    <body>
+        <nav>
+            <a href="./index.html">Leaderboard</a>
+            <a href="./items.html">Inventory</a>
+            <a id="login-link" href="./login.html">Login</a>
+            <a href="./submit.html">Get boozing!</a>
+        </nav>
+
+        <div class="container">
+            <div class="profile-section">
+                <h3><span id="owner-name"></span></h3>
+                <p><strong>Created:</strong> <span id="creation-date"></span></p>
+                <p><strong>Members:</strong> <span id="member-count"></span></p>
+            </div>
+            <div class="leaderboard-section">
+                <div class="leaderboard-column">
+                    <div id="leaderboard-container" class="leaderboard-container">
+                        <div class="loading">Loading leaderboard...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            async function displayLeaderboard() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const inviteCode = urlParams.get("invite");
+
+                if (!inviteCode) {
+                    document.getElementById("leaderboard-container").innerHTML = "";
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/leaderboards/private/${inviteCode}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    const data = await response.json();
+
+                    document.getElementById("owner-name").innerText = data.leaderboard.owner_username + "'s private leaderboard";
+
+                    // Format creation date
+                    const creationDate = new Date(data.leaderboard.created * 1000);
+                    document.getElementById("creation-date").innerText = creationDate.toLocaleDateString("en-UK");
+
+                    // Display member count
+                    document.getElementById("member-count").innerText = data.members.length;
+
+                    const leaderboardContainer = document.getElementById("leaderboard-container");
+                    leaderboardContainer.innerHTML = createTable(data.members, "users");
+
+                } catch (error) {
+                    document.getElementById("leaderboard-name").innerText = "Error loading leaderboard.";
+                    document.getElementById("leaderboard-container").innerHTML = `<div class="error-message">Could not load leaderboard.</div>`;
+                }
+            }
+
+            document.addEventListener("DOMContentLoaded", displayLeaderboard);
+            document.addEventListener("DOMContentLoaded", getUser);
+        </script>
+    </body>
+</html>
