@@ -1213,6 +1213,11 @@ func (a *App) RemovePrivateLeaderboard(c *gin.Context) {
 }
 
 func (a *App) GetPrivateLeaderboard(c *gin.Context) {
+	type PrivateLeaderboardResponse struct {
+		models.PrivateLeaderboard
+		OwnerUsername string `json:"owner_username"`
+	}
+
 	var leaderboard models.PrivateLeaderboard
 	var members []models.LeaderboardUser
 
@@ -1223,6 +1228,15 @@ func (a *App) GetPrivateLeaderboard(c *gin.Context) {
 			return
 		}
 
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// Get owner's username
+	var ownerUsername string
+	err = a.DB.QueryRow(context.Background(), "SELECT username FROM users WHERE user_id=$1", leaderboard.UserId).Scan(&ownerUsername)
+	if err != nil {
+		slog.Error("error getting owner username", "error", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -1246,8 +1260,11 @@ func (a *App) GetPrivateLeaderboard(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"leaderboard": leaderboard,
-		"members":     members,
+		"leaderboard": PrivateLeaderboardResponse{
+			PrivateLeaderboard: leaderboard,
+			OwnerUsername:      ownerUsername,
+		},
+		"members": members,
 	})
 }
 
