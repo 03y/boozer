@@ -5,12 +5,14 @@ type User struct {
 	Username string `json:"username"`
 	Password string `json:"password"` // hashed, never in clear
 	Created  int    `json:"created"`  // unix timestamp
+	Admin    bool   `json:"admin"`
 }
 
 type UserNoPw struct {
 	User_id  int    `json:"user_id"`
 	Username string `json:"username"`
 	Created  int    `json:"created"` // unix timestamp
+	Admin    bool   `json:"admin"`
 }
 
 type ChangePassword struct {
@@ -148,4 +150,22 @@ type GlobalRecap struct {
 	Users        UsersStats    `json:"users"`
 	Consumptions UsersStats    `json:"consumptions"`
 	WeeklyCounts []WeeklyCount `json:"weekly_counts"`
+}
+
+type PrivateLeaderboard struct {
+	Leaderboard_Id int    `json:"leaderboard_id"`
+	UserId         int    `json:"user_id"`
+	Invite         string `json:"invite"`
+	Created        int    `json:"created"`
+}
+
+type LeaderboardMember struct {
+	Membership_id  int `json:"membership_id"`
+	Leaderboard_id int `json:"leaderboard_id"`
+	UserId         int `json:"user_id"`
+	Joined         int `json:"joined"`
+}
+
+type JoinPrivateLeaderboardRequest struct {
+	InviteCode string `json:"invite_code"`
 }

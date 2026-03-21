@@ -7,7 +7,8 @@ CREATE TABLE users(
     username    VARCHAR(20)     NOT NULL    UNIQUE,
     password    VARCHAR         NOT NULL,
     created     INT             NOT NULL,
-    recap_2025  JSONB
+    recap_2025  JSONB,
+    admin       BOOLEAN         NOT NULL    DEFAULT FALSE
 );
 
 CREATE TABLE items(
@@ -39,5 +40,19 @@ CREATE TABLE item_reports(
 CREATE TABLE global_recaps(
     year        INT         PRIMARY KEY,
     recap       JSONB       NOT NULL
+);
+
+CREATE TABLE private_leaderboards(
+    leaderboard_id  SERIAL          PRIMARY KEY,
+    user_id         SERIAL          REFERENCES USERS,
+    invite          VARCHAR(20)     NOT NULL,
+    created         INT             NOT NULL
+);
+
+CREATE TABLE leaderboard_members(
+    membership_id   SERIAL      PRIMARY KEY,
+    leaderboard_id  SERIAL      REFERENCES PRIVATE_LEADERBOARDS,
+    user_id         SERIAL      REFERENCES USERS,
+    joined_at       INT         NOT NULL
 );
 

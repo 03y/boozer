@@ -1,12 +1,20 @@
 const API_BASE_URL = "https://localhost/api/v2"; // TODO: update
 
 async function getUser() {
-    const response = await fetch(`${API_BASE_URL}/users/me`);
+    const response = await fetch(`${API_BASE_URL}/users/me`, {credentials: 'include'});
 
     if (response.ok) {
       data = await response.json();
 
       updateLoginLink(document.getElementById("login-link"), data.username);
+
+      if (data.admin) {
+        const nav = document.querySelector('nav');
+        const adminLink = document.createElement('a');
+        adminLink.href = './admin.html';
+        adminLink.textContent = 'Admin';
+        nav.appendChild(adminLink);
+      }
 
       return data;
     } else {
