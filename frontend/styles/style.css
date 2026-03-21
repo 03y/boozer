@@ -459,3 +459,7 @@ input:checked:disabled {
     text-decoration: none;
     cursor: pointer;
 }
+
+.reported-row {
+    background-color: var(--red-button-primary-colour);
+}

@@ -7,7 +7,8 @@ CREATE TABLE users(
     username    VARCHAR(20)     NOT NULL    UNIQUE,
     password    VARCHAR         NOT NULL,
     created     INT             NOT NULL,
-    recap_2025  JSONB
+    recap_2025  JSONB,
+    admin       BOOLEAN         NOT NULL    DEFAULT FALSE
 );
 
 CREATE TABLE items(
