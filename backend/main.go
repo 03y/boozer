@@ -1635,6 +1635,7 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 		admin.GET("/reports", a.GetReports)
 		admin.GET("/items", a.GetItems)
 		admin.PUT("/items/:item_id", a.UpdateItem)
+		admin.DELETE("/reports/:item_id", a.ClearItemReports)
 	}
 
 	return router

@@ -55,6 +55,22 @@ func (a *App) UpdateItem(c *gin.Context) {
 	c.JSON(http.StatusOK, item)
 }
 
+func (a *App) ClearItemReports(c *gin.Context) {
+	itemID, err := strconv.Atoi(c.Param("item_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid item ID"})
+		return
+	}
+
+	_, err = a.DB.Exec(context.Background(), "DELETE FROM item_reports WHERE item_id=$1", itemID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
 func (a *App) AdminMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString, err := c.Cookie("token")
