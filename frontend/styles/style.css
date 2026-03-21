@@ -173,6 +173,58 @@ a {
     border-radius: 8px;
 }
 
+.modal-form-group {
+    margin-bottom: 15px; /* Add spacing below each form group */
+}
+
+.modal-form-group label {
+    display: block; /* Ensure label takes full width */
+    margin-bottom: 5px; /* Space between label and input */
+    color: var(--text-color);
+}
+
+.modal-form-group input[type="text"],
+.modal-form-group input[type="number"] {
+    width: calc(100% - 20px); /* Adjust width for padding */
+    padding: 10px;
+    border: 1px solid var(--tabacco-tan);
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: var(--pint-foam-cream);
+    color: var(--stout-brown);
+}
+
+#item-reports {
+    margin-top: 15px;
+    text-align: left;
+    max-height: 150px; /* Limit height for scroll if many reports */
+    overflow-y: auto; /* Enable scrolling */
+    padding: 5px;
+    border: 1px solid var(--tabacco-tan);
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+#item-reports p {
+    margin: 5px 0;
+    color: var(--text-color);
+}
+
+#item-reports ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#item-reports li {
+    padding: 3px 0;
+    border-bottom: 1px dotted rgba(255, 255, 255, 0.1);
+}
+
+#item-reports li:last-child {
+    border-bottom: none;
+}
+
 .modal-buttons {
     margin-top: 20px;
 }
