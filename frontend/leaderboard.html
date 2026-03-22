@@ -23,23 +23,17 @@
                 <p class="private-lb-invite-label">
                     <strong>Join code:</strong>
                 </p>
-                <div
-                    id="private-lb-invite-copy-wrap"
-                    class="private-lb-invite-copy-wrap"
-                    role="button"
-                    tabindex="0"
-                    aria-label="Copy join code to clipboard"
-                >
-                    <p id="private-lb-copy-hint" class="private-lb-copy-hint">
-                        Click to copy
-                    </p>
-                    <pre
-                        id="private-lb-invite-code"
-                        class="private-lb-invite-code"
-                    ></pre>
-                </div>
+                <pre
+                    id="private-lb-invite-code"
+                    class="private-lb-invite-code"
+                ></pre>
                 <p><strong>Created:</strong> <span id="creation-date"></span></p>
                 <p><strong>Members:</strong> <span id="member-count"></span></p>
+                <p id="private-lb-invite-share-wrap" class="private-lb-invite-share-wrap" hidden>
+                    <button type="button" id="private-lb-invite-share-btn" class="join-lb-btn">
+                        Invite user
+                    </button>
+                </p>
             </div>
             <div class="leaderboard-section">
                 <div class="leaderboard-column">
@@ -51,29 +45,18 @@
         </div>
 
         <script>
-            let privateLbCopyHintTimer = null;
-
-            function setupInviteCodeCopy() {
-                const wrap = document.getElementById(
-                    "private-lb-invite-copy-wrap",
-                );
-                const hint = document.getElementById("private-lb-copy-hint");
-                if (!wrap) return;
-
-                const hintDefault = "Click to copy";
-
-                function showCopiedFeedback() {
-                    if (!hint) return;
-                    hint.textContent = "Copied!";
-                    if (privateLbCopyHintTimer) {
-                        clearTimeout(privateLbCopyHintTimer);
+            function copyTextWithFallback(text) {
+                return new Promise((resolve) => {
+                    if (
+                        navigator.clipboard &&
+                        typeof navigator.clipboard.writeText === "function"
+                    ) {
+                        navigator.clipboard
+                            .writeText(text)
+                            .then(() => resolve(true))
+                            .catch(() => resolve(false));
+                        return;
                     }
-                    privateLbCopyHintTimer = setTimeout(() => {
-                        hint.textContent = hintDefault;
-                    }, 2000);
-                }
-
-                function copyViaFallback(text) {
                     const ta = document.createElement("textarea");
                     ta.value = text;
                     ta.setAttribute("readonly", "");
@@ -81,43 +64,70 @@
                     ta.style.left = "-9999px";
                     document.body.appendChild(ta);
                     ta.select();
+                    let ok = false;
                     try {
-                        if (document.execCommand("copy")) {
-                            showCopiedFeedback();
-                        }
+                        ok = document.execCommand("copy");
                     } catch (e) {
                         /* ignore */
                     }
                     document.body.removeChild(ta);
-                }
+                    resolve(ok);
+                });
+            }
 
-                function tryCopyInviteCode() {
+            function setupInviteShareButton() {
+                const btn = document.getElementById(
+                    "private-lb-invite-share-btn",
+                );
+                if (!btn) return;
+                btn.addEventListener("click", async () => {
                     const pre = document.getElementById(
                         "private-lb-invite-code",
                     );
-                    if (!pre) return;
-                    const code = pre.textContent.trim();
+                    const code = pre ? pre.textContent.trim() : "";
                     if (!code) return;
 
-                    if (
-                        navigator.clipboard &&
-                        typeof navigator.clipboard.writeText === "function"
-                    ) {
-                        navigator.clipboard
-                            .writeText(code)
-                            .then(showCopiedFeedback)
-                            .catch(() => copyViaFallback(code));
-                    } else {
-                        copyViaFallback(code);
-                    }
-                }
+                    const joinPageUrl = new URL("join.html", window.location.href);
+                    joinPageUrl.searchParams.set("code", code);
 
-                wrap.addEventListener("click", tryCopyInviteCode);
-                wrap.addEventListener("keydown", (e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        tryCopyInviteCode();
+                    const sharePayload = {
+                        title: "Join my Boozer leaderboard",
+                        text: "Join my private leaderboard on Boozer.",
+                        url: joinPageUrl.href,
+                    };
+
+                    try {
+                        if (navigator.share) {
+                            if (
+                                navigator.canShare &&
+                                !navigator.canShare(sharePayload)
+                            ) {
+                                const urlOnly = { url: joinPageUrl.href };
+                                if (
+                                    navigator.canShare &&
+                                    navigator.canShare(urlOnly)
+                                ) {
+                                    await navigator.share(urlOnly);
+                                } else {
+                                    await navigator.share(sharePayload);
+                                }
+                            } else {
+                                await navigator.share(sharePayload);
+                            }
+                            return;
+                        }
+                    } catch (err) {
+                        if (err && err.name === "AbortError") return;
                     }
+
+                    const copied = await copyTextWithFallback(joinPageUrl.href);
+                    const orig = btn.textContent;
+                    btn.textContent = copied
+                        ? "Invite link copied!"
+                        : "Could not share or copy link";
+                    setTimeout(() => {
+                        btn.textContent = orig;
+                    }, 2500);
                 });
             }
 
@@ -129,6 +139,10 @@
                 const invitePre = document.getElementById(
                     "private-lb-invite-code",
                 );
+                const shareWrap = document.getElementById(
+                    "private-lb-invite-share-wrap",
+                );
+                if (shareWrap) shareWrap.hidden = true;
 
                 if (!inviteCode) {
                     document.getElementById("leaderboard-container").innerHTML =
@@ -161,16 +175,19 @@
                     const leaderboardContainer = document.getElementById("leaderboard-container");
                     leaderboardContainer.innerHTML = createTable(data.members, "users");
 
+                    if (shareWrap) shareWrap.hidden = false;
+
                 } catch (error) {
                     document.getElementById("owner-name").innerText =
                         "Error loading leaderboard.";
                     if (invitePre) invitePre.textContent = "";
+                    if (shareWrap) shareWrap.hidden = true;
                     document.getElementById("leaderboard-container").innerHTML = `<div class="error-message">Could not load leaderboard.</div>`;
                 }
             }
 
             document.addEventListener("DOMContentLoaded", () => {
-                setupInviteCodeCopy();
+                setupInviteShareButton();
                 displayLeaderboard();
                 getUser();
             });

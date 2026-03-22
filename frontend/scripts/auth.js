@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://localhost/api/v2"; // TODO: update
+const API_BASE_URL = "https://192.168.1.3/api/v2"; // TODO: update
 
 async function getUser() {
     const response = await fetch(`${API_BASE_URL}/users/me`, {credentials: 'include'});
