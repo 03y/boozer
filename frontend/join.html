@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>🍺 Boozer</title>
+        <link rel="stylesheet" type="text/css" href="styles/style.css" />
+        <script src="scripts/auth.js"></script>
+    </head>
+    <body>
+        <nav>
+            <a href="./index.html">Leaderboard</a>
+            <a href="./items.html">Inventory</a>
+            <a id="login-link" href="./login.html">Login</a>
+            <a href="./submit.html">Get boozing!</a>
+        </nav>
+
+        <div class="container">
+            <div class="profile-section">
+                <h3>Join a private leaderboard</h3>
+                <div class="private-lb-join-row">
+                    <input
+                        type="text"
+                        id="join-lb-code-input"
+                        placeholder="Leaderboard code"
+                        autocomplete="off"
+                    />
+                    <button type="button" class="join-lb-btn" id="join-lb-submit-btn">
+                        Join
+                    </button>
+                </div>
+                <div id="join-lb-error"></div>
+            </div>
+        </div>
+
+        <script>
+            function escapeHtml(str) {
+                if (str === null || str === undefined) return "";
+                const el = document.createElement("div");
+                el.textContent = str;
+                return el.innerHTML;
+            }
+
+            function initJoinPageFromUrl() {
+                const params = new URLSearchParams(window.location.search);
+                const fromUrl = params.get("code");
+                const input = document.getElementById("join-lb-code-input");
+                if (fromUrl !== null && fromUrl !== undefined && input) {
+                    input.value = fromUrl;
+                }
+            }
+
+            async function submitJoinPrivateLeaderboard() {
+                const errEl = document.getElementById("join-lb-error");
+                const input = document.getElementById("join-lb-code-input");
+                if (errEl) errEl.innerHTML = "";
+                const code = input.value.trim();
+                if (!code) {
+                    if (errEl) {
+                        errEl.innerHTML =
+                            '<div class="error">Enter a leaderboard code.</div>';
+                    }
+                    return;
+                }
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/leaderboards/private/${encodeURIComponent(code)}/members`,
+                        {
+                            method: "POST",
+                            credentials: "include",
+                        },
+                    );
+                    if (response.ok || response.status === 201) {
+                        window.location.href = `./leaderboard.html?id=${encodeURIComponent(code)}`;
+                        return;
+                    }
+                    let msg = "Could not join that leaderboard.";
+                    if (response.status === 401) {
+                        msg = "You must be logged in to join. Please log in and try again.";
+                    }
+                    try {
+                        const body = await response.json();
+                        if (body.error) msg = body.error;
+                    } catch (_) {
+                        /* ignore */
+                    }
+                    if (errEl) {
+                        errEl.innerHTML = `<div class="error">${escapeHtml(msg)}</div>`;
+                    }
+                } catch (err) {
+                    if (errEl) {
+                        errEl.innerHTML =
+                            '<div class="error">Could not join that leaderboard.</div>';
+                    }
+                }
+            }
+
+            document.addEventListener("DOMContentLoaded", () => {
+                initJoinPageFromUrl();
+                document
+                    .getElementById("join-lb-submit-btn")
+                    .addEventListener("click", submitJoinPrivateLeaderboard);
+                document
+                    .getElementById("join-lb-code-input")
+                    .addEventListener("keydown", (e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            submitJoinPrivateLeaderboard();
+                        }
+                    });
+                getUser();
+            });
+        </script>
+    </body>
+</html>

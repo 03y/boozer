@@ -32,6 +32,30 @@
                 </p>
             </div>
 
+            <div class="profile-section">
+                <p><strong>Private leaderboards</strong></p>
+                <div id="private-leaderboards-table-wrap"></div>
+                <div class="private-lb-join-row">
+                    <input
+                        type="text"
+                        id="private-lb-invite-input"
+                        placeholder="Leaderboard code"
+                        autocomplete="off"
+                    />
+                    <button type="button" class="join-lb-btn" id="private-lb-join-btn">
+                        Join
+                    </button>
+                </div>
+                <div id="private-lb-join-error"></div>
+                <div class="private-lb-create-row">
+                    <span class="private-lb-create-prompt">Or create your own!</span>
+                    <button type="button" class="join-lb-btn" id="private-lb-create-btn">
+                        Create
+                    </button>
+                </div>
+                <div id="private-lb-create-error"></div>
+            </div>
+
             <div class="container">
                 <div class="logout">
                     <button
@@ -70,6 +94,43 @@
             </div>
         </div>
 
+        <div id="leave-lb-modal" class="modal">
+            <div class="modal-content">
+                <p>
+                    Are you sure you want to leave
+                    <strong id="leave-lb-modal-name"></strong>?
+                </p>
+                <div class="modal-buttons">
+                    <button type="button" id="leave-lb-confirm-btn" class="del-btn">
+                        Leave
+                    </button>
+                    <button type="button" id="leave-lb-cancel-btn" class="cancel-btn">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="delete-lb-modal" class="modal">
+            <div class="modal-content">
+                <p>
+                    You are about to <strong>permanently delete</strong> this private
+                    leaderboard for everyone. All members will lose access.
+                </p>
+                <p><strong id="delete-lb-modal-title"></strong></p>
+                <p>Current members:</p>
+                <div id="delete-lb-modal-members-wrap"></div>
+                <div class="modal-buttons">
+                    <button type="button" id="delete-lb-confirm-btn" class="del-btn">
+                        Delete leaderboard
+                    </button>
+                    <button type="button" id="delete-lb-cancel-btn" class="cancel-btn">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div id="edit-modal" class="modal">
             <div class="modal-content">
                 <h2>Edit Consumption</h2>
@@ -99,6 +160,396 @@
             const logoutButton = document.getElementById("logout-btn");
             if (logoutButton) {
                 logoutButton.addEventListener("click", logout);
+            }
+
+            let leaveLbInvitePending = null;
+            let deleteLbInvitePending = null;
+
+            function escapeHtml(str) {
+                if (str === null || str === undefined) return "";
+                const el = document.createElement("div");
+                el.textContent = str;
+                return el.innerHTML;
+            }
+
+            function escapeAttr(str) {
+                return String(str)
+                    .replace(/&/g, "&amp;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#39;")
+                    .replace(/</g, "&lt;");
+            }
+
+            function privateLbDisplayName(entry) {
+                return `${entry.owner_username}'s leaderboard [${entry.invite}]`;
+            }
+
+            function closeLeaveLbModal() {
+                leaveLbInvitePending = null;
+                const modal = document.getElementById("leave-lb-modal");
+                if (modal) modal.style.display = "none";
+            }
+
+            function openLeaveLbModal(invite, displayName) {
+                leaveLbInvitePending = invite;
+                const nameEl = document.getElementById("leave-lb-modal-name");
+                if (nameEl) nameEl.textContent = displayName;
+                const modal = document.getElementById("leave-lb-modal");
+                if (modal) modal.style.display = "block";
+            }
+
+            function closeDeleteLbModal() {
+                deleteLbInvitePending = null;
+                const modal = document.getElementById("delete-lb-modal");
+                if (modal) modal.style.display = "none";
+                const wrapEl = document.getElementById(
+                    "delete-lb-modal-members-wrap",
+                );
+                if (wrapEl) wrapEl.innerHTML = "";
+            }
+
+            async function openDeleteLbModal(invite, displayName) {
+                deleteLbInvitePending = invite;
+                const titleEl = document.getElementById("delete-lb-modal-title");
+                const wrapEl = document.getElementById(
+                    "delete-lb-modal-members-wrap",
+                );
+                const modal = document.getElementById("delete-lb-modal");
+                if (titleEl) titleEl.textContent = displayName;
+                if (wrapEl) {
+                    wrapEl.innerHTML = "<p>Loading members…</p>";
+                }
+                if (modal) modal.style.display = "block";
+
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/leaderboards/private/${encodeURIComponent(invite)}`,
+                    );
+                    if (!response.ok) {
+                        if (wrapEl) {
+                            wrapEl.innerHTML =
+                                '<div class="error">Could not load the member list.</div>';
+                        }
+                        return;
+                    }
+                    const data = await response.json();
+                    const members = data.members || [];
+                    const names = members
+                        .map((m) => m.username)
+                        .filter(Boolean)
+                        .sort((a, b) =>
+                            a.localeCompare(b, undefined, {
+                                sensitivity: "base",
+                            }),
+                        );
+                    if (!wrapEl) return;
+                    if (names.length === 0) {
+                        wrapEl.innerHTML =
+                            "<p><em>No members listed.</em></p>";
+                        return;
+                    }
+                    let memberTable = `
+                        <table class="consumption-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    names.forEach((un) => {
+                        memberTable += `<tr><td>${escapeHtml(un)}</td></tr>`;
+                    });
+                    memberTable += `
+                            </tbody>
+                        </table>
+                    `;
+                    wrapEl.innerHTML = memberTable;
+                } catch (err) {
+                    if (wrapEl) {
+                        wrapEl.innerHTML =
+                            '<div class="error">Could not load the member list.</div>';
+                    }
+                }
+            }
+
+            async function confirmDeletePrivateLeaderboard() {
+                const invite = deleteLbInvitePending;
+                const messageContainer =
+                    document.getElementById("message-container");
+                if (!invite) {
+                    closeDeleteLbModal();
+                    return;
+                }
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/leaderboards/private/${encodeURIComponent(invite)}`,
+                        {
+                            method: "DELETE",
+                            credentials: "include",
+                        },
+                    );
+                    closeDeleteLbModal();
+                    if (response.ok) {
+                        messageContainer.innerHTML =
+                            '<div class="success">The private leaderboard was deleted.</div>';
+                        setTimeout(() => {
+                            messageContainer.innerHTML = "";
+                        }, 3000);
+                        const u = await getUser();
+                        await loadPrivateLeaderboards(
+                            typeof u === "object" && u !== null ? u : null,
+                        );
+                    } else {
+                        let msg = "Failed to delete the leaderboard.";
+                        try {
+                            const body = await response.json();
+                            if (body.error) msg = body.error;
+                        } catch (_) {
+                            /* ignore */
+                        }
+                        messageContainer.innerHTML = `<div class="error">${escapeHtml(msg)}</div>`;
+                        setTimeout(() => {
+                            messageContainer.innerHTML = "";
+                        }, 5000);
+                    }
+                } catch (err) {
+                    closeDeleteLbModal();
+                    messageContainer.innerHTML =
+                        '<div class="error">Error deleting the leaderboard.</div>';
+                    setTimeout(() => {
+                        messageContainer.innerHTML = "";
+                    }, 5000);
+                }
+            }
+
+            async function loadPrivateLeaderboards(user) {
+                const wrap = document.getElementById(
+                    "private-leaderboards-table-wrap",
+                );
+                if (!wrap) return;
+                if (
+                    typeof user !== "object" ||
+                    user === null ||
+                    !user.username
+                ) {
+                    wrap.innerHTML =
+                        '<p class="error">Sign in to manage private leaderboards.</p>';
+                    return;
+                }
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/users/me/leaderboards`,
+                        { credentials: "include" },
+                    );
+                    if (response.status === 401) {
+                        wrap.innerHTML =
+                            '<p class="error">Sign in to manage private leaderboards.</p>';
+                        return;
+                    }
+                    if (!response.ok) {
+                        wrap.innerHTML =
+                            '<p class="error">Could not load your private leaderboards.</p>';
+                        return;
+                    }
+                    const boards = await response.json();
+                    if (!boards.length) {
+                        wrap.innerHTML =
+                            "<p>You are not a member of any private leaderboards yet.</p>";
+                        return;
+                    }
+                    let tableHTML = `
+                    <table class="consumption-table">
+                        <thead>
+                            <tr>
+                                <th>Leaderboard</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                    const myUserId = Number(user.user_id);
+                    boards.forEach((entry) => {
+                        const name = privateLbDisplayName(entry);
+                        const safeName = escapeHtml(name);
+                        const invite = entry.invite;
+                        const isOwner =
+                            Number(entry.user_id) === myUserId;
+                        const actionLabel = isOwner ? "Delete" : "Leave";
+                        const action = isOwner ? "delete" : "leave";
+                        tableHTML += `
+                        <tr data-lb-invite="${escapeAttr(invite)}">
+                            <td><a href="./leaderboard.html?id=${encodeURIComponent(invite)}">${safeName}</a></td>
+                            <td><button type="button" class="leave-lb-btn" data-lb-action="${action}">${actionLabel}</button></td>
+                        </tr>
+                    `;
+                    });
+                    tableHTML += `
+                        </tbody>
+                    </table>
+                `;
+                    wrap.innerHTML = tableHTML;
+                    wrap.querySelectorAll("[data-lb-action]").forEach((btn) => {
+                        btn.addEventListener("click", (e) => {
+                            const tr = e.target.closest("tr");
+                            const invite = tr ? tr.dataset.lbInvite : "";
+                            const link = tr ? tr.querySelector("a") : null;
+                            const displayName = link
+                                ? link.textContent
+                                : invite;
+                            const action = btn.getAttribute("data-lb-action");
+                            if (action === "delete") {
+                                openDeleteLbModal(invite, displayName);
+                            } else {
+                                openLeaveLbModal(invite, displayName);
+                            }
+                        });
+                    });
+                } catch (err) {
+                    wrap.innerHTML =
+                        '<p class="error">Could not load your private leaderboards.</p>';
+                }
+            }
+
+            async function confirmLeavePrivateLeaderboard() {
+                const invite = leaveLbInvitePending;
+                const messageContainer =
+                    document.getElementById("message-container");
+                if (!invite) {
+                    closeLeaveLbModal();
+                    return;
+                }
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/leaderboards/private/${encodeURIComponent(invite)}/members`,
+                        {
+                            method: "DELETE",
+                            credentials: "include",
+                        },
+                    );
+                    closeLeaveLbModal();
+                    if (response.ok || response.status === 204) {
+                        messageContainer.innerHTML =
+                            '<div class="success">You left the leaderboard.</div>';
+                        setTimeout(() => {
+                            messageContainer.innerHTML = "";
+                        }, 3000);
+                        const u = await getUser();
+                        await loadPrivateLeaderboards(
+                            typeof u === "object" && u !== null ? u : null,
+                        );
+                    } else {
+                        let msg = "Failed to leave the leaderboard.";
+                        try {
+                            const body = await response.json();
+                            if (body.error) msg = body.error;
+                        } catch (_) {
+                            /* ignore */
+                        }
+                        messageContainer.innerHTML = `<div class="error">${escapeHtml(msg)}</div>`;
+                        setTimeout(() => {
+                            messageContainer.innerHTML = "";
+                        }, 5000);
+                    }
+                } catch (err) {
+                    closeLeaveLbModal();
+                    messageContainer.innerHTML =
+                        '<div class="error">Error leaving the leaderboard.</div>';
+                    setTimeout(() => {
+                        messageContainer.innerHTML = "";
+                    }, 5000);
+                }
+            }
+
+            async function joinPrivateLeaderboard() {
+                const errEl = document.getElementById("private-lb-join-error");
+                const createErrEl = document.getElementById(
+                    "private-lb-create-error",
+                );
+                const input = document.getElementById(
+                    "private-lb-invite-input",
+                );
+                if (errEl) errEl.innerHTML = "";
+                if (createErrEl) createErrEl.innerHTML = "";
+                const code = input.value.trim();
+                if (!code) {
+                    if (errEl) {
+                        errEl.innerHTML =
+                            '<div class="error">Enter a leaderboard code.</div>';
+                    }
+                    return;
+                }
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/leaderboards/private/${encodeURIComponent(code)}/members`,
+                        {
+                            method: "POST",
+                            credentials: "include",
+                        },
+                    );
+                    if (response.ok || response.status === 201) {
+                        window.location.href = `./leaderboard.html?id=${encodeURIComponent(code)}`;
+                        return;
+                    }
+                    let msg = "Could not join that leaderboard.";
+                    try {
+                        const body = await response.json();
+                        if (body.error) msg = body.error;
+                    } catch (_) {
+                        /* ignore */
+                    }
+                    if (errEl) {
+                        errEl.innerHTML = `<div class="error">${escapeHtml(msg)}</div>`;
+                    }
+                } catch (err) {
+                    if (errEl) {
+                        errEl.innerHTML =
+                            '<div class="error">Could not join that leaderboard.</div>';
+                    }
+                }
+            }
+
+            async function createPrivateLeaderboard() {
+                const joinErrEl = document.getElementById(
+                    "private-lb-join-error",
+                );
+                const createErrEl = document.getElementById(
+                    "private-lb-create-error",
+                );
+                if (joinErrEl) joinErrEl.innerHTML = "";
+                if (createErrEl) createErrEl.innerHTML = "";
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/leaderboards/private/`,
+                        {
+                            method: "POST",
+                            credentials: "include",
+                        },
+                    );
+                    if (response.status === 201 || response.ok) {
+                        const data = await response.json();
+                        const invite = data.invite;
+                        if (invite) {
+                            window.location.href = `./leaderboard.html?id=${encodeURIComponent(invite)}`;
+                            return;
+                        }
+                    }
+                    let msg = "Could not create a leaderboard.";
+                    try {
+                        const body = await response.json();
+                        if (body.error) msg = body.error;
+                    } catch (_) {
+                        /* ignore */
+                    }
+                    if (createErrEl) {
+                        createErrEl.innerHTML = `<div class="error">${escapeHtml(msg)}</div>`;
+                    }
+                } catch (err) {
+                    if (createErrEl) {
+                        createErrEl.innerHTML =
+                            '<div class="error">Could not create a leaderboard.</div>';
+                    }
+                }
             }
 
             async function remove_consumption(consumption_id) {
@@ -293,7 +744,13 @@
                 try {
                     const user = await getUser();
 
-                    if (!user) {
+                    await loadPrivateLeaderboards(
+                        typeof user === "object" && user !== null
+                            ? user
+                            : null,
+                    );
+
+                    if (!user || typeof user !== "object") {
                         document.getElementById("username").innerHTML =
                             "Error loading user.";
                         document.getElementById("date-joined").innerHTML = "";
@@ -423,7 +880,35 @@
                 }
             }
 
-            document.addEventListener("DOMContentLoaded", displayProfile);
+            document.addEventListener("DOMContentLoaded", () => {
+                document
+                    .getElementById("leave-lb-cancel-btn")
+                    .addEventListener("click", closeLeaveLbModal);
+                document
+                    .getElementById("leave-lb-confirm-btn")
+                    .addEventListener("click", confirmLeavePrivateLeaderboard);
+                document
+                    .getElementById("delete-lb-cancel-btn")
+                    .addEventListener("click", closeDeleteLbModal);
+                document
+                    .getElementById("delete-lb-confirm-btn")
+                    .addEventListener("click", confirmDeletePrivateLeaderboard);
+                document
+                    .getElementById("private-lb-join-btn")
+                    .addEventListener("click", joinPrivateLeaderboard);
+                document
+                    .getElementById("private-lb-create-btn")
+                    .addEventListener("click", createPrivateLeaderboard);
+                document
+                    .getElementById("private-lb-invite-input")
+                    .addEventListener("keydown", (e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            joinPrivateLeaderboard();
+                        }
+                    });
+                displayProfile();
+            });
         </script>
     </body>
 </html>

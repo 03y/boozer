@@ -20,8 +20,20 @@
         <div class="container">
             <div class="profile-section">
                 <h3><span id="owner-name"></span></h3>
+                <p class="private-lb-invite-label">
+                    <strong>Join code:</strong>
+                </p>
+                <pre
+                    id="private-lb-invite-code"
+                    class="private-lb-invite-code"
+                ></pre>
                 <p><strong>Created:</strong> <span id="creation-date"></span></p>
                 <p><strong>Members:</strong> <span id="member-count"></span></p>
+                <p id="private-lb-invite-share-wrap" class="private-lb-invite-share-wrap" hidden>
+                    <button type="button" id="private-lb-invite-share-btn" class="join-lb-btn">
+                        Invite user
+                    </button>
+                </p>
             </div>
             <div class="leaderboard-section">
                 <div class="leaderboard-column">
@@ -33,12 +45,109 @@
         </div>
 
         <script>
+            function copyTextWithFallback(text) {
+                return new Promise((resolve) => {
+                    if (
+                        navigator.clipboard &&
+                        typeof navigator.clipboard.writeText === "function"
+                    ) {
+                        navigator.clipboard
+                            .writeText(text)
+                            .then(() => resolve(true))
+                            .catch(() => resolve(false));
+                        return;
+                    }
+                    const ta = document.createElement("textarea");
+                    ta.value = text;
+                    ta.setAttribute("readonly", "");
+                    ta.style.position = "fixed";
+                    ta.style.left = "-9999px";
+                    document.body.appendChild(ta);
+                    ta.select();
+                    let ok = false;
+                    try {
+                        ok = document.execCommand("copy");
+                    } catch (e) {
+                        /* ignore */
+                    }
+                    document.body.removeChild(ta);
+                    resolve(ok);
+                });
+            }
+
+            function setupInviteShareButton() {
+                const btn = document.getElementById(
+                    "private-lb-invite-share-btn",
+                );
+                if (!btn) return;
+                btn.addEventListener("click", async () => {
+                    const pre = document.getElementById(
+                        "private-lb-invite-code",
+                    );
+                    const code = pre ? pre.textContent.trim() : "";
+                    if (!code) return;
+
+                    const joinPageUrl = new URL("join.html", window.location.href);
+                    joinPageUrl.searchParams.set("code", code);
+
+                    const sharePayload = {
+                        title: "Join my Boozer leaderboard",
+                        text: "Join my private leaderboard on Boozer.",
+                        url: joinPageUrl.href,
+                    };
+
+                    try {
+                        if (navigator.share) {
+                            if (
+                                navigator.canShare &&
+                                !navigator.canShare(sharePayload)
+                            ) {
+                                const urlOnly = { url: joinPageUrl.href };
+                                if (
+                                    navigator.canShare &&
+                                    navigator.canShare(urlOnly)
+                                ) {
+                                    await navigator.share(urlOnly);
+                                } else {
+                                    await navigator.share(sharePayload);
+                                }
+                            } else {
+                                await navigator.share(sharePayload);
+                            }
+                            return;
+                        }
+                    } catch (err) {
+                        if (err && err.name === "AbortError") return;
+                    }
+
+                    const copied = await copyTextWithFallback(joinPageUrl.href);
+                    const orig = btn.textContent;
+                    btn.textContent = copied
+                        ? "Invite link copied!"
+                        : "Could not share or copy link";
+                    setTimeout(() => {
+                        btn.textContent = orig;
+                    }, 2500);
+                });
+            }
+
             async function displayLeaderboard() {
                 const urlParams = new URLSearchParams(window.location.search);
-                const inviteCode = urlParams.get("invite");
+                const inviteCode =
+                    urlParams.get("invite") || urlParams.get("id");
+
+                const invitePre = document.getElementById(
+                    "private-lb-invite-code",
+                );
+                const shareWrap = document.getElementById(
+                    "private-lb-invite-share-wrap",
+                );
+                if (shareWrap) shareWrap.hidden = true;
 
                 if (!inviteCode) {
-                    document.getElementById("leaderboard-container").innerHTML = "";
+                    document.getElementById("leaderboard-container").innerHTML =
+                        "";
+                    if (invitePre) invitePre.textContent = "";
                     return;
                 }
 
@@ -51,6 +160,11 @@
 
                     document.getElementById("owner-name").innerText = data.leaderboard.owner_username + "'s private leaderboard";
 
+                    if (invitePre) {
+                        invitePre.textContent =
+                            data.leaderboard.invite || inviteCode;
+                    }
+
                     // Format creation date
                     const creationDate = new Date(data.leaderboard.created * 1000);
                     document.getElementById("creation-date").innerText = creationDate.toLocaleDateString("en-UK");
@@ -61,14 +175,22 @@
                     const leaderboardContainer = document.getElementById("leaderboard-container");
                     leaderboardContainer.innerHTML = createTable(data.members, "users");
 
+                    if (shareWrap) shareWrap.hidden = false;
+
                 } catch (error) {
-                    document.getElementById("leaderboard-name").innerText = "Error loading leaderboard.";
+                    document.getElementById("owner-name").innerText =
+                        "Error loading leaderboard.";
+                    if (invitePre) invitePre.textContent = "";
+                    if (shareWrap) shareWrap.hidden = true;
                     document.getElementById("leaderboard-container").innerHTML = `<div class="error-message">Could not load leaderboard.</div>`;
                 }
             }
 
-            document.addEventListener("DOMContentLoaded", displayLeaderboard);
-            document.addEventListener("DOMContentLoaded", getUser);
+            document.addEventListener("DOMContentLoaded", () => {
+                setupInviteShareButton();
+                displayLeaderboard();
+                getUser();
+            });
         </script>
     </body>
 </html>
