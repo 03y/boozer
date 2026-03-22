@@ -35,7 +35,8 @@
         <script>
             async function displayLeaderboard() {
                 const urlParams = new URLSearchParams(window.location.search);
-                const inviteCode = urlParams.get("invite");
+                const inviteCode =
+                    urlParams.get("invite") || urlParams.get("id");
 
                 if (!inviteCode) {
                     document.getElementById("leaderboard-container").innerHTML = "";
@@ -62,7 +63,8 @@
                     leaderboardContainer.innerHTML = createTable(data.members, "users");
 
                 } catch (error) {
-                    document.getElementById("leaderboard-name").innerText = "Error loading leaderboard.";
+                    document.getElementById("owner-name").innerText =
+                        "Error loading leaderboard.";
                     document.getElementById("leaderboard-container").innerHTML = `<div class="error-message">Could not load leaderboard.</div>`;
                 }
             }

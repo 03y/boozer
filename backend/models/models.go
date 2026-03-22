@@ -159,6 +159,12 @@ type PrivateLeaderboard struct {
 	Created        int    `json:"created"`
 }
 
+// UserPrivateLeaderboardEntry is returned by GET /users/me/leaderboards (member's view of boards they belong to).
+type UserPrivateLeaderboardEntry struct {
+	PrivateLeaderboard
+	OwnerUsername string `json:"owner_username"`
+}
+
 type LeaderboardMember struct {
 	Membership_id  int `json:"membership_id"`
 	Leaderboard_id int `json:"leaderboard_id"`

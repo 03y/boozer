@@ -162,6 +162,10 @@ a {
     z-index: 2;
 }
 
+#leave-lb-modal {
+    z-index: 2;
+}
+
 .modal-content {
     background-color: var(--stout-brown);
     margin: 15% auto;
@@ -274,6 +278,55 @@ a {
 
 .red-button:hover {
     background-color: var(--red-button-hover-colour);
+}
+
+.leave-lb-btn {
+    background-color: var(--red-button-primary-colour);
+    color: white;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: var(--button-font-size);
+    white-space: nowrap;
+}
+
+.leave-lb-btn:hover {
+    background-color: var(--red-button-hover-colour);
+}
+
+.private-lb-join-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.private-lb-join-row input[type="text"] {
+    flex: 1;
+    min-width: 140px;
+    padding: 10px;
+    border: 1px solid var(--tabacco-tan);
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: var(--pint-foam-cream);
+    color: var(--stout-brown);
+}
+
+.join-lb-btn {
+    background-color: var(--green-button-primary-colour);
+    color: white;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: var(--button-font-size);
+    white-space: nowrap;
+}
+
+.join-lb-btn:hover {
+    background-color: var(--green-button-hover-colour);
 }
 
 .toggle-switch {

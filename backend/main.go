@@ -1438,7 +1438,7 @@ func (a *App) GetUserPrivateLeaderboards(c *gin.Context) {
 		return
 	}
 
-	rows, err := a.DB.Query(context.Background(), "SELECT pl.leaderboard_id, pl.user_id, pl.invite, pl.created FROM private_leaderboards pl INNER JOIN leaderboard_members lm ON pl.leaderboard_id = lm.leaderboard_id WHERE lm.user_id = $1", userId)
+	rows, err := a.DB.Query(context.Background(), "SELECT pl.leaderboard_id, pl.user_id, pl.invite, pl.created, owner_u.username FROM private_leaderboards pl INNER JOIN leaderboard_members lm ON pl.leaderboard_id = lm.leaderboard_id INNER JOIN users owner_u ON pl.user_id = owner_u.user_id WHERE lm.user_id = $1", userId)
 	if err != nil {
 		slog.Error("error getting user private leaderboards", "error", err)
 		c.Status(http.StatusInternalServerError)
@@ -1446,10 +1446,10 @@ func (a *App) GetUserPrivateLeaderboards(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	leaderboards := make([]models.PrivateLeaderboard, 0)
+	leaderboards := make([]models.UserPrivateLeaderboardEntry, 0)
 	for rows.Next() {
-		var l models.PrivateLeaderboard
-		if err := rows.Scan(&l.Leaderboard_Id, &l.UserId, &l.Invite, &l.Created); err != nil {
+		var l models.UserPrivateLeaderboardEntry
+		if err := rows.Scan(&l.Leaderboard_Id, &l.UserId, &l.Invite, &l.Created, &l.OwnerUsername); err != nil {
 			slog.Error("error scanning leaderboard", "error", err)
 			c.Status(http.StatusInternalServerError)
 			return
