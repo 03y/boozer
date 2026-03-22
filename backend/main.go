@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/subtle"
 	"crypto/x509"
+	"database/sql"
 	"encoding/base64"
 	"encoding/pem"
 	"errors"
@@ -222,6 +223,70 @@ func (a *App) GetItems(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, items)
+}
+
+func (a *App) GetItemsPersonalised(c *gin.Context) {
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		slog.Warn("invalid JWT", "error", err)
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	var userID int
+	err = a.DB.QueryRow(context.Background(), "SELECT user_id FROM users WHERE username = $1", claims["username"]).Scan(&userID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			c.Status(http.StatusUnauthorized)
+			return
+		}
+		slog.Error("error resolving user for personalised items", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	rows, err := a.DB.Query(context.Background(), `
+SELECT i.item_id, i.user_id, i.name, i.units, i.added,
+	COALESCE(gc.cnt, 0), uc.last_time
+FROM items i
+LEFT JOIN (
+	SELECT item_id, COUNT(*)::bigint AS cnt FROM consumptions GROUP BY item_id
+) gc ON gc.item_id = i.item_id
+LEFT JOIN (
+	SELECT item_id, MAX(time) AS last_time FROM consumptions WHERE user_id = $1 GROUP BY item_id
+) uc ON uc.item_id = i.item_id`, userID)
+	if err != nil {
+		slog.Error("error getting personalised item list", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	out := make([]models.ItemPersonalised, 0)
+	for rows.Next() {
+		var row models.ItemPersonalised
+		var globalCount int64
+		var userLast sql.NullInt64
+		err := rows.Scan(&row.Item_id, &row.User_id, &row.Name, &row.Units, &row.Added, &globalCount, &userLast)
+		if err != nil {
+			slog.Error("error scanning personalised item", "error", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		row.Global_consumption_count = int(globalCount)
+		if userLast.Valid {
+			t := int(userLast.Int64)
+			row.User_last_consumed = &t
+		}
+		out = append(out, row)
+	}
+
+	c.JSON(http.StatusOK, out)
 }
 
 func (a *App) GetItem(c *gin.Context) {
@@ -1580,6 +1645,7 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	router.POST(API_V2_BASE_URL+"/items", a.AddItem) // TODO: maybe add field for who added it, add auth for this
 	// TODO: router.PUT("/submit/consumption", a.AddConsumption) // for updating items
 	router.GET(API_V2_BASE_URL+"/items", a.GetItems)
+	router.GET(API_V2_BASE_URL+"/items/personalised", a.GetItemsPersonalised)
 	router.GET(API_V2_BASE_URL+"/items/:name", a.GetItem)
 	router.GET(API_V2_BASE_URL+"/items/:name/leaderboard", a.GetItemUserConsumptionCount)
 	router.GET(API_V2_BASE_URL+"/items/:name/consumptions", a.GetItemConsumptionCount)

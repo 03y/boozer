@@ -58,25 +58,73 @@
         <script>
             let items = [];
 
+            const PERSONAL_WINDOW_SEC = 86400;
+            const WEIGHT_PERSONAL = 1000;
+            const WEIGHT_GLOBAL = 1;
+
+            function itemRankScore(item, nowSec) {
+                let personal = 0;
+                const last = item.user_last_consumed;
+                if (last != null) {
+                    const ageSec = nowSec - last;
+                    if (ageSec >= 0 && ageSec <= PERSONAL_WINDOW_SEC) {
+                        personal = 1 - ageSec / PERSONAL_WINDOW_SEC;
+                    }
+                }
+                const globalCount = item.global_consumption_count ?? 0;
+                const global = Math.log1p(globalCount);
+                return WEIGHT_PERSONAL * personal + WEIGHT_GLOBAL * global;
+            }
+
+            function sortItemsForSubmit(list) {
+                const nowSec = Math.floor(Date.now() / 1000);
+                return [...list].sort((a, b) => {
+                    const diff = itemRankScore(b, nowSec) - itemRankScore(a, nowSec);
+                    if (diff !== 0) {
+                        return diff;
+                    }
+                    return a.name.localeCompare(b.name);
+                });
+            }
+
             async function fetchItems() {
                 try {
-                    const response = await fetch(`${API_BASE_URL}/items`);
+                    const response = await fetch(
+                        `${API_BASE_URL}/items/personalised`,
+                        { credentials: "include" },
+                    );
                     if (!response.ok) {
                         throw new Error(
                             `HTTP error! status: ${response.status}`,
                         );
                     }
-                    items = await response.json();
+                    items = sortItemsForSubmit(await response.json());
                 } catch (error) {
-                    console.error("Error fetching items:", error);
+                    console.error("Error fetching personalised items:", error);
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/items`, {
+                            credentials: "include",
+                        });
+                        if (!response.ok) {
+                            throw new Error(
+                                `HTTP error! status: ${response.status}`,
+                            );
+                        }
+                        items = await response.json();
+                        items.sort((a, b) => b.added - a.added);
+                    } catch (fallbackErr) {
+                        console.error("Error fetching items:", fallbackErr);
+                    }
                 }
             }
 
             function renderDropdown(filter = "") {
                 const dropdown = document.getElementById("itemDropdown");
                 dropdown.innerHTML = "";
-                const filteredItems = items.filter((item) =>
-                    item.name.toLowerCase().includes(filter.toLowerCase()),
+                const filteredItems = sortItemsForSubmit(
+                    items.filter((item) =>
+                        item.name.toLowerCase().includes(filter.toLowerCase()),
+                    ),
                 );
 
                 if (filteredItems.length === 0 && filter !== "") {
@@ -149,6 +197,7 @@
                         messageElement.classList.add("success");
                         document.getElementById("consumptionForm").reset();
                         document.getElementById("selectedItemId").value = "";
+                        await fetchItems();
                         const date = new Date();
                         const year = date.getFullYear();
                         const month = (date.getMonth() + 1)
