@@ -5,12 +5,14 @@ type User struct {
 	Username string `json:"username"`
 	Password string `json:"password"` // hashed, never in clear
 	Created  int    `json:"created"`  // unix timestamp
+	Admin    bool   `json:"admin"`
 }
 
 type UserNoPw struct {
 	User_id  int    `json:"user_id"`
 	Username string `json:"username"`
 	Created  int    `json:"created"` // unix timestamp
+	Admin    bool   `json:"admin"`
 }
 
 type ChangePassword struct {

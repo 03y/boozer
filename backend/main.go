@@ -506,7 +506,7 @@ func (a *App) Logout(c *gin.Context) {
 
 func (a *App) GetUser(c *gin.Context) {
 	var user models.UserNoPw
-	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE username=$1", c.Param("username")).Scan(&user.User_id, &user.Username, &user.Created)
+	err := a.DB.QueryRow(context.Background(), "SELECT user_id, username, created, admin FROM users WHERE username=$1", c.Param("username")).Scan(&user.User_id, &user.Username, &user.Created, &user.Admin)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			c.Status(http.StatusNotFound)
@@ -535,7 +535,7 @@ func (a *App) GetUserFromToken(c *gin.Context) {
 
 	if claims["username"] != nil {
 		var user models.UserNoPw
-		err = a.DB.QueryRow(context.Background(), "SELECT user_id, username, created FROM users WHERE username=$1", claims["username"]).Scan(&user.User_id, &user.Username, &user.Created)
+		err = a.DB.QueryRow(context.Background(), "SELECT user_id, username, created, admin FROM users WHERE username=$1", claims["username"]).Scan(&user.User_id, &user.Username, &user.Created, &user.Admin)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				c.Status(http.StatusNotFound)
@@ -1625,6 +1625,18 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	router.DELETE(API_V2_BASE_URL+"/leaderboards/private/:invite", a.RemovePrivateLeaderboard)
 	router.POST(API_V2_BASE_URL+"/leaderboards/private/:invite/members", a.JoinPrivateLeaderboard)
 	router.DELETE(API_V2_BASE_URL+"/leaderboards/private/:invite/members", a.LeavePrivateLeaderboard)
+
+	/* ********************************** */
+	/* Admin routes                       */
+	/* ********************************** */
+	admin := router.Group("/v2/admin")
+	admin.Use(a.AdminMiddleware())
+	{
+		admin.GET("/reports", a.GetReports)
+		admin.GET("/items", a.GetItems)
+		admin.PUT("/items/:item_id", a.UpdateItem)
+		admin.DELETE("/reports/:item_id", a.ClearItemReports)
+	}
 
 	return router
 }

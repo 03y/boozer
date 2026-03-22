@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>🍺 Boozer</title>
+        <link rel="stylesheet" type="text/css" href="styles/style.css" />
+        <link rel="stylesheet" type="text/css" href="styles/leaderboard.css" />
+        <script src="scripts/auth.js"></script>
+    </head>
+    <body>
+        <nav>
+            <a href="./index.html">Leaderboard</a>
+            <a href="./items.html">Inventory</a>
+            <a id="login-link" href="./login.html">Login</a>
+            <a href="./submit.html">Get boozing!</a>
+        </nav>
+
+        <div class="container">
+            <h1>Admin Panel</h1>
+            <div class="items-section">
+                <div class="leaderboard-controls">
+                    <select id="sort-selector">
+                        <option value="date">📅 Date Added</option>
+                        <option value="alpha">🔤 Alphabetical</option>
+                        <option value="units">📊 Units</option>
+                    </select>
+                </div>
+                <div id="items-container">
+                    <div class="loading">Loading inventory...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="edit-modal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2>Edit Item</h2>
+                <form id="edit-form">
+                    <input type="hidden" id="edit-item-id">
+                    <div class="form-group modal-form-group">
+                        <label for="edit-item-name">Name:</label>
+                        <input type="text" id="edit-item-name" required>
+                    </div>
+                    <div class="form-group modal-form-group">
+                        <label for="edit-item-units">Units:</label>
+                        <input type="number" id="edit-item-units" step="0.1" required>
+                    </div>
+                    <h3>Reports</h3>
+                    <div id="item-reports">
+                        <p>No reports for this item.</p>
+                    </div>
+                    <button type="submit">Save Changes</button>
+                    <button type="button" id="clear-reports-btn" class="red-button">Clear Reports</button>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            let itemsData = [];
+            let reportsData = [];
+            const container = document.getElementById("items-container");
+            const modal = document.getElementById('edit-modal');
+            const closeButton = document.querySelector('.close-button');
+            const editForm = document.getElementById('edit-form');
+            const clearReportsBtn = document.getElementById('clear-reports-btn');
+
+            async function fetchItems() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/admin/items`, {credentials: 'include'});
+                    if (!response.ok) {
+                        if (response.status === 403) {
+                            window.location.href = './index.html';
+                        }
+                        throw new Error("Failed to fetch items");
+                    }
+                    return await response.json();
+                } catch (error) {
+                    console.error("Error fetching inventory:", error);
+                    throw error;
+                }
+            }
+
+            async function fetchReports() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/admin/reports`, {credentials: 'include'});
+                    if (!response.ok) {
+                        throw new Error("Failed to fetch reports");
+                    }
+                    return await response.json();
+                } catch (error) {
+                    console.error("Error fetching reports:", error);
+                    throw error;
+                }
+            }
+
+            async function clearReports(itemId) {
+                if (confirm('Are you sure you want to clear all reports for this item? This action cannot be undone.')) {
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/admin/reports/${itemId}`, {
+                            method: 'DELETE',
+                            credentials: 'include'
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to clear reports');
+                        }
+
+                        alert('Reports cleared successfully!');
+                        modal.style.display = 'none';
+                        loadData();
+                    } catch (error) {
+                        console.error('Error clearing reports:', error);
+                        alert('Failed to clear reports.');
+                    }
+                }
+            }
+
+            function renderTable() {
+                if (!itemsData || itemsData.length === 0) {
+                    container.innerHTML = `<div class="error">Inventory is empty.</div>`;
+                    return;
+                }
+
+                const reportCounts = reportsData.reduce((acc, report) => {
+                    acc[report.item_id] = (acc[report.item_id] || 0) + 1;
+                    return acc;
+                }, {});
+
+                let tableHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Units</th>
+                                <th>Date added</th>
+                                <th>Reports</th>
+                                <th>Edit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                itemsData.forEach((item) => {
+                    const date = new Date(item.added * 1000);
+                    const formattedDate = date.toISOString().split("T")[0];
+                    const reportCount = reportCounts[item.item_id] || 0;
+                    
+                    tableHTML += `
+                        <tr data-item-id="${item.item_id}" class="${reportCount > 0 ? 'reported-row' : ''}">
+                            <td>${item.name}</td>
+                            <td>${item.units || 0}</td>
+                            <td>${formattedDate}</td>
+                            <td>${reportCount > 0 ? reportCount : ''}</td>
+                            <td><button class="edit-btn">✏️</button></td>
+                        </tr>
+                    `;
+                });
+
+                tableHTML += `
+                        </tbody>
+                    </table>
+                `;
+                container.innerHTML = tableHTML;
+
+                document.querySelectorAll('.edit-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const row = e.target.closest('tr');
+                        const itemId = row.dataset.itemId;
+                        const item = itemsData.find(i => i.item_id == itemId);
+                        document.getElementById('edit-item-id').value = item.item_id;
+                        document.getElementById('edit-item-name').value = item.name;
+                        document.getElementById('edit-item-units').value = item.units;
+
+                        const itemReports = reportsData.filter(report => report.item_id == itemId);
+                        const reportCounts = itemReports.reduce((acc, report) => {
+                            acc[report.reason] = (acc[report.reason] || 0) + 1;
+                            return acc;
+                        }, {});
+
+                        const itemReportsDiv = document.getElementById('item-reports');
+                        if (Object.keys(reportCounts).length > 0) {
+                            let reportsHTML = '<ul>';
+                            for (const type in reportCounts) {
+                                reportsHTML += `<li>${type} (${reportCounts[type]})</li>`;
+                            }
+                            reportsHTML += '</ul>';
+                            itemReportsDiv.innerHTML = reportsHTML;
+                        } else {
+                            itemReportsDiv.innerHTML = '<p>No reports for this item.</p>';
+                        }
+
+                        clearReportsBtn.onclick = () => {
+                            clearReports(item.item_id);
+                        };
+
+                        modal.style.display = 'block';
+                    });
+                });
+            }
+
+            function sortData(criteria) {
+                switch (criteria) {
+                    case 'date':
+                        itemsData.sort((a, b) => b.added - a.added);
+                        break;
+                    case 'alpha':
+                        itemsData.sort((a, b) => a.name.localeCompare(b.name));
+                        break;
+                    case 'units':
+                        itemsData.sort((a, b) => b.units - a.units);
+                        break;
+                }
+                renderTable();
+            }
+
+            async function loadData() {
+                container.innerHTML = '<div class="loading">Loading...</div>';
+                try {
+                    [itemsData, reportsData] = await Promise.all([fetchItems(), fetchReports()]);
+                    sortData('date');
+                } catch (error) {
+                    container.innerHTML = `
+                        <div class="error">
+                            <strong>Error loading data</strong><br>
+                        </div>
+                    `;
+                }
+            }
+
+            closeButton.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            });
+
+            editForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const itemId = document.getElementById('edit-item-id').value;
+                const name = document.getElementById('edit-item-name').value;
+                const units = parseFloat(document.getElementById('edit-item-units').value);
+
+                if (confirm('Are you sure you want to save these changes?')) {
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/admin/items/${itemId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ name, units }),
+                            credentials: 'include'
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to update item');
+                        }
+
+                        modal.style.display = 'none';
+                        loadData();
+                    } catch (error) {
+                        console.error('Error updating item:', error);
+                        alert('Failed to update item.');
+                    }
+                }
+            });
+
+            document.getElementById('sort-selector').addEventListener('change', function () {
+                sortData(this.value);
+            });
+
+            document.addEventListener("DOMContentLoaded", async () => {
+                const user = await getUser();
+                if (!user || !user.admin) {
+                    window.location.href = './index.html';
+                } else {
+                    loadData();
+                }
+            });
+        </script>
+    </body>
+</html>
