@@ -28,6 +28,14 @@ type Item struct {
 	Added   int     `json:"added"` // unix timestamp
 }
 
+// ItemPersonalised is the full item row plus ranking signals for the authenticated user.
+// Sorting is performed on the client.
+type ItemPersonalised struct {
+	Item
+	Global_consumption_count int  `json:"global_consumption_count"`
+	User_last_consumed       *int `json:"user_last_consumed,omitempty"`
+}
+
 type Consumption struct {
 	Consumption_id int      `json:"consumption_id"`
 	User_id        int      `json:"user_id"`
