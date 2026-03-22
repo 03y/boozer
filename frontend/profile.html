@@ -104,6 +104,26 @@
             </div>
         </div>
 
+        <div id="delete-lb-modal" class="modal">
+            <div class="modal-content">
+                <p>
+                    You are about to <strong>permanently delete</strong> this private
+                    leaderboard for everyone. All members will lose access.
+                </p>
+                <p><strong id="delete-lb-modal-title"></strong></p>
+                <p>Current members:</p>
+                <div id="delete-lb-modal-members-wrap"></div>
+                <div class="modal-buttons">
+                    <button type="button" id="delete-lb-confirm-btn" class="del-btn">
+                        Delete leaderboard
+                    </button>
+                    <button type="button" id="delete-lb-cancel-btn" class="cancel-btn">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div id="edit-modal" class="modal">
             <div class="modal-content">
                 <h2>Edit Consumption</h2>
@@ -136,6 +156,7 @@
             }
 
             let leaveLbInvitePending = null;
+            let deleteLbInvitePending = null;
 
             function escapeHtml(str) {
                 if (str === null || str === undefined) return "";
@@ -168,6 +189,131 @@
                 if (nameEl) nameEl.textContent = displayName;
                 const modal = document.getElementById("leave-lb-modal");
                 if (modal) modal.style.display = "block";
+            }
+
+            function closeDeleteLbModal() {
+                deleteLbInvitePending = null;
+                const modal = document.getElementById("delete-lb-modal");
+                if (modal) modal.style.display = "none";
+                const wrapEl = document.getElementById(
+                    "delete-lb-modal-members-wrap",
+                );
+                if (wrapEl) wrapEl.innerHTML = "";
+            }
+
+            async function openDeleteLbModal(invite, displayName) {
+                deleteLbInvitePending = invite;
+                const titleEl = document.getElementById("delete-lb-modal-title");
+                const wrapEl = document.getElementById(
+                    "delete-lb-modal-members-wrap",
+                );
+                const modal = document.getElementById("delete-lb-modal");
+                if (titleEl) titleEl.textContent = displayName;
+                if (wrapEl) {
+                    wrapEl.innerHTML = "<p>Loading members…</p>";
+                }
+                if (modal) modal.style.display = "block";
+
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/leaderboards/private/${encodeURIComponent(invite)}`,
+                    );
+                    if (!response.ok) {
+                        if (wrapEl) {
+                            wrapEl.innerHTML =
+                                '<div class="error">Could not load the member list.</div>';
+                        }
+                        return;
+                    }
+                    const data = await response.json();
+                    const members = data.members || [];
+                    const names = members
+                        .map((m) => m.username)
+                        .filter(Boolean)
+                        .sort((a, b) =>
+                            a.localeCompare(b, undefined, {
+                                sensitivity: "base",
+                            }),
+                        );
+                    if (!wrapEl) return;
+                    if (names.length === 0) {
+                        wrapEl.innerHTML =
+                            "<p><em>No members listed.</em></p>";
+                        return;
+                    }
+                    let memberTable = `
+                        <table class="consumption-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    names.forEach((un) => {
+                        memberTable += `<tr><td>${escapeHtml(un)}</td></tr>`;
+                    });
+                    memberTable += `
+                            </tbody>
+                        </table>
+                    `;
+                    wrapEl.innerHTML = memberTable;
+                } catch (err) {
+                    if (wrapEl) {
+                        wrapEl.innerHTML =
+                            '<div class="error">Could not load the member list.</div>';
+                    }
+                }
+            }
+
+            async function confirmDeletePrivateLeaderboard() {
+                const invite = deleteLbInvitePending;
+                const messageContainer =
+                    document.getElementById("message-container");
+                if (!invite) {
+                    closeDeleteLbModal();
+                    return;
+                }
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/leaderboards/private/${encodeURIComponent(invite)}`,
+                        {
+                            method: "DELETE",
+                            credentials: "include",
+                        },
+                    );
+                    closeDeleteLbModal();
+                    if (response.ok) {
+                        messageContainer.innerHTML =
+                            '<div class="success">The private leaderboard was deleted.</div>';
+                        setTimeout(() => {
+                            messageContainer.innerHTML = "";
+                        }, 3000);
+                        const u = await getUser();
+                        await loadPrivateLeaderboards(
+                            typeof u === "object" && u !== null ? u : null,
+                        );
+                    } else {
+                        let msg = "Failed to delete the leaderboard.";
+                        try {
+                            const body = await response.json();
+                            if (body.error) msg = body.error;
+                        } catch (_) {
+                            /* ignore */
+                        }
+                        messageContainer.innerHTML = `<div class="error">${escapeHtml(msg)}</div>`;
+                        setTimeout(() => {
+                            messageContainer.innerHTML = "";
+                        }, 5000);
+                    }
+                } catch (err) {
+                    closeDeleteLbModal();
+                    messageContainer.innerHTML =
+                        '<div class="error">Error deleting the leaderboard.</div>';
+                    setTimeout(() => {
+                        messageContainer.innerHTML = "";
+                    }, 5000);
+                }
             }
 
             async function loadPrivateLeaderboards(user) {
@@ -215,14 +361,19 @@
                         </thead>
                         <tbody>
                 `;
+                    const myUserId = Number(user.user_id);
                     boards.forEach((entry) => {
                         const name = privateLbDisplayName(entry);
                         const safeName = escapeHtml(name);
                         const invite = entry.invite;
+                        const isOwner =
+                            Number(entry.user_id) === myUserId;
+                        const actionLabel = isOwner ? "Delete" : "Leave";
+                        const action = isOwner ? "delete" : "leave";
                         tableHTML += `
                         <tr data-lb-invite="${escapeAttr(invite)}">
                             <td><a href="./leaderboard.html?id=${encodeURIComponent(invite)}">${safeName}</a></td>
-                            <td><button type="button" class="leave-lb-btn">Leave</button></td>
+                            <td><button type="button" class="leave-lb-btn" data-lb-action="${action}">${actionLabel}</button></td>
                         </tr>
                     `;
                     });
@@ -231,7 +382,7 @@
                     </table>
                 `;
                     wrap.innerHTML = tableHTML;
-                    wrap.querySelectorAll(".leave-lb-btn").forEach((btn) => {
+                    wrap.querySelectorAll("[data-lb-action]").forEach((btn) => {
                         btn.addEventListener("click", (e) => {
                             const tr = e.target.closest("tr");
                             const invite = tr ? tr.dataset.lbInvite : "";
@@ -239,7 +390,12 @@
                             const displayName = link
                                 ? link.textContent
                                 : invite;
-                            openLeaveLbModal(invite, displayName);
+                            const action = btn.getAttribute("data-lb-action");
+                            if (action === "delete") {
+                                openDeleteLbModal(invite, displayName);
+                            } else {
+                                openLeaveLbModal(invite, displayName);
+                            }
                         });
                     });
                 } catch (err) {
@@ -677,6 +833,12 @@
                 document
                     .getElementById("leave-lb-confirm-btn")
                     .addEventListener("click", confirmLeavePrivateLeaderboard);
+                document
+                    .getElementById("delete-lb-cancel-btn")
+                    .addEventListener("click", closeDeleteLbModal);
+                document
+                    .getElementById("delete-lb-confirm-btn")
+                    .addEventListener("click", confirmDeletePrivateLeaderboard);
                 document
                     .getElementById("private-lb-join-btn")
                     .addEventListener("click", joinPrivateLeaderboard);

@@ -1241,7 +1241,7 @@ func (a *App) GetPrivateLeaderboard(c *gin.Context) {
 		return
 	}
 
-	rows, err := a.DB.Query(context.Background(), "SELECT u.username, COUNT(c.item_id) AS drank FROM consumptions c INNER JOIN users u ON c.user_id = u.user_id INNER JOIN leaderboard_members lm ON u.user_id = lm.user_id WHERE lm.leaderboard_id = $1 GROUP BY u.username ORDER BY drank DESC", leaderboard.Leaderboard_Id)
+	rows, err := a.DB.Query(context.Background(), "SELECT u.username, COUNT(c.item_id) AS drank FROM leaderboard_members lm INNER JOIN users u ON u.user_id = lm.user_id LEFT JOIN consumptions c ON c.user_id = u.user_id WHERE lm.leaderboard_id = $1 GROUP BY u.username ORDER BY drank DESC", leaderboard.Leaderboard_Id)
 	if err != nil {
 		slog.Error("error getting user leaderboard", "error", err)
 		c.Status(http.StatusNotFound)

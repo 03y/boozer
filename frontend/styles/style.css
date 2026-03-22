@@ -166,6 +166,25 @@ a {
     z-index: 2;
 }
 
+#delete-lb-modal {
+    z-index: 2;
+}
+
+#delete-lb-modal .modal-content {
+    max-width: 520px;
+    text-align: left;
+}
+
+#delete-lb-modal .modal-buttons {
+    text-align: center;
+}
+
+#delete-lb-modal-members-wrap {
+    margin: 16px 0;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
 .modal-content {
     background-color: var(--stout-brown);
     margin: 15% auto;
