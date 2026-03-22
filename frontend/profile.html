@@ -47,6 +47,13 @@
                     </button>
                 </div>
                 <div id="private-lb-join-error"></div>
+                <div class="private-lb-create-row">
+                    <span class="private-lb-create-prompt">Or create your own!</span>
+                    <button type="button" class="join-lb-btn" id="private-lb-create-btn">
+                        Create
+                    </button>
+                </div>
+                <div id="private-lb-create-error"></div>
             </div>
 
             <div class="container">
@@ -456,10 +463,14 @@
 
             async function joinPrivateLeaderboard() {
                 const errEl = document.getElementById("private-lb-join-error");
+                const createErrEl = document.getElementById(
+                    "private-lb-create-error",
+                );
                 const input = document.getElementById(
                     "private-lb-invite-input",
                 );
                 if (errEl) errEl.innerHTML = "";
+                if (createErrEl) createErrEl.innerHTML = "";
                 const code = input.value.trim();
                 if (!code) {
                     if (errEl) {
@@ -494,6 +505,49 @@
                     if (errEl) {
                         errEl.innerHTML =
                             '<div class="error">Could not join that leaderboard.</div>';
+                    }
+                }
+            }
+
+            async function createPrivateLeaderboard() {
+                const joinErrEl = document.getElementById(
+                    "private-lb-join-error",
+                );
+                const createErrEl = document.getElementById(
+                    "private-lb-create-error",
+                );
+                if (joinErrEl) joinErrEl.innerHTML = "";
+                if (createErrEl) createErrEl.innerHTML = "";
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/leaderboards/private/`,
+                        {
+                            method: "POST",
+                            credentials: "include",
+                        },
+                    );
+                    if (response.status === 201 || response.ok) {
+                        const data = await response.json();
+                        const invite = data.invite;
+                        if (invite) {
+                            window.location.href = `./leaderboard.html?id=${encodeURIComponent(invite)}`;
+                            return;
+                        }
+                    }
+                    let msg = "Could not create a leaderboard.";
+                    try {
+                        const body = await response.json();
+                        if (body.error) msg = body.error;
+                    } catch (_) {
+                        /* ignore */
+                    }
+                    if (createErrEl) {
+                        createErrEl.innerHTML = `<div class="error">${escapeHtml(msg)}</div>`;
+                    }
+                } catch (err) {
+                    if (createErrEl) {
+                        createErrEl.innerHTML =
+                            '<div class="error">Could not create a leaderboard.</div>';
                     }
                 }
             }
@@ -842,6 +896,9 @@
                 document
                     .getElementById("private-lb-join-btn")
                     .addEventListener("click", joinPrivateLeaderboard);
+                document
+                    .getElementById("private-lb-create-btn")
+                    .addEventListener("click", createPrivateLeaderboard);
                 document
                     .getElementById("private-lb-invite-input")
                     .addEventListener("keydown", (e) => {
