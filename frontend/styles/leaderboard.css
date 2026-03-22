@@ -46,6 +46,62 @@ tr:hover {
     background-color: var(--hover-bg-colour);
 }
 
+.private-lb-invite-label {
+    margin: 0 0 6px;
+}
+
+.private-lb-copy-hint {
+    margin: 0 0 8px;
+    font-weight: normal;
+    font-size: 0.9em;
+    opacity: 0.85;
+    color: var(--text-colour);
+}
+
+.private-lb-invite-copy-wrap {
+    cursor: pointer;
+    border-radius: 6px;
+    margin-bottom: 12px;
+}
+
+.private-lb-invite-copy-wrap:hover .private-lb-invite-code {
+    border-color: rgba(255, 255, 255, 0.28);
+    background-color: rgba(0, 0, 0, 0.32);
+}
+
+.private-lb-invite-copy-wrap:hover .private-lb-copy-hint {
+    opacity: 1;
+}
+
+.private-lb-invite-copy-wrap:focus {
+    outline: none;
+}
+
+.private-lb-invite-copy-wrap:focus .private-lb-invite-code {
+    outline: 2px solid rgba(255, 255, 255, 0.45);
+    outline-offset: 2px;
+}
+
+.private-lb-invite-copy-wrap .private-lb-invite-code {
+    margin-bottom: 0;
+}
+
+.private-lb-invite-code {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        "Liberation Mono", "Courier New", monospace;
+    font-size: clamp(14px, 3vw, 16px);
+    line-height: 1.4;
+    color: var(--text-colour);
+    background-color: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
 .leaderboard-section {
     margin: 30px 0;
     display: flex;

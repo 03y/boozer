@@ -20,6 +20,24 @@
         <div class="container">
             <div class="profile-section">
                 <h3><span id="owner-name"></span></h3>
+                <p class="private-lb-invite-label">
+                    <strong>Join code:</strong>
+                </p>
+                <div
+                    id="private-lb-invite-copy-wrap"
+                    class="private-lb-invite-copy-wrap"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Copy join code to clipboard"
+                >
+                    <p id="private-lb-copy-hint" class="private-lb-copy-hint">
+                        Click to copy
+                    </p>
+                    <pre
+                        id="private-lb-invite-code"
+                        class="private-lb-invite-code"
+                    ></pre>
+                </div>
                 <p><strong>Created:</strong> <span id="creation-date"></span></p>
                 <p><strong>Members:</strong> <span id="member-count"></span></p>
             </div>
@@ -33,13 +51,89 @@
         </div>
 
         <script>
+            let privateLbCopyHintTimer = null;
+
+            function setupInviteCodeCopy() {
+                const wrap = document.getElementById(
+                    "private-lb-invite-copy-wrap",
+                );
+                const hint = document.getElementById("private-lb-copy-hint");
+                if (!wrap) return;
+
+                const hintDefault = "Click to copy";
+
+                function showCopiedFeedback() {
+                    if (!hint) return;
+                    hint.textContent = "Copied!";
+                    if (privateLbCopyHintTimer) {
+                        clearTimeout(privateLbCopyHintTimer);
+                    }
+                    privateLbCopyHintTimer = setTimeout(() => {
+                        hint.textContent = hintDefault;
+                    }, 2000);
+                }
+
+                function copyViaFallback(text) {
+                    const ta = document.createElement("textarea");
+                    ta.value = text;
+                    ta.setAttribute("readonly", "");
+                    ta.style.position = "fixed";
+                    ta.style.left = "-9999px";
+                    document.body.appendChild(ta);
+                    ta.select();
+                    try {
+                        if (document.execCommand("copy")) {
+                            showCopiedFeedback();
+                        }
+                    } catch (e) {
+                        /* ignore */
+                    }
+                    document.body.removeChild(ta);
+                }
+
+                function tryCopyInviteCode() {
+                    const pre = document.getElementById(
+                        "private-lb-invite-code",
+                    );
+                    if (!pre) return;
+                    const code = pre.textContent.trim();
+                    if (!code) return;
+
+                    if (
+                        navigator.clipboard &&
+                        typeof navigator.clipboard.writeText === "function"
+                    ) {
+                        navigator.clipboard
+                            .writeText(code)
+                            .then(showCopiedFeedback)
+                            .catch(() => copyViaFallback(code));
+                    } else {
+                        copyViaFallback(code);
+                    }
+                }
+
+                wrap.addEventListener("click", tryCopyInviteCode);
+                wrap.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        tryCopyInviteCode();
+                    }
+                });
+            }
+
             async function displayLeaderboard() {
                 const urlParams = new URLSearchParams(window.location.search);
                 const inviteCode =
                     urlParams.get("invite") || urlParams.get("id");
 
+                const invitePre = document.getElementById(
+                    "private-lb-invite-code",
+                );
+
                 if (!inviteCode) {
-                    document.getElementById("leaderboard-container").innerHTML = "";
+                    document.getElementById("leaderboard-container").innerHTML =
+                        "";
+                    if (invitePre) invitePre.textContent = "";
                     return;
                 }
 
@@ -51,6 +145,11 @@
                     const data = await response.json();
 
                     document.getElementById("owner-name").innerText = data.leaderboard.owner_username + "'s private leaderboard";
+
+                    if (invitePre) {
+                        invitePre.textContent =
+                            data.leaderboard.invite || inviteCode;
+                    }
 
                     // Format creation date
                     const creationDate = new Date(data.leaderboard.created * 1000);
@@ -65,12 +164,16 @@
                 } catch (error) {
                     document.getElementById("owner-name").innerText =
                         "Error loading leaderboard.";
+                    if (invitePre) invitePre.textContent = "";
                     document.getElementById("leaderboard-container").innerHTML = `<div class="error-message">Could not load leaderboard.</div>`;
                 }
             }
 
-            document.addEventListener("DOMContentLoaded", displayLeaderboard);
-            document.addEventListener("DOMContentLoaded", getUser);
+            document.addEventListener("DOMContentLoaded", () => {
+                setupInviteCodeCopy();
+                displayLeaderboard();
+                getUser();
+            });
         </script>
     </body>
 </html>
