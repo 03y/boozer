@@ -14,7 +14,7 @@ With docker & docker compose installed, run `docker compose up --build`.
 4. Run SQL commands from here.
 
 ## Schema
-Three tables: users, items and uses.
+Tables: `users`, `items`, `consumptions`, `item_reports`, `global_recaps`, `private_leaderboards`, `leaderboard_members`, `item_ratings`.
 
 ### Users
 | Field         | Datatype      | Key | Comments  |
@@ -39,3 +39,11 @@ Three tables: users, items and uses.
 | item\_id      | int(20)       | FK  |           |
 | user\_id      | int(20)       | FK  |           |
 | time          | int           |     | unix time |
+
+### Item ratings
+| Field         | Datatype      | Key | Comments  |
+| ------------- |:-------------:|:---:|:---------:|
+| rating\_id    | int           | PK  | AUTO-INC  |
+| user\_id      | int           | FK  | references users |
+| item\_id      | int           | FK  | references items |
+| rating        | int           |     | 1–5 (`CHECK`); one rating per user per item (`UNIQUE (user_id, item_id)`) |
