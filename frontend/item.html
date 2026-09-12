@@ -35,6 +35,11 @@
                     <span id="rating-value"></span>
                     <span id="rating-stars" class="rating-stars"></span>
                 </p>
+                <p id="user-rating-row" hidden>
+                    <strong>Your rating:</strong>
+                    <span id="user-rating-value"></span>
+                    <span id="user-rating-stars" class="rating-stars"></span>
+                </p>
             </div>
         </div>
 
@@ -108,10 +113,20 @@
                     document.getElementById("name").innerHTML = item.name;
                     document.getElementById("units").innerHTML = item.units;
                     displayRating(item.rating);
+                    displayUserRating(item.item_id);
                 } catch (error) {
                     document.getElementById("name").innerHTML =
                         "Error loading item.";
                 }
+            }
+
+            function renderStars(filled) {
+                let starsHtml = "";
+                for (let i = 1; i <= 5; i++) {
+                    const cls = i <= filled ? "star-filled" : "star-empty";
+                    starsHtml += `<span class="${cls}">★</span>`;
+                }
+                return starsHtml;
             }
 
             function displayRating(rating) {
@@ -126,16 +141,40 @@
                     return;
                 }
 
-                const filled = Math.floor(rating);
-                let starsHtml = "";
-                for (let i = 1; i <= 5; i++) {
-                    const cls = i <= filled ? "star-filled" : "star-empty";
-                    starsHtml += `<span class="${cls}">★</span>`;
+                ratingValue.textContent = rating.toFixed(1);
+                ratingStars.innerHTML = renderStars(Math.floor(rating));
+                ratingRow.hidden = false;
+            }
+
+            async function displayUserRating(itemId) {
+                const user = await getUser();
+                if (!user || typeof user !== "object") {
+                    return;
                 }
 
-                ratingValue.textContent = rating.toFixed(1);
-                ratingStars.innerHTML = starsHtml;
-                ratingRow.hidden = false;
+                const ratingRow = document.getElementById("user-rating-row");
+                const ratingValue = document.getElementById("user-rating-value");
+                const ratingStars = document.getElementById("user-rating-stars");
+
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/ratings/${itemId}`,
+                        { credentials: "include" },
+                    );
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        ratingValue.textContent = data.rating;
+                        ratingStars.innerHTML = renderStars(data.rating);
+                    } else {
+                        ratingValue.textContent = "No rating";
+                        ratingStars.innerHTML = "";
+                    }
+
+                    ratingRow.hidden = false;
+                } catch (error) {
+                    // leave user rating hidden on error
+                }
             }
 
             function showModal() {
