@@ -30,6 +30,11 @@
                     <strong>Consumptions:</strong>
                     <span id="consumptions"></span>
                 </p>
+                <p id="rating-row" hidden>
+                    <strong>Rating:</strong>
+                    <span id="rating-value"></span>
+                    <span id="rating-stars" class="rating-stars"></span>
+                </p>
             </div>
         </div>
 
@@ -102,10 +107,35 @@
 
                     document.getElementById("name").innerHTML = item.name;
                     document.getElementById("units").innerHTML = item.units;
+                    displayRating(item.rating);
                 } catch (error) {
                     document.getElementById("name").innerHTML =
                         "Error loading item.";
                 }
+            }
+
+            function displayRating(rating) {
+                const ratingRow = document.getElementById("rating-row");
+                const ratingValue = document.getElementById("rating-value");
+                const ratingStars = document.getElementById("rating-stars");
+
+                if (!rating || rating === 0) {
+                    ratingValue.textContent = "No ratings";
+                    ratingStars.innerHTML = "";
+                    ratingRow.hidden = false;
+                    return;
+                }
+
+                const filled = Math.floor(rating);
+                let starsHtml = "";
+                for (let i = 1; i <= 5; i++) {
+                    const cls = i <= filled ? "star-filled" : "star-empty";
+                    starsHtml += `<span class="${cls}">★</span>`;
+                }
+
+                ratingValue.textContent = rating.toFixed(1);
+                ratingStars.innerHTML = starsHtml;
+                ratingRow.hidden = false;
             }
 
             function showModal() {

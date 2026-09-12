@@ -86,6 +86,18 @@ a {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+.rating-stars {
+    letter-spacing: 0.15em;
+}
+
+.rating-stars .star-filled {
+    color: gold;
+}
+
+.rating-stars .star-empty {
+    color: #bbb;
+}
+
 .title-section {
     text-align: center;
     margin: 5px auto;
