@@ -26,6 +26,7 @@ type Item struct {
 	Name    string  `json:"name"`
 	Units   float32 `json:"units"`
 	Added   int     `json:"added"` // unix timestamp
+	Rating  float64 `json:"rating"`
 }
 
 // ItemPersonalised is the full item row plus ranking signals for the authenticated user.
@@ -182,4 +183,15 @@ type LeaderboardMember struct {
 
 type JoinPrivateLeaderboardRequest struct {
 	InviteCode string `json:"invite_code"`
+}
+
+type ItemRating struct {
+	Rating_id int `json:"rating_id"`
+	User_id   int `json:"user_id"`
+	Item_id   int `json:"item_id"`
+	Rating    int `json:"rating"`
+}
+
+type UserItemRating struct {
+	Rating int `json:"rating"`
 }

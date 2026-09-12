@@ -56,3 +56,10 @@ CREATE TABLE leaderboard_members(
     joined_at       INT         NOT NULL
 );
 
+CREATE TABLE item_ratings(
+    rating_id   SERIAL      PRIMARY KEY,
+    user_id     INT         NOT NULL REFERENCES users,
+    item_id     INT         NOT NULL REFERENCES items,
+    rating      INT         NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    UNIQUE (user_id, item_id)
+);

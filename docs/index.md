@@ -42,6 +42,7 @@ Boozer is a web app which stores users, beers and consumptions!
   1. **Items**
   2. **Users**
   3. **Consumptions**
+  4. **Item ratings**
 
 ---
 

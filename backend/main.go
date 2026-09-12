@@ -291,7 +291,8 @@ LEFT JOIN (
 
 func (a *App) GetItem(c *gin.Context) {
 	var item models.Item
-	err := a.DB.QueryRow(context.Background(), "SELECT item_id, user_id, name, units, added FROM items WHERE name=$1", c.Param("name")).Scan(&item.Item_id, &item.User_id, &item.Name, &item.Units, &item.Added)
+
+	err := a.DB.QueryRow(context.Background(), "SELECT i.item_id, i.user_id, i.name, i.units, i.added, COALESCE(AVG(r.rating), 0)::float8 FROM items i LEFT JOIN item_ratings r ON r.item_id = i.item_id WHERE i.name=$1 GROUP BY i.item_id", c.Param("name")).Scan(&item.Item_id, &item.User_id, &item.Name, &item.Units, &item.Added, &item.Rating)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			c.Status(http.StatusNotFound)
@@ -1594,6 +1595,107 @@ func (a *App) ChangePassword(c *gin.Context) {
 	}
 }
 
+func (a *App) SetItemRating(c *gin.Context) {
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		slog.Warn("invalid JWT", "error", err)
+		c.Status(http.StatusUnauthorized) // TODO: should this (and other similar instances) be 401 Unauth?
+		return
+	}
+
+	var userItemRating models.UserItemRating // what we got from the client
+	var itemRating models.ItemRating               // what we'll put in the db
+	err = c.BindJSON(&userItemRating)
+	if err != nil {
+		slog.Error("error binding JSON", "error", err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	// copy fields from client request
+	itemRating.Item_id, _ = strconv.Atoi(c.Param("item_id"))
+	itemRating.Rating = userItemRating.Rating
+
+	// value range is clamped on db side
+
+	// check item exists
+	err = a.DB.QueryRow(context.Background(), "SELECT item_id FROM items WHERE item_id=$1", itemRating.Item_id).Scan(&itemRating.Item_id)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			slog.Error("item not found", "error", err)
+		}
+		c.Status(http.StatusInternalServerError)
+		slog.Error("error", err)
+		return
+	}
+
+	// get user id
+	var idLookup string
+	err = a.DB.QueryRow(context.Background(), "SELECT user_id FROM users WHERE username=$1", claims["username"]).Scan(&idLookup)
+	if err != nil {
+		slog.Error("error looking up user ID", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	itemRating.User_id, _ = strconv.Atoi(idLookup)
+
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO item_ratings (item_id, user_id, rating) VALUES ($1, $2, $3) ON CONFLICT (user_id, item_id) DO UPDATE SET rating = EXCLUDED.rating", itemRating.Item_id, itemRating.User_id, itemRating.Rating)
+	if err != nil {
+		slog.Error("error adding item rating", "error", err)
+		c.Status(http.StatusBadRequest) // it was probably the clients fault
+		return
+	} else {
+		slog.Info("user rated item", "item_id", itemRating.Item_id, "item_id", itemRating.User_id, "rating", itemRating.Rating)
+	}
+
+	c.Status(http.StatusCreated)
+}
+
+func (a *App) GetUserItemRating(c *gin.Context) {
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		slog.Warn("invalid JWT", "error", err)
+		c.Status(http.StatusUnauthorized) // TODO: should this (and other similar instances) be 401 Unauth?
+		return
+	}
+
+	// get user id
+	var idLookup string
+	err = a.DB.QueryRow(context.Background(), "SELECT user_id FROM users WHERE username=$1", claims["username"]).Scan(&idLookup)
+	if err != nil {
+		slog.Error("error looking up user ID", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	var itemRating models.UserItemRating
+
+	err = a.DB.QueryRow(context.Background(), "SELECT rating FROM item_ratings WHERE item_id=$1 AND user_id=$2", c.Param("item_id"), idLookup).Scan(&itemRating.Rating)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		c.Status(http.StatusInternalServerError)
+		slog.Error("Error getting item", "error", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, itemRating)
+}
+
 /* ******************************************************************************** */
 
 func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
@@ -1691,6 +1793,11 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	router.DELETE(API_V2_BASE_URL+"/leaderboards/private/:invite", a.RemovePrivateLeaderboard)
 	router.POST(API_V2_BASE_URL+"/leaderboards/private/:invite/members", a.JoinPrivateLeaderboard)
 	router.DELETE(API_V2_BASE_URL+"/leaderboards/private/:invite/members", a.LeavePrivateLeaderboard)
+
+	// ratings
+	// item avg rating GET is part of GET /items/:item_id
+	router.GET(API_V2_BASE_URL+"/ratings/:item_id", a.GetUserItemRating) // user gets their rating of item
+	router.PUT(API_V2_BASE_URL+"/ratings/:item_id", a.SetItemRating) // user sets their rating of item
 
 	/* ********************************** */
 	/* Admin routes                       */
