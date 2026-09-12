@@ -192,6 +192,6 @@ type ItemRating struct {
 	Rating    int `json:"rating"`
 }
 
-type ItemRatingRequest struct {
+type UserItemRating struct {
 	Rating int `json:"rating"`
 }

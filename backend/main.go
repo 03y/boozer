@@ -292,7 +292,7 @@ LEFT JOIN (
 func (a *App) GetItem(c *gin.Context) {
 	var item models.Item
 
-	err := a.DB.QueryRow(context.Background(), "SELECT i.item_id, i.user_id, i.name, i.units, i.added, AVG(r.rating) FROM items i LEFT JOIN item_ratings r ON r.item_id = i.item_id WHERE name=$1 GROUP BY i.item_id", c.Param("name")).Scan(&item.Item_id, &item.User_id, &item.Name, &item.Units, &item.Added, &item.Rating)
+	err := a.DB.QueryRow(context.Background(), "SELECT i.item_id, i.user_id, i.name, i.units, i.added, COALESCE(AVG(r.rating), 0)::float8 FROM items i LEFT JOIN item_ratings r ON r.item_id = i.item_id WHERE i.name=$1 GROUP BY i.item_id", c.Param("name")).Scan(&item.Item_id, &item.User_id, &item.Name, &item.Units, &item.Added, &item.Rating)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			c.Status(http.StatusNotFound)
@@ -1609,9 +1609,9 @@ func (a *App) SetItemRating(c *gin.Context) {
 		return
 	}
 
-	var itemRatingRequest models.ItemRatingRequest // what we got from the client
+	var userItemRating models.UserItemRating // what we got from the client
 	var itemRating models.ItemRating               // what we'll put in the db
-	err = c.BindJSON(&itemRatingRequest)
+	err = c.BindJSON(&userItemRating)
 	if err != nil {
 		slog.Error("error binding JSON", "error", err)
 		c.Status(http.StatusBadRequest)
@@ -1620,7 +1620,7 @@ func (a *App) SetItemRating(c *gin.Context) {
 
 	// copy fields from client request
 	itemRating.Item_id, _ = strconv.Atoi(c.Param("item_id"))
-	itemRating.Rating = itemRatingRequest.Rating
+	itemRating.Rating = userItemRating.Rating
 
 	// value range is clamped on db side
 
@@ -1655,6 +1655,45 @@ func (a *App) SetItemRating(c *gin.Context) {
 	}
 
 	c.Status(http.StatusCreated)
+}
+
+func (a *App) GetUserItemRating(c *gin.Context) {
+	tokenString, err := c.Cookie("token")
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := parseJWT(tokenString, a.JWT_KEY)
+	if err != nil {
+		slog.Warn("invalid JWT", "error", err)
+		c.Status(http.StatusUnauthorized) // TODO: should this (and other similar instances) be 401 Unauth?
+		return
+	}
+
+	// get user id
+	var idLookup string
+	err = a.DB.QueryRow(context.Background(), "SELECT user_id FROM users WHERE username=$1", claims["username"]).Scan(&idLookup)
+	if err != nil {
+		slog.Error("error looking up user ID", "error", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	var itemRating models.UserItemRating
+
+	err = a.DB.QueryRow(context.Background(), "SELECT rating FROM item_ratings WHERE item_id=$1 AND user_id=$2", c.Param("item_id"), idLookup).Scan(&itemRating.Rating)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		c.Status(http.StatusInternalServerError)
+		slog.Error("Error getting item", "error", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, itemRating)
 }
 
 /* ******************************************************************************** */
@@ -1756,8 +1795,9 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	router.DELETE(API_V2_BASE_URL+"/leaderboards/private/:invite/members", a.LeavePrivateLeaderboard)
 
 	// ratings
-	// item rating GET is part of GET /items/:item_id
-	router.PUT(API_V2_BASE_URL+"/items/:item_id/rating", a.SetItemRating) // user sets their rating of item
+	// item avg rating GET is part of GET /items/:item_id
+	router.GET(API_V2_BASE_URL+"/ratings/:item_id", a.GetUserItemRating) // user gets their rating of item
+	router.PUT(API_V2_BASE_URL+"/ratings/:item_id", a.SetItemRating) // user sets their rating of item
 
 	/* ********************************** */
 	/* Admin routes                       */
