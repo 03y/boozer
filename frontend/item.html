@@ -38,7 +38,8 @@
                 <p id="user-rating-row" hidden>
                     <strong>Your rating:</strong>
                     <span id="user-rating-value"></span>
-                    <span id="user-rating-stars" class="rating-stars"></span>
+                    <span id="user-rating-stars" class="rating-stars interactive"></span>
+                    <span id="user-rating-hint" class="rating-hint"></span>
                 </p>
             </div>
         </div>
@@ -92,6 +93,7 @@
                 window.location.search,
             );
             const NAME = urlParams.get("name");
+            let currentItemId = null;
 
             async function displayItem() {
                 try {
@@ -110,6 +112,7 @@
                         return;
                     }
 
+                    currentItemId = item.item_id;
                     document.getElementById("name").innerHTML = item.name;
                     document.getElementById("units").innerHTML = item.units;
                     displayRating(item.rating);
@@ -125,6 +128,15 @@
                 for (let i = 1; i <= 5; i++) {
                     const cls = i <= filled ? "star-filled" : "star-empty";
                     starsHtml += `<span class="${cls}">★</span>`;
+                }
+                return starsHtml;
+            }
+
+            function renderInteractiveStars(filled) {
+                let starsHtml = "";
+                for (let i = 1; i <= 5; i++) {
+                    const cls = i <= filled ? "star-filled" : "star-empty";
+                    starsHtml += `<button type="button" class="star-btn ${cls}" data-rating="${i}" aria-label="Rate ${i} out of 5">★</button>`;
                 }
                 return starsHtml;
             }
@@ -146,15 +158,25 @@
                 ratingRow.hidden = false;
             }
 
+            function showUserRating(rating) {
+                const ratingRow = document.getElementById("user-rating-row");
+                const ratingValue = document.getElementById("user-rating-value");
+                const ratingStars = document.getElementById("user-rating-stars");
+                const ratingHint = document.getElementById("user-rating-hint");
+
+                ratingValue.textContent = rating ? rating : "";
+                ratingStars.innerHTML = renderInteractiveStars(rating || 0);
+                ratingHint.textContent = rating
+                    ? "Click to update"
+                    : "Click a star to rate";
+                ratingRow.hidden = false;
+            }
+
             async function displayUserRating(itemId) {
                 const user = await getUser();
                 if (!user || typeof user !== "object") {
                     return;
                 }
-
-                const ratingRow = document.getElementById("user-rating-row");
-                const ratingValue = document.getElementById("user-rating-value");
-                const ratingStars = document.getElementById("user-rating-stars");
 
                 try {
                     const response = await fetch(
@@ -164,16 +186,56 @@
 
                     if (response.ok) {
                         const data = await response.json();
-                        ratingValue.textContent = data.rating;
-                        ratingStars.innerHTML = renderStars(data.rating);
+                        showUserRating(data.rating);
                     } else {
-                        ratingValue.textContent = "No rating";
-                        ratingStars.innerHTML = "";
+                        showUserRating(0);
                     }
-
-                    ratingRow.hidden = false;
                 } catch (error) {
                     // leave user rating hidden on error
+                }
+            }
+
+            async function setUserRating(rating) {
+                if (!currentItemId) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/ratings/${currentItemId}`,
+                        {
+                            method: "PUT",
+                            credentials: "include",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({ rating: rating }),
+                        },
+                    );
+
+                    if (response.ok || response.status === 201) {
+                        showUserRating(rating);
+                        setMessage("Rating saved.");
+                        refreshAverageRating();
+                    } else {
+                        setMessage("Failed to save rating.", true);
+                    }
+                } catch (error) {
+                    setMessage("Failed to save rating.", true);
+                }
+            }
+
+            async function refreshAverageRating() {
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/items/${encodeURIComponent(NAME)}`,
+                    );
+                    if (response.ok) {
+                        const data = await response.json();
+                        displayRating(data.rating);
+                    }
+                } catch (error) {
+                    // keep existing average on failure
                 }
             }
 
@@ -279,6 +341,17 @@
             if (reportBadDataButton) {
                 reportBadDataButton.addEventListener("click", reportBadData);
             }
+
+            document.getElementById("user-rating-stars").addEventListener("click", (event) => {
+                const star = event.target.closest(".star-btn");
+                if (!star) {
+                    return;
+                }
+                const rating = parseInt(star.dataset.rating, 10);
+                if (rating >= 1 && rating <= 5) {
+                    setUserRating(rating);
+                }
+            });
 
             document.getElementById('report-form').addEventListener('submit', handleReportSubmit);
             document.querySelector('.close-button').addEventListener('click', closeModal);
