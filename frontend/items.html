@@ -28,6 +28,12 @@
         <div class="container">
             <div class="items-section">
                 <div class="leaderboard-controls">
+                    <input
+                        type="text"
+                        id="item-search"
+                        placeholder="Search items..."
+                        autocomplete="off"
+                    />
                     <select id="sort-selector">
                         <option value="date">📅 Date Added</option>
                         <option value="alpha">🔤 Alphabetical</option>
@@ -57,11 +63,55 @@
                 }
             }
 
+            // Fold diacritics / accents so e.g. "Zywiec" matches "Żywiec"
+            // and "Perla" matches "Perła".
+            // Characters like ł, ø, đ have no NFD decomposition, so we
+            // substitute them explicitly before the NFD pass.
+            const FOLD_MAP = {
+                'ł': 'l', 'Ł': 'L',
+                'ø': 'o', 'Ø': 'O',
+                'đ': 'd', 'Đ': 'D',
+                'ß': 'ss',
+                'æ': 'ae', 'AE': 'AE',
+                'œ': 'oe', 'Œ': 'OE',
+                'ð': 'd', 'Ð': 'D',
+                'þ': 'th', 'Þ': 'Th',
+            };
+            const FOLD_RE = new RegExp('[' + Object.keys(FOLD_MAP).join('') + ']', 'g');
+
+            function foldDiacritics(str) {
+                return str
+                    .replace(FOLD_RE, ch => FOLD_MAP[ch])
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "");
+            }
+
+            // Pre-compute folded search name on each item after loading
+            function prepareSearchNames(list) {
+                for (const item of list) {
+                    item._searchName = item.name ? foldDiacritics(item.name.toLowerCase()) : "";
+                }
+            }
+
+            function getFilteredItems() {
+                const searchInput = document.getElementById("item-search");
+                const filter = searchInput ? searchInput.value.trim() : "";
+                if (!filter) {
+                    return itemsData;
+                }
+                const foldedFilter = foldDiacritics(filter.toLowerCase());
+                return itemsData.filter((item) =>
+                    item._searchName && item._searchName.includes(foldedFilter),
+                );
+            }
+
             function renderTable() {
                 if (!itemsData || itemsData.length === 0) {
                     container.innerHTML = `<div class="error">Inventory is empty.</div>`;
                     return;
                 }
+
+                const displayItems = getFilteredItems();
 
                 let tableHTML = `
                     <table>
@@ -75,7 +125,7 @@
                         <tbody>
                 `;
 
-                itemsData.forEach((item) => {
+                displayItems.forEach((item) => {
                     const date = new Date(item.added * 1000);
                     const formattedDate = date.toISOString().split("T")[0];
                     tableHTML += `
@@ -114,6 +164,7 @@
                 try {
                     const data = await fetchItems();
                     itemsData = data || [];
+                    prepareSearchNames(itemsData);
                     const count = itemsData.length;
                     const countTextElem = document.getElementById("items-count-text");
                     if (countTextElem) {
@@ -135,6 +186,10 @@
 
             document.getElementById('sort-selector').addEventListener('change', function () {
                 sortData(this.value);
+            });
+
+            document.getElementById('item-search').addEventListener('input', function () {
+                renderTable();
             });
 
             document.addEventListener("DOMContentLoaded", loadItems);
