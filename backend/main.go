@@ -559,7 +559,7 @@ func (a *App) AddItemReport(c *gin.Context) {
 		c.Status(http.StatusBadRequest) // it was probably the clients fault
 		return
 	} else {
-		slog.Info("new item report created", "item_id", newItemReport.Item_id, "item_id", newItemReport.User_id, "reason", newItemReport.Reason)
+		slog.Info("new item report created", "item_id", newItemReport.Item_id, "user_id", newItemReport.User_id, "reason", newItemReport.Reason)
 	}
 
 	c.Status(http.StatusCreated)
@@ -1677,7 +1677,7 @@ func (a *App) SetItemRating(c *gin.Context) {
 		c.Status(http.StatusBadRequest) // it was probably the clients fault
 		return
 	} else {
-		slog.Info("user rated item", "item_id", itemRating.Item_id, "item_id", itemRating.User_id, "rating", itemRating.Rating)
+		slog.Info("user rated item", "item_id", itemRating.Item_id, "user_id", itemRating.User_id, "rating", itemRating.Rating)
 	}
 
 	c.Status(http.StatusCreated)
