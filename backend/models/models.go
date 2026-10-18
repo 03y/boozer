@@ -190,8 +190,17 @@ type ItemRating struct {
 	User_id   int `json:"user_id"`
 	Item_id   int `json:"item_id"`
 	Rating    int `json:"rating"`
+	Created   int `json:"created"`
 }
 
 type UserItemRating struct {
 	Rating int `json:"rating"`
 }
+
+type FeedRating struct {
+	Username string `json:"username"`
+	Name     string `json:"name"`
+	Rating   int    `json:"rating"`
+	Created  int64  `json:"created"`
+}
+

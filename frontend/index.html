@@ -39,6 +39,17 @@
         <div class="container">
             <div class="leaderboard-section">
                 <div class="leaderboard-column">
+                    <h2>⭐ Recent Ratings</h2>
+                    <div id="ratings-feed-table" class="leaderboard-container">
+                        <div class="loading">Loading recent ratings...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="leaderboard-section">
+                <div class="leaderboard-column">
                     <h2>👤 Top Boozers</h2>
                     <div class="leaderboard-controls">
                         <select id="leaderboard-type-selector">
@@ -215,6 +226,95 @@
                 }
             }
 
+            async function fetchRatingsFeed() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/ratings/feed`, {
+                        method: "GET",
+                        credentials: "include",
+                        headers: {
+                            Accept: "application/json",
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(
+                            `HTTP error! status: ${response.status}`,
+                        );
+                    }
+
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error("Error fetching ratings feed:", error);
+                    throw error;
+                }
+            }
+
+            function renderStars(filled) {
+                let starsHtml = "";
+                for (let i = 1; i <= 5; i++) {
+                    const cls = i <= filled ? "star-filled" : "star-empty";
+                    starsHtml += `<span class="${cls}">★</span>`;
+                }
+                return starsHtml;
+            }
+
+            function createRatingsFeedTable(data) {
+                if (!data || data.length === 0) {
+                    return '<div class="error">No recent ratings found.</div>';
+                }
+
+                let tableHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Item</th>
+                                <th>Rating</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                data.forEach((rating) => {
+                    const relativeTime = getRelativeTime(rating.created);
+                    tableHTML += `
+                        <tr>
+                          <td>${rating.username ? `<a href="./user.html?username=${rating.username}">${rating.username}</a>` : "Unknown User"}</td>
+                          <td>${rating.name ? `<a href="./item.html?name=${encodeURIComponent(rating.name)}">${rating.name}</a>` : "Unknown Item"}</td>
+                          <td>${rating.rating != null ? `${rating.rating} <span class="rating-stars">${renderStars(rating.rating)}</span>` : "N/A"}</td>
+                          <td>${relativeTime}</td>
+                        </tr>
+                    `;
+                });
+
+                tableHTML += `
+                        </tbody>
+                    </table>
+                `;
+
+                return tableHTML;
+            }
+
+            async function loadRatingsFeed() {
+                const feedContainer = document.getElementById("ratings-feed-table");
+                feedContainer.innerHTML =
+                    '<div class="loading">Loading recent ratings...</div>';
+
+                try {
+                    const feedData = await fetchRatingsFeed();
+                    feedContainer.innerHTML = createRatingsFeedTable(feedData);
+                } catch (error) {
+                    const errorHTML = `
+                        <div class="error">
+                            <strong>Error loading ratings feed</strong><br>
+                        </div>
+                    `;
+                    feedContainer.innerHTML = errorHTML;
+                }
+            }
+
             async function loadUsersLeaderboard(type = "users") {
                 const usersContainer =
                     document.getElementById("users-leaderboard");
@@ -290,6 +390,7 @@
             }
 
             document.addEventListener("DOMContentLoaded", loadFeed);
+            document.addEventListener("DOMContentLoaded", loadRatingsFeed);
             document.addEventListener("DOMContentLoaded", loadLeaderboards);
             document.addEventListener("DOMContentLoaded", getUser);
             document.addEventListener(

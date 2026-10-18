@@ -1141,6 +1141,30 @@ func (a *App) GetFeed(c *gin.Context) {
 	c.JSON(http.StatusOK, feed)
 }
 
+func (a *App) GetRatingsFeed(c *gin.Context) {
+	rows, err := a.DB.Query(context.Background(), "SELECT users.username, items.name, item_ratings.rating, item_ratings.created FROM item_ratings INNER JOIN items ON item_ratings.item_id = items.item_id INNER JOIN users ON item_ratings.user_id = users.user_id ORDER BY item_ratings.created DESC LIMIT 10;")
+	if err != nil {
+		slog.Error("error getting ratings feed", "error", err)
+		c.Status(http.StatusNotFound)
+		return
+	}
+	defer rows.Close()
+
+	feed := make([]models.FeedRating, 0)
+	for rows.Next() {
+		var rating models.FeedRating
+		err := rows.Scan(&rating.Username, &rating.Name, &rating.Rating, &rating.Created)
+		if err != nil {
+			slog.Error("error scanning rating", "error", err)
+			c.Status(http.StatusNotFound)
+			return
+		}
+		feed = append(feed, rating)
+	}
+
+	c.JSON(http.StatusOK, feed)
+}
+
 func (a *App) AddPrivateLeaderboard(c *gin.Context) {
 	tokenString, err := c.Cookie("token")
 	if err != nil {
@@ -1645,7 +1669,9 @@ func (a *App) SetItemRating(c *gin.Context) {
 	}
 	itemRating.User_id, _ = strconv.Atoi(idLookup)
 
-	_, err = a.DB.Exec(context.Background(), "INSERT INTO item_ratings (item_id, user_id, rating) VALUES ($1, $2, $3) ON CONFLICT (user_id, item_id) DO UPDATE SET rating = EXCLUDED.rating", itemRating.Item_id, itemRating.User_id, itemRating.Rating)
+	itemRating.Created = int(time.Now().Unix())
+
+	_, err = a.DB.Exec(context.Background(), "INSERT INTO item_ratings (item_id, user_id, rating, created) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, item_id) DO UPDATE SET rating = EXCLUDED.rating", itemRating.Item_id, itemRating.User_id, itemRating.Rating, itemRating.Created)
 	if err != nil {
 		slog.Error("error adding item rating", "error", err)
 		c.Status(http.StatusBadRequest) // it was probably the clients fault
@@ -1798,6 +1824,7 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	// item avg rating GET is part of GET /items/:item_id
 	router.GET(API_V2_BASE_URL+"/ratings/:item_id", a.GetUserItemRating) // user gets their rating of item
 	router.PUT(API_V2_BASE_URL+"/ratings/:item_id", a.SetItemRating) // user sets their rating of item
+	router.GET(API_V2_BASE_URL+"/ratings/feed", a.GetRatingsFeed)
 
 	/* ********************************** */
 	/* Admin routes                       */
