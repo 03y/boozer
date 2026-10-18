@@ -61,5 +61,6 @@ CREATE TABLE item_ratings(
     user_id     INT         NOT NULL REFERENCES users,
     item_id     INT         NOT NULL REFERENCES items,
     rating      INT         NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    created     INT         NOT NULL,
     UNIQUE (user_id, item_id)
 );
