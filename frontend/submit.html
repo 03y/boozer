@@ -99,6 +99,7 @@
                         );
                     }
                     items = sortItemsForSubmit(await response.json());
+                    prepareSearchNames(items);
                 } catch (error) {
                     console.error("Error fetching personalised items:", error);
                     try {
@@ -112,18 +113,50 @@
                         }
                         items = await response.json();
                         items.sort((a, b) => b.added - a.added);
+                        prepareSearchNames(items);
                     } catch (fallbackErr) {
                         console.error("Error fetching items:", fallbackErr);
                     }
                 }
             }
 
+            // Fold diacritics / accents so e.g. "Zywiec" matches "Żywiec"
+            // and "Perla" matches "Perła".
+            // Characters like ł, ø, đ have no NFD decomposition, so we
+            // substitute them explicitly before the NFD pass.
+            const FOLD_MAP = {
+                'ł': 'l', 'Ł': 'L',
+                'ø': 'o', 'Ø': 'O',
+                'đ': 'd', 'Đ': 'D',
+                'ß': 'ss',
+                'æ': 'ae', 'Æ': 'AE',
+                'œ': 'oe', 'Œ': 'OE',
+                'ð': 'd', 'Ð': 'D',
+                'þ': 'th', 'Þ': 'Th',
+            };
+            const FOLD_RE = new RegExp('[' + Object.keys(FOLD_MAP).join('') + ']', 'g');
+
+            function foldDiacritics(str) {
+                return str
+                    .replace(FOLD_RE, ch => FOLD_MAP[ch])
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "");
+            }
+
+            // Pre-compute folded search name on each item after loading
+            function prepareSearchNames(list) {
+                for (const item of list) {
+                    item._searchName = foldDiacritics(item.name.toLowerCase());
+                }
+            }
+
             function renderDropdown(filter = "") {
                 const dropdown = document.getElementById("itemDropdown");
                 dropdown.innerHTML = "";
+                const foldedFilter = foldDiacritics(filter.toLowerCase());
                 const filteredItems = sortItemsForSubmit(
                     items.filter((item) =>
-                        item.name.toLowerCase().includes(filter.toLowerCase()),
+                        item._searchName.includes(foldedFilter),
                     ),
                 );
 
