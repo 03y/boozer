@@ -38,6 +38,7 @@
                         <option value="date">📅 Date Added</option>
                         <option value="alpha">🔤 Alphabetical</option>
                         <option value="units">📊 Units</option>
+                        <option value="rating">⭐ Average Rating</option>
                     </select>
                 </div>
                 <div id="items-container">
@@ -105,6 +106,16 @@
                 );
             }
 
+            function renderStars(filled) {
+                let starsHtml = "";
+                const rounded = Math.round(filled || 0);
+                for (let i = 1; i <= 5; i++) {
+                    const cls = i <= rounded ? "star-filled" : "star-empty";
+                    starsHtml += `<span class="${cls}">★</span>`;
+                }
+                return starsHtml;
+            }
+
             function renderTable() {
                 if (!itemsData || itemsData.length === 0) {
                     container.innerHTML = `<div class="error">Inventory is empty.</div>`;
@@ -119,6 +130,7 @@
                             <tr>
                                 <th>Name</th>
                                 <th>Units</th>
+                                <th>Average Rating</th>
                                 <th>Date added</th>
                             </tr>
                         </thead>
@@ -128,10 +140,13 @@
                 displayItems.forEach((item) => {
                     const date = new Date(item.added * 1000);
                     const formattedDate = date.toISOString().split("T")[0];
+                    const rating = item.avg_rating || 0;
+                    const ratingHTML = `${rating.toFixed(1)} <span class="rating-stars">${renderStars(rating)}</span>`;
                     tableHTML += `
                         <tr>
                             <td>${item.name ? `<a href="./item.html?name=${encodeURIComponent(item.name)}">${item.name}</a>` : "Unknown Item"}</td>
                             <td>${item.units || 0}</td>
+                            <td>${ratingHTML}</td>
                             <td>${formattedDate}</td>
                         </tr>
                     `;
@@ -154,6 +169,9 @@
                         break;
                     case 'units':
                         itemsData.sort((a, b) => b.units - a.units);
+                        break;
+                    case 'rating':
+                        itemsData.sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0));
                         break;
                 }
                 renderTable();

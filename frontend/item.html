@@ -115,7 +115,7 @@
                     currentItemId = item.item_id;
                     document.getElementById("name").innerHTML = item.name;
                     document.getElementById("units").innerHTML = item.units;
-                    displayRating(item.rating);
+                    displayRating(item.avg_rating);
                     displayUserRating(item.item_id);
                 } catch (error) {
                     document.getElementById("name").innerHTML =
