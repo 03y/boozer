@@ -17,6 +17,15 @@
         </nav>
 
         <div class="container">
+            <div class="card profile-section" id="items-count-card" style="text-align: center;">
+                <h3 style="margin-top: 0;">🍺 Inventory</h3>
+                <p id="items-count-text" style="margin-bottom: 0; font-size: 1.1em;">
+                    Item count: <strong id="items-count">...</strong>
+                </p>
+            </div>
+        </div>
+
+        <div class="container">
             <div class="items-section">
                 <div class="leaderboard-controls">
                     <select id="sort-selector">
@@ -105,6 +114,11 @@
                 try {
                     const data = await fetchItems();
                     itemsData = data || [];
+                    const count = itemsData.length;
+                    const countTextElem = document.getElementById("items-count-text");
+                    if (countTextElem) {
+                        countTextElem.innerHTML = `Item count: <strong id="items-count">${count}</strong>`;
+                    }
                     sortData('date');
                 } catch (error) {
                     container.innerHTML = `
@@ -112,6 +126,10 @@
                             <strong>Error loading items</strong><br>
                         </div>
                     `;
+                    const countTextElem = document.getElementById("items-count-text");
+                    if (countTextElem) {
+                        countTextElem.textContent = "Error loading item count.";
+                    }
                 }
             }
 
