@@ -137,22 +137,36 @@ tr:hover {
     justify-content: center;
     align-items: center;
     margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 
 #leaderboard-type-selector,
-#sort-selector {
+#sort-selector,
+#item-search {
     padding: 10px;
     font-size: 16px;
     border-radius: 4px;
     background-color: #333;
     border: 1px solid #555;
     color: #fff;
+    box-sizing: border-box;
+}
+
+#leaderboard-type-selector,
+#sort-selector {
     cursor: pointer;
 }
 
 #leaderboard-type-selector:hover,
-#sort-selector:hover {
+#sort-selector:hover,
+#item-search:focus {
     background-color: #444;
+    outline: none;
+    border-color: #777;
+}
+
+#item-search::placeholder {
+    color: #aaa;
 }
 
 .leaderboard-column {

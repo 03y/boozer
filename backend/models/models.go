@@ -26,7 +26,7 @@ type Item struct {
 	Name    string  `json:"name"`
 	Units   float32 `json:"units"`
 	Added   int     `json:"added"` // unix timestamp
-	Rating  float64 `json:"rating"`
+	Rating  float64 `json:"avg_rating"`
 }
 
 // ItemPersonalised is the full item row plus ranking signals for the authenticated user.
