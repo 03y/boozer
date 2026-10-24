@@ -1722,6 +1722,23 @@ func (a *App) GetUserItemRating(c *gin.Context) {
 	c.JSON(http.StatusOK, itemRating)
 }
 
+func (a *App) GetItemRatingCount(c *gin.Context) {
+	var count models.RatingCount
+
+	err := a.DB.QueryRow(context.Background(), "SELECT COUNT(1) FROM item_ratings WHERE item_id=$1", c.Param("item_id")).Scan(&count.Count)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		c.Status(http.StatusInternalServerError)
+		slog.Error("Error getting item rating count", "error", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, count)
+}
+
 /* ******************************************************************************** */
 
 func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
@@ -1824,6 +1841,7 @@ func (a *App) setUpRouter(writer io.Writer) *gin.Engine {
 	// item avg rating GET is part of GET /items/:item_id
 	router.GET(API_V2_BASE_URL+"/ratings/:item_id", a.GetUserItemRating) // user gets their rating of item
 	router.PUT(API_V2_BASE_URL+"/ratings/:item_id", a.SetItemRating) // user sets their rating of item
+	router.GET(API_V2_BASE_URL+"/ratings/:item_id/count", a.GetItemRatingCount) // how many ratings does an item have
 	router.GET(API_V2_BASE_URL+"/ratings/feed", a.GetRatingsFeed)
 
 	/* ********************************** */

@@ -154,6 +154,10 @@ type UsersStats struct {
 	Count int `json:"count"`
 }
 
+type RatingCount struct {
+	Count int `json:"count"`
+}
+
 type GlobalRecap struct {
 	Items        ItemsStats    `json:"items"`
 	Users        UsersStats    `json:"users"`
