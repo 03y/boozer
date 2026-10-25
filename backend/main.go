@@ -203,7 +203,7 @@ func round(value float64, precision int) float64 {
 /* ******************************************************************************** */
 
 func (a *App) GetItems(c *gin.Context) {
-	rows, err := a.DB.Query(context.Background(), "SELECT i.item_id, i.user_id, name, units, added, COALESCE(AVG(r.rating), 0)::float8  AS avg_rating FROM items i LEFT JOIN item_ratings r ON r.item_id = i.item_id GROUP BY i.item_id ORDER BY added DESC;")
+	rows, err := a.DB.Query(context.Background(), "SELECT i.item_id, i.user_id, name, units, added, COALESCE(AVG(r.rating), 0)::float8  AS avg_rating, COUNT(r.rating) AS rating_count FROM items i LEFT JOIN item_ratings r ON r.item_id = i.item_id GROUP BY i.item_id ORDER BY added DESC;")
 	if err != nil {
 		slog.Error("error getting item list", "error", err)
 		c.Status(http.StatusInternalServerError)
@@ -213,7 +213,7 @@ func (a *App) GetItems(c *gin.Context) {
 	items := make([]models.Item, 0)
 	for rows.Next() {
 		var item models.Item
-		err := rows.Scan(&item.Item_id, &item.User_id, &item.Name, &item.Units, &item.Added, &item.Rating)
+		err := rows.Scan(&item.Item_id, &item.User_id, &item.Name, &item.Units, &item.Added, &item.Rating, &item.RatingCount)
 		if err != nil {
 			slog.Error("error scanning item", "error", err)
 			c.Status(http.StatusInternalServerError)
@@ -292,7 +292,7 @@ LEFT JOIN (
 func (a *App) GetItem(c *gin.Context) {
 	var item models.Item
 
-	err := a.DB.QueryRow(context.Background(), "SELECT i.item_id, i.user_id, i.name, i.units, i.added, COALESCE(AVG(r.rating), 0)::float8 FROM items i LEFT JOIN item_ratings r ON r.item_id = i.item_id WHERE i.name=$1 GROUP BY i.item_id", c.Param("name")).Scan(&item.Item_id, &item.User_id, &item.Name, &item.Units, &item.Added, &item.Rating)
+	err := a.DB.QueryRow(context.Background(), "SELECT i.item_id, i.user_id, i.name, i.units, i.added, COALESCE(AVG(r.rating), 0)::float8, COUNT(r.rating) FROM items i LEFT JOIN item_ratings r ON r.item_id = i.item_id WHERE i.name=$1 GROUP BY i.item_id", c.Param("name")).Scan(&item.Item_id, &item.User_id, &item.Name, &item.Units, &item.Added, &item.Rating, &item.RatingCount)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			c.Status(http.StatusNotFound)

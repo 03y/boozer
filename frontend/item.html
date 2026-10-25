@@ -34,6 +34,7 @@
                     <strong>Rating:</strong>
                     <span id="rating-value"></span>
                     <span id="rating-stars" class="rating-stars"></span>
+                    <span id="rating-count"></span>
                 </p>
                 <p id="user-rating-row" hidden>
                     <strong>Your rating:</strong>
@@ -115,12 +116,28 @@
                     currentItemId = item.item_id;
                     document.getElementById("name").innerHTML = item.name;
                     document.getElementById("units").innerHTML = item.units;
-                    displayRating(item.avg_rating);
+                    const ratingCount = item.rating_count != null ? item.rating_count : await fetchRatingCount(item.item_id);
+                    displayRating(item.avg_rating, ratingCount);
                     displayUserRating(item.item_id);
                 } catch (error) {
                     document.getElementById("name").innerHTML =
                         "Error loading item.";
                 }
+            }
+
+            async function fetchRatingCount(itemId) {
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/ratings/${itemId}/count`,
+                    );
+                    if (response.ok) {
+                        const data = await response.json();
+                        return data.count != null ? data.count : 0;
+                    }
+                } catch (error) {
+                    console.error("Error fetching rating count:", error);
+                }
+                return 0;
             }
 
             function renderStars(filled) {
@@ -141,20 +158,29 @@
                 return starsHtml;
             }
 
-            function displayRating(rating) {
+            function displayRating(rating, count = 0) {
                 const ratingRow = document.getElementById("rating-row");
                 const ratingValue = document.getElementById("rating-value");
                 const ratingStars = document.getElementById("rating-stars");
+                const ratingCount = document.getElementById("rating-count");
+
+                const countText = count != null ? ` (${count})` : "";
 
                 if (!rating || rating === 0) {
                     ratingValue.textContent = "No ratings";
                     ratingStars.innerHTML = "";
+                    if (ratingCount) {
+                        ratingCount.textContent = countText;
+                    }
                     ratingRow.hidden = false;
                     return;
                 }
 
                 ratingValue.textContent = rating.toFixed(1);
                 ratingStars.innerHTML = renderStars(Math.floor(rating));
+                if (ratingCount) {
+                    ratingCount.textContent = countText;
+                }
                 ratingRow.hidden = false;
             }
 
@@ -232,7 +258,9 @@
                     );
                     if (response.ok) {
                         const data = await response.json();
-                        displayRating(data.rating);
+                        const ratingCount = data.rating_count != null ? data.rating_count : (currentItemId ? await fetchRatingCount(currentItemId) : 0);
+                        const avgRating = data.avg_rating != null ? data.avg_rating : data.rating;
+                        displayRating(avgRating, ratingCount);
                     }
                 } catch (error) {
                     // keep existing average on failure

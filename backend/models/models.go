@@ -21,12 +21,13 @@ type ChangePassword struct {
 }
 
 type Item struct {
-	Item_id int     `json:"item_id"`
-	User_id int     `json:"user_id"` // who added the item
-	Name    string  `json:"name"`
-	Units   float32 `json:"units"`
-	Added   int     `json:"added"` // unix timestamp
-	Rating  float64 `json:"avg_rating"`
+	Item_id     int     `json:"item_id"`
+	User_id     int     `json:"user_id"` // who added the item
+	Name        string  `json:"name"`
+	Units       float32 `json:"units"`
+	Added       int     `json:"added"` // unix timestamp
+	Rating      float64 `json:"avg_rating"`
+	RatingCount int     `json:"rating_count"`
 }
 
 // ItemPersonalised is the full item row plus ranking signals for the authenticated user.

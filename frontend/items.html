@@ -141,7 +141,8 @@
                     const date = new Date(item.added * 1000);
                     const formattedDate = date.toISOString().split("T")[0];
                     const rating = item.avg_rating || 0;
-                    const ratingHTML = `${rating.toFixed(1)} <span class="rating-stars">${renderStars(rating)}</span>`;
+                    const ratingCount = item.rating_count != null ? item.rating_count : 0;
+                    const ratingHTML = `${rating.toFixed(1)} <span class="rating-stars">${renderStars(rating)}</span> (${ratingCount})`;
                     tableHTML += `
                         <tr>
                             <td>${item.name ? `<a href="./item.html?name=${encodeURIComponent(item.name)}">${item.name}</a>` : "Unknown Item"}</td>
